@@ -2,16 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
-/* PTminder - Personal Training Management System Design */
+/* TrainWithUs - Personal Training Management System Design */
 
 @layer base {
   :root {
     /* Main backgrounds */
-    --background: 248 250 252;
+    --background: 210 20% 98%;
     --foreground: 215 25% 27%;
     
     /* Header colors */
-    --header: 215 25% 27%;
+    --header: 215 28% 17%;
     --header-foreground: 0 0% 100%;
 
     /* Card system */
@@ -22,42 +22,42 @@
     --popover: 0 0% 100%;
     --popover-foreground: 215 25% 27%;
 
-    /* Primary fitness brand colors */
-    --primary: 200 98% 39%;
-    --primary-light: 200 98% 45%;
+    /* Primary brand colors - Deep blue */
+    --primary: 217 91% 53%;
+    --primary-light: 217 91% 60%;
     --primary-foreground: 0 0% 100%;
 
-    /* Success/fitness green */
-    --success: 142 76% 36%;
-    --success-light: 142 69% 42%;
+    /* Success green */
+    --success: 142 69% 58%;
+    --success-light: 142 71% 65%;
     --success-foreground: 0 0% 100%;
 
-    /* Secondary grays */
-    --secondary: 215 16% 95%;
-    --secondary-foreground: 215 25% 27%;
+    /* Secondary dark gray */
+    --secondary: 215 28% 17%;
+    --secondary-foreground: 0 0% 100%;
 
     /* Muted text and backgrounds */
-    --muted: 215 16% 97%;
-    --muted-foreground: 215 16% 46%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 215 16% 47%;
 
     /* Accent colors */
-    --accent: 215 16% 97%;
-    --accent-foreground: 215 25% 27%;
+    --accent: 142 69% 58%;
+    --accent-foreground: 0 0% 100%;
 
     /* Status colors */
-    --warning: 38 92% 50%;
+    --warning: 32 95% 44%;
     --warning-foreground: 0 0% 100%;
     
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
     /* Borders and inputs */
-    --border: 215 16% 92%;
-    --input: 215 16% 92%;
-    --ring: 200 98% 39%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 217 91% 53%;
 
     /* Layout */
-    --radius: 0.75rem;
+    --radius: 0.5rem;
 
     /* Gradients */
     --gradient-primary: linear-gradient(135deg, hsl(200 98% 39%), hsl(200 98% 45%));

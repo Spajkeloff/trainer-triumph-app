@@ -63,7 +63,7 @@ const SummaryCards = () => {
   const cards = [
     {
       title: "Revenue (This Month)",
-      value: "$12,450",
+      value: "AED 45,750",
       change: "+12.5%",
       trend: "up" as const,
       icon: DollarSign,
@@ -79,7 +79,7 @@ const SummaryCards = () => {
     },
     {
       title: "Outstanding",
-      value: "$2,340",
+      value: "AED 8,620",
       change: "-15.3%",
       trend: "down" as const,
       icon: CreditCard,
