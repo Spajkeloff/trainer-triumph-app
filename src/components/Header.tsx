@@ -62,12 +62,7 @@ const Header = () => {
       icon: Grid3X3, 
       path: "/services",
       dropdown: [
-        { label: "Packages", path: "/services/packages" },
-        { label: "Memberships", path: "/services/memberships" },
-        { label: "Products", path: "/services/products" },
-        { label: "Session Templates", path: "/services/templates" },
-        { label: "Class Templates", path: "/services/classes" },
-        { label: "Discounts", path: "/services/discounts" },
+        { label: "Training Packages", path: "/services" },
       ]
     },
     { 

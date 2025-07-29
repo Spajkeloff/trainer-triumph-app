@@ -47,10 +47,6 @@ const App = () => (
               <Route path="clients/active" element={<Clients />} />
               <Route path="clients/new" element={<Clients />} />
               <Route path="services" element={<Services />} />
-              <Route path="services/packages" element={<PackageManagement />} />
-              <Route path="services/memberships" element={<Services />} />
-              <Route path="services/classes" element={<Services />} />
-              <Route path="services/discounts" element={<Services />} />
               <Route path="finances" element={<Finances />} />
               <Route path="finances/payments" element={<Finances />} />
               <Route path="finances/invoices" element={<Finances />} />

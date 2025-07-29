@@ -4,11 +4,6 @@ import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 import { 
   Plus,
-  Package,
-  Users,
-  Calendar,
-  Clock,
-  DollarSign,
   Edit,
   Trash2,
   MoreHorizontal,
@@ -20,9 +15,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../components/ui/dropdown-menu";
+import CreatePackageModal from "../components/CreatePackageModal";
 
 const Services = () => {
-  const [activeTab, setActiveTab] = useState<"packages">("packages");
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [editingPackage, setEditingPackage] = useState<any>(null);
 
   // Sample data
   const packages = [
@@ -71,6 +68,28 @@ const Services = () => {
       <Badge variant="secondary">Inactive</Badge>;
   };
 
+  const handleEditPackage = (pkg: any) => {
+    setEditingPackage(pkg);
+    setShowCreateModal(true);
+  };
+
+  const handleDeletePackage = (pkgId: string) => {
+    if (confirm('Are you sure you want to delete this package?')) {
+      // Handle package deletion
+      console.log('Deleting package:', pkgId);
+    }
+  };
+
+  const handleModalClose = () => {
+    setShowCreateModal(false);
+    setEditingPackage(null);
+  };
+
+  const handleModalSuccess = () => {
+    // Refresh packages list
+    handleModalClose();
+  };
+
   const renderPackages = () => (
     <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
       {packages.map((pkg) => (
@@ -94,11 +113,14 @@ const Services = () => {
                       <Eye className="h-4 w-4 mr-2" />
                       View Details
                     </DropdownMenuItem>
-                    <DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleEditPackage(pkg)}>
                       <Edit className="h-4 w-4 mr-2" />
                       Edit Package
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="text-destructive">
+                    <DropdownMenuItem 
+                      className="text-destructive"
+                      onClick={() => handleDeletePackage(pkg.id)}
+                    >
                       <Trash2 className="h-4 w-4 mr-2" />
                       Delete Package
                     </DropdownMenuItem>
@@ -134,8 +156,8 @@ const Services = () => {
                     <p className="text-lg font-bold text-primary">{pkg.price}</p>
                     <p className="text-sm text-muted-foreground">{pkg.pricePerSession} per session</p>
                   </div>
-                  <Button size="sm">
-                    Assign to Client
+                  <Button size="sm" onClick={() => handleEditPackage(pkg)}>
+                    Edit Package
                   </Button>
                 </div>
               </div>
@@ -156,9 +178,12 @@ const Services = () => {
            <h1 className="text-3xl font-bold text-foreground mb-2">Training Packages</h1>
            <p className="text-muted-foreground">Manage your training packages and programs</p>
          </div>
-         <Button className="bg-primary hover:bg-primary/90">
+         <Button 
+           className="bg-primary hover:bg-primary/90"
+           onClick={() => setShowCreateModal(true)}
+         >
            <Plus className="h-4 w-4 mr-2" />
-           Add New Package
+           Create New Package
          </Button>
         </div>
 
@@ -166,6 +191,14 @@ const Services = () => {
         <div>
           {renderPackages()}
         </div>
+
+        {/* Create Package Modal */}
+        <CreatePackageModal 
+          open={showCreateModal}
+          onClose={handleModalClose}
+          onSuccess={handleModalSuccess}
+          editingPackage={editingPackage}
+        />
       </div>
     </div>
   );
