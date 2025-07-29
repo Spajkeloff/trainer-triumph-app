@@ -44,7 +44,7 @@ interface SessionManagementModalProps {
 
 const SessionManagementModal = ({ isOpen, onClose, session, onSuccess, onEdit }: SessionManagementModalProps) => {
   const [loading, setLoading] = useState(false);
-  const [showReconcileOptions, setShowReconcileOptions] = useState(false);
+  const [showReconcileOptions, setShowReconcileOptions] = useState<boolean | 'cancelled' | 'rescheduled'>(false);
   const { toast } = useToast();
 
   const handleStatusUpdate = async (newStatus: string) => {
@@ -422,58 +422,81 @@ const SessionManagementModal = ({ isOpen, onClose, session, onSuccess, onEdit }:
               How did this session conclude?
             </div>
             
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3">
               <Button 
                 onClick={() => handleReconcile('completed')}
                 disabled={loading}
                 className="bg-success hover:bg-success/90"
               >
                 <CheckCircle className="h-4 w-4 mr-2" />
-                Completed
+                Session Completed
               </Button>
               
               <Button 
                 variant="outline"
-                onClick={() => {
-                  const shouldCount = confirm("Should this cancelled session count towards the package? Click OK to count it, Cancel to not count it.");
-                  handleReconcile('cancelled', shouldCount);
-                }}
+                onClick={() => setShowReconcileOptions('cancelled')}
                 disabled={loading}
               >
                 <XCircle className="h-4 w-4 mr-2" />
-                No Show
-              </Button>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <Button 
-                variant="outline"
-                onClick={() => {
-                  const shouldCount = confirm("Should this cancelled session count towards the package? Click OK to count it, Cancel to not count it.");
-                  handleReconcile('cancelled', shouldCount);
-                }}
-                disabled={loading}
-              >
-                <XCircle className="h-4 w-4 mr-2" />
-                Cancel
+                Session Cancelled / No Show
               </Button>
               
               <Button 
                 variant="outline"
-                onClick={() => {
-                  const shouldCount = confirm("Should this rescheduled session count towards the package? Click OK to count it, Cancel to not count it.");
-                  handleReconcile('rescheduled', shouldCount);
-                }}
+                onClick={() => setShowReconcileOptions('rescheduled')}
                 disabled={loading}
               >
                 <RotateCcw className="h-4 w-4 mr-2" />
-                Reschedule
+                Session Rescheduled
               </Button>
             </div>
 
             <Button 
               variant="ghost"
               onClick={() => setShowReconcileOptions(false)}
+              className="w-full"
+            >
+              Back
+            </Button>
+          </div>
+        )}
+
+        {/* Package Count Options */}
+        {(showReconcileOptions === 'cancelled' || showReconcileOptions === 'rescheduled') && (
+          <div className="space-y-4 mb-4">
+            <div className="text-sm font-medium text-center mb-3">
+              Should this {showReconcileOptions} session be deducted from the client's package?
+            </div>
+            
+            <div className="grid grid-cols-1 gap-3">
+              <Button 
+                onClick={() => {
+                  handleReconcile(showReconcileOptions, true);
+                  setShowReconcileOptions(false);
+                }}
+                disabled={loading}
+                className="bg-destructive hover:bg-destructive/90"
+              >
+                <XCircle className="h-4 w-4 mr-2" />
+                Yes - Deduct from Package
+              </Button>
+              
+              <Button 
+                variant="outline"
+                onClick={() => {
+                  handleReconcile(showReconcileOptions, false);
+                  setShowReconcileOptions(false);
+                }}
+                disabled={loading}
+              >
+                <CheckCircle className="h-4 w-4 mr-2" />
+                No - Don't Deduct from Package
+              </Button>
+            </div>
+
+            <Button 
+              variant="ghost"
+              onClick={() => setShowReconcileOptions(true)}
               className="w-full"
             >
               Back

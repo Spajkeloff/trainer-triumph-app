@@ -113,13 +113,13 @@ const Calendar = () => {
       return "bg-success text-success-foreground";
     }
     
-    // Other status-based colors
-    if (status === 'cancelled') {
-      return "bg-destructive text-destructive-foreground";
+    // Cancelled and rescheduled sessions are yellow
+    if (status === 'cancelled' || status === 'rescheduled') {
+      return "bg-warning text-warning-foreground";
     }
     
     if (status === 'no_show') {
-      return "bg-warning text-warning-foreground";
+      return "bg-destructive text-destructive-foreground";
     }
 
     // Default colors for scheduled sessions
