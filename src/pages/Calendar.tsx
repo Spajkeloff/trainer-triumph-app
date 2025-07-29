@@ -1,7 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import BookSessionModal from "@/components/BookSessionModal";
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -11,37 +14,68 @@ import {
   MapPin
 } from "lucide-react";
 
+interface Session {
+  id: string;
+  date: string;
+  start_time: string;
+  end_time: string;
+  type: string;
+  location: string;
+  notes?: string;
+  clients: {
+    first_name: string;
+    last_name: string;
+  };
+}
+
 const Calendar = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState<"month" | "week" | "day" | "agenda">("month");
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showBookModal, setShowBookModal] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>();
+  const { toast } = useToast();
 
-  // Sample sessions data
-  const sessions = [
-    {
-      id: "1",
-      title: "Personal Training - Sarah Al-Zahra",
-      time: "09:00 AM - 10:00 AM",
-      type: "personal",
-      location: "Main Gym",
-      date: "2024-12-28"
-    },
-    {
-      id: "2",
-      title: "HIIT Class",
-      time: "10:30 AM - 11:15 AM",
-      type: "group",
-      location: "Studio A",
-      date: "2024-12-28"
-    },
-    {
-      id: "3",
-      title: "Personal Training - Omar Hassan",
-      time: "02:00 PM - 03:00 PM",
-      type: "personal",
-      location: "Weight Room",
-      date: "2024-12-28"
+  useEffect(() => {
+    fetchSessions();
+  }, [currentDate]);
+
+  const fetchSessions = async () => {
+    try {
+      setLoading(true);
+      const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+      const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+
+      const { data, error } = await supabase
+        .from('sessions')
+        .select(`
+          id,
+          date,
+          start_time,
+          end_time,
+          type,
+          location,
+          notes,
+          clients (first_name, last_name)
+        `)
+        .gte('date', startOfMonth.toISOString().split('T')[0])
+        .lte('date', endOfMonth.toISOString().split('T')[0])
+        .order('date', { ascending: true });
+
+      if (error) throw error;
+      setSessions(data || []);
+    } catch (error) {
+      console.error('Error fetching sessions:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load sessions",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
   const getSessionColor = (type: string) => {
     switch (type) {
@@ -101,7 +135,10 @@ const Calendar = () => {
             <h1 className="text-3xl font-bold text-foreground mb-2">Calendar</h1>
             <p className="text-muted-foreground">Manage your training schedule and sessions</p>
           </div>
-          <Button className="bg-primary hover:bg-primary/90">
+          <Button 
+            className="bg-primary hover:bg-primary/90"
+            onClick={() => setShowBookModal(true)}
+          >
             <Plus className="h-4 w-4 mr-2" />
             New Session
           </Button>
@@ -180,15 +217,23 @@ const Calendar = () => {
                       </div>
                       
                       <div className="space-y-1">
-                        {daySessions.map((session) => (
-                          <div
-                            key={session.id}
-                            className={`text-xs p-1 rounded text-left cursor-pointer hover:opacity-80 ${getSessionColor(session.type)}`}
-                          >
-                            <div className="font-medium truncate">{session.title}</div>
-                            <div className="opacity-90">{session.time}</div>
-                          </div>
-                        ))}
+                        {daySessions.map((session) => {
+                          const startTime = new Date(`2000-01-01T${session.start_time}`);
+                          const endTime = new Date(`2000-01-01T${session.end_time}`);
+                          const timeStr = `${startTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })} - ${endTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`;
+                          
+                          return (
+                            <div
+                              key={session.id}
+                              className={`text-xs p-1 rounded text-left cursor-pointer hover:opacity-80 ${getSessionColor(session.type)}`}
+                            >
+                              <div className="font-medium truncate">
+                                {session.type === 'personal' ? 'Personal Training' : session.type} - {session.clients.first_name} {session.clients.last_name}
+                              </div>
+                              <div className="opacity-90">{timeStr}</div>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   );
@@ -210,25 +255,33 @@ const Calendar = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {sessions.map((session) => (
-                    <div key={session.id} className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors">
-                      <div className="flex items-center space-x-4">
-                        <div className={`w-4 h-4 rounded-full ${getSessionColor(session.type).split(' ')[0]}`} />
-                        <div>
-                          <h3 className="font-medium text-card-foreground">{session.title}</h3>
-                          <div className="flex items-center text-sm text-muted-foreground mt-1">
-                            <Clock className="h-3 w-3 mr-1" />
-                            {session.time}
-                            <MapPin className="h-3 w-3 ml-3 mr-1" />
-                            {session.location}
+                  {sessions.map((session) => {
+                    const startTime = new Date(`2000-01-01T${session.start_time}`);
+                    const endTime = new Date(`2000-01-01T${session.end_time}`);
+                    const timeStr = `${startTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })} - ${endTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`;
+                    
+                    return (
+                      <div key={session.id} className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors">
+                        <div className="flex items-center space-x-4">
+                          <div className={`w-4 h-4 rounded-full ${getSessionColor(session.type).split(' ')[0]}`} />
+                          <div>
+                            <h3 className="font-medium text-card-foreground">
+                              {session.type === 'personal' ? 'Personal Training' : session.type} - {session.clients.first_name} {session.clients.last_name}
+                            </h3>
+                            <div className="flex items-center text-sm text-muted-foreground mt-1">
+                              <Clock className="h-3 w-3 mr-1" />
+                              {timeStr}
+                              <MapPin className="h-3 w-3 ml-3 mr-1" />
+                              {session.location}
+                            </div>
                           </div>
                         </div>
+                        <Badge variant={session.type === "personal" ? "default" : "secondary"}>
+                          {session.type === "personal" ? "Personal" : "Group"}
+                        </Badge>
                       </div>
-                      <Badge variant={session.type === "personal" ? "default" : "secondary"}>
-                        {session.type === "personal" ? "Personal" : "Group"}
-                      </Badge>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </CardContent>
             </Card>
@@ -255,6 +308,14 @@ const Calendar = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Book Session Modal */}
+        <BookSessionModal
+          isOpen={showBookModal}
+          onClose={() => setShowBookModal(false)}
+          onSuccess={fetchSessions}
+          selectedDate={selectedDate}
+        />
       </div>
     </div>
   );
