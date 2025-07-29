@@ -40,8 +40,7 @@ const Finances = () => {
   const [financialStats, setFinancialStats] = useState({
     totalRevenue: 0,
     netProfit: 0,
-    outstanding: 0,
-    totalExpenses: 0
+    outstanding: 0
   });
   const [recentPayments, setRecentPayments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -70,8 +69,7 @@ const Finances = () => {
       setFinancialStats({
         totalRevenue,
         netProfit: totalRevenue * 0.7, // Assume 70% profit margin
-        outstanding,
-        totalExpenses: totalRevenue * 0.3 // Assume 30% expenses
+        outstanding
       });
 
       // Format recent payments
@@ -161,7 +159,7 @@ const Finances = () => {
   const renderOverview = () => (
     <div className="space-y-6">
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -216,23 +214,6 @@ const Finances = () => {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Total Expenses</p>
-                <p className="text-2xl font-bold text-foreground">AED {financialStats.totalExpenses.toLocaleString()}</p>
-                <p className="text-sm text-muted-foreground flex items-center mt-1">
-                  <Calendar className="h-3 w-3 mr-1" />
-                  This month
-                </p>
-              </div>
-              <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center">
-                <FileText className="h-6 w-6 text-muted-foreground" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
       {/* Charts */}

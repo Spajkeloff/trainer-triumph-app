@@ -36,6 +36,7 @@ import {
 } from "lucide-react";
 import AssignPackageModal from "@/components/AssignPackageModal";
 import AddPaymentModal from "@/components/AddPaymentModal";
+import EditPackageModal from "@/components/EditPackageModal";
 
 const ClientProfile = () => {
   const { id } = useParams<{ id: string }>();
@@ -48,6 +49,8 @@ const ClientProfile = () => {
   const [activeTab, setActiveTab] = useState("summary");
   const [showAssignPackage, setShowAssignPackage] = useState(false);
   const [showAddPayment, setShowAddPayment] = useState(false);
+  const [showEditPackage, setShowEditPackage] = useState(false);
+  const [selectedPackage, setSelectedPackage] = useState<any>(null);
   const [paymentData, setPaymentData] = useState<any>(null);
 
   useEffect(() => {
@@ -492,7 +495,7 @@ const ClientProfile = () => {
                           </div>
                         </CardHeader>
                         <CardContent>
-                          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
                             <div>
                               <p className="text-sm font-medium">Sessions Remaining</p>
                               <p className="text-2xl font-bold text-primary">{pkg.sessions_remaining}</p>
@@ -510,7 +513,19 @@ const ClientProfile = () => {
                               <p className="text-lg font-semibold">AED {pkg.packages?.price || 0}</p>
                             </div>
                           </div>
-                          {/* Package description would come from package data if available */}
+                          <div className="flex justify-end space-x-2">
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              onClick={() => {
+                                setSelectedPackage(pkg);
+                                setShowEditPackage(true);
+                              }}
+                            >
+                              <Edit className="h-4 w-4 mr-2" />
+                              Edit Package
+                            </Button>
+                          </div>
                         </CardContent>
                       </Card>
                     ))}
@@ -762,6 +777,16 @@ const ClientProfile = () => {
         onSuccess={fetchClientData}
         prefilledAmount={paymentData?.amount}
         prefilledDescription={paymentData ? `Payment for ${paymentData.packageName}` : undefined}
+      />
+
+      <EditPackageModal
+        isOpen={showEditPackage}
+        onClose={() => {
+          setShowEditPackage(false);
+          setSelectedPackage(null);
+        }}
+        clientPackage={selectedPackage}
+        onSuccess={fetchClientData}
       />
     </div>
   );
