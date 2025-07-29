@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
@@ -23,69 +23,51 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../components/ui/dropdown-menu";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import AddClientModal from "@/components/AddClientModal";
 
 const Clients = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState<"all" | "active" | "leads">("all");
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [clients, setClients] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  
+  const { user } = useAuth();
+  const { toast } = useToast();
 
-  // Sample clients data
-  const clients = [
-    {
-      id: "1",
-      name: "Sarah Al-Zahra",
-      email: "sarah.alzahra@email.com",
-      phone: "+971 50 123 4567",
-      status: "active",
-      package: "Premium Training Package",
-      sessionsRemaining: 8,
-      nextSession: "Dec 28, 2024",
-      outstandingBalance: "AED 0",
-      joinDate: "Nov 15, 2024",
-      avatar: null
-    },
-    {
-      id: "2",
-      name: "Omar Hassan",
-      email: "omar.hassan@email.com",
-      phone: "+971 55 987 6543",
-      status: "active",
-      package: "Basic Training Package",
-      sessionsRemaining: 3,
-      nextSession: "Dec 29, 2024",
-      outstandingBalance: "AED 450",
-      joinDate: "Oct 22, 2024",
-      avatar: null
-    },
-    {
-      id: "3",
-      name: "Fatima Al-Rashid",
-      email: "fatima.alrashid@email.com",
-      phone: "+971 52 456 7890",
-      status: "lead",
-      package: null,
-      sessionsRemaining: null,
-      nextSession: null,
-      outstandingBalance: "AED 0",
-      joinDate: "Dec 20, 2024",
-      avatar: null
-    },
-    {
-      id: "4",
-      name: "Ahmed Al-Mansouri",
-      email: "ahmed.almansouri@email.com",
-      phone: "+971 56 789 0123",
-      status: "active",
-      package: "Group Classes Membership",
-      sessionsRemaining: 12,
-      nextSession: "Dec 30, 2024",
-      outstandingBalance: "AED 0",
-      joinDate: "Sep 10, 2024",
-      avatar: null
+  const fetchClients = async () => {
+    try {
+      setLoading(true);
+      const { data: clientsData, error } = await supabase
+        .from('clients')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      setClients(clientsData || []);
+    } catch (error) {
+      console.error('Error fetching clients:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load clients",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
+
+  useEffect(() => {
+    fetchClients();
+  }, []);
 
   const filteredClients = clients.filter(client => {
-    const matchesSearch = client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    const clientName = `${client.first_name} ${client.last_name}`;
+    const matchesSearch = clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          client.email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFilter = filterType === "all" || client.status === filterType;
     return matchesSearch && matchesFilter;
@@ -113,7 +95,10 @@ const Clients = () => {
             <h1 className="text-3xl font-bold text-foreground mb-2">Clients</h1>
             <p className="text-muted-foreground">Manage your client relationships and training programs</p>
           </div>
-          <Button className="bg-primary hover:bg-primary/90">
+          <Button 
+            className="bg-primary hover:bg-primary/90"
+            onClick={() => setShowAddModal(true)}
+          >
             <Plus className="h-4 w-4 mr-2" />
             Add New Client
           </Button>
@@ -174,9 +159,11 @@ const Clients = () => {
                       <User className="h-6 w-6 text-primary" />
                     </div>
                     <div>
-                      <CardTitle className="text-lg">{client.name}</CardTitle>
+                      <CardTitle className="text-lg">
+                        {client.first_name} {client.last_name}
+                      </CardTitle>
                       <p className="text-sm text-muted-foreground">
-                        Joined {client.joinDate}
+                        Joined {new Date(client.join_date).toLocaleDateString()}
                       </p>
                     </div>
                   </div>
@@ -221,41 +208,15 @@ const Clients = () => {
                     </div>
                   </div>
 
-                  {/* Package Info */}
-                  {client.package && (
+                  {/* Goals */}
+                  {client.goals && (
                     <div className="p-3 bg-muted rounded-lg">
-                      <p className="text-sm font-medium text-card-foreground">
-                        {client.package}
-                      </p>
+                      <p className="text-sm font-medium text-card-foreground">Goals</p>
                       <p className="text-xs text-muted-foreground mt-1">
-                        {client.sessionsRemaining} sessions remaining
+                        {client.goals}
                       </p>
                     </div>
                   )}
-
-                  {/* Next Session */}
-                  {client.nextSession && (
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="flex items-center text-muted-foreground">
-                        <Calendar className="h-4 w-4 mr-2" />
-                        Next Session:
-                      </span>
-                      <span className="font-medium">{client.nextSession}</span>
-                    </div>
-                  )}
-
-                  {/* Outstanding Balance */}
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="flex items-center text-muted-foreground">
-                      <CreditCard className="h-4 w-4 mr-2" />
-                      Outstanding:
-                    </span>
-                    <span className={`font-medium ${
-                      client.outstandingBalance === "AED 0" ? "text-success" : "text-warning"
-                    }`}>
-                      {client.outstandingBalance}
-                    </span>
-                  </div>
                 </div>
 
                 {/* Actions */}
@@ -267,12 +228,6 @@ const Clients = () => {
                   {client.status === "lead" && (
                     <Button size="sm" className="flex-1">
                       Convert to Client
-                    </Button>
-                  )}
-                  {client.outstandingBalance !== "AED 0" && (
-                    <Button variant="outline" size="sm" className="flex-1">
-                      <CreditCard className="h-4 w-4 mr-2" />
-                      Payment
                     </Button>
                   )}
                 </div>
@@ -294,12 +249,23 @@ const Clients = () => {
                   ? "Try adjusting your search or filters" 
                   : "Get started by adding your first client"}
               </p>
-              <Button>
+              <Button onClick={() => setShowAddModal(true)}>
                 <Plus className="h-4 w-4 mr-2" />
                 Add New Client
               </Button>
             </CardContent>
           </Card>
+        )}
+
+        {/* Add Client Modal */}
+        {showAddModal && (
+          <AddClientModal 
+            onClose={() => setShowAddModal(false)}
+            onSuccess={() => {
+              fetchClients();
+              setShowAddModal(false);
+            }}
+          />
         )}
       </div>
     </div>
