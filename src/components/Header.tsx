@@ -10,8 +10,11 @@ import {
   ChevronDown,
   Bell,
   Settings,
-  User
+  User,
+  LogOut
 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Button } from "./ui/button";
 import {
   DropdownMenu,
@@ -24,6 +27,7 @@ import {
 const Header = () => {
   const location = useLocation();
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+  const { user, profile, signOut } = useAuth();
 
   const navItems = [
     { 
@@ -107,7 +111,7 @@ const Header = () => {
               <div className="bg-gradient-to-r from-primary to-primary-light w-8 h-8 rounded-lg flex items-center justify-center mr-3">
                 <span className="text-white font-bold text-sm">PT</span>
               </div>
-              <span className="text-header-foreground font-bold text-xl">PTminder</span>
+              <span className="text-header-foreground font-bold text-xl">TrainWithUs</span>
             </Link>
           </div>
 
@@ -168,30 +172,47 @@ const Header = () => {
             
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="text-header-foreground hover:bg-white/10 hover:text-white">
-                  <User className="h-5 w-5" />
+                <Button variant="ghost" className="text-header-foreground hover:bg-white/10 hover:text-white h-8 px-2">
+                  <Avatar className="h-6 w-6 mr-2">
+                    <AvatarImage src={profile?.avatar_url || undefined} alt="Profile" />
+                    <AvatarFallback className="text-xs">
+                      {profile?.first_name?.[0]}{profile?.last_name?.[0]}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="hidden md:block font-medium">
+                    {profile?.first_name} {profile?.last_name}
+                  </span>
+                  <ChevronDown className="h-3 w-3 ml-1" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-48 bg-popover border-border shadow-elevated" align="end">
-                <DropdownMenuItem>
-                  <User className="h-4 w-4 mr-2" />
-                  Profile
+                <div className="px-3 py-2 border-b border-border">
+                  <p className="text-sm font-medium">{profile?.first_name} {profile?.last_name}</p>
+                  <p className="text-xs text-muted-foreground">{user?.email}</p>
+                  <p className="text-xs text-muted-foreground capitalize">{profile?.role}</p>
+                </div>
+                <DropdownMenuItem asChild>
+                  <Link to="/profile">
+                    <User className="h-4 w-4 mr-2" />
+                    View Profile
+                  </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Settings className="h-4 w-4 mr-2" />
-                  Settings
+                <DropdownMenuItem asChild>
+                  <Link to="/settings">
+                    <Settings className="h-4 w-4 mr-2" />
+                    Settings
+                  </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-destructive">
+                <DropdownMenuItem 
+                  className="text-destructive cursor-pointer"
+                  onClick={signOut}
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
                   Sign Out
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-
-            {/* Trainer name */}
-            <div className="hidden md:block text-header-foreground text-sm">
-              <span className="font-medium">Lazar Sretenovic</span>
-            </div>
           </div>
         </div>
       </div>
