@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -26,6 +26,8 @@ interface AddPaymentModalProps {
   onClose: () => void;
   clientId?: string;
   onSuccess?: () => void;
+  prefilledAmount?: number;
+  prefilledDescription?: string;
 }
 
 interface Client {
@@ -35,19 +37,31 @@ interface Client {
   email: string;
 }
 
-const AddPaymentModal = ({ isOpen, onClose, clientId, onSuccess }: AddPaymentModalProps) => {
+const AddPaymentModal = ({ isOpen, onClose, clientId, onSuccess, prefilledAmount, prefilledDescription }: AddPaymentModalProps) => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
   const form = useForm<PaymentFormData>({
     resolver: zodResolver(paymentSchema),
     defaultValues: {
-      amount: 0,
+      amount: prefilledAmount || 0,
       payment_method: "",
-      description: "",
+      description: prefilledDescription || "",
       payment_date: new Date().toISOString().split('T')[0],
     },
   });
+
+  // Update form when prefilled data changes
+  useEffect(() => {
+    if (isOpen) {
+      form.reset({
+        amount: prefilledAmount || 0,
+        payment_method: "",
+        description: prefilledDescription || "",
+        payment_date: new Date().toISOString().split('T')[0],
+      });
+    }
+  }, [isOpen, prefilledAmount, prefilledDescription, form]);
 
   const onSubmit = async (data: PaymentFormData) => {
     try {

@@ -23,9 +23,10 @@ interface AssignPackageModalProps {
   onClose: () => void;
   clientId: string;
   onSuccess?: () => void;
+  onPaymentRequired?: (packageData: any) => void;
 }
 
-const AssignPackageModal = ({ isOpen, onClose, clientId, onSuccess }: AssignPackageModalProps) => {
+const AssignPackageModal = ({ isOpen, onClose, clientId, onSuccess, onPaymentRequired }: AssignPackageModalProps) => {
   const [packages, setPackages] = useState<Package[]>([]);
   const [selectedPackageId, setSelectedPackageId] = useState("");
   const [customPrice, setCustomPrice] = useState("");
@@ -130,7 +131,7 @@ const AssignPackageModal = ({ isOpen, onClose, clientId, onSuccess }: AssignPack
           client_id: clientId,
           amount: -price, // Negative for charge
           payment_method: 'package_assignment',
-          status: paymentStatus === 'paid' ? 'completed' : 'pending',
+          status: 'pending',
           description: `${selectedPackage.name} Package Assignment${notes ? ` - ${notes}` : ''}`,
           payment_date: new Date().toISOString().split('T')[0],
           client_package_id: clientPackageData.id
@@ -138,8 +139,25 @@ const AssignPackageModal = ({ isOpen, onClose, clientId, onSuccess }: AssignPack
 
       if (chargeError) throw chargeError;
 
-      // 3. If marked as paid, create payment record
-      if (paymentStatus === 'paid') {
+      toast({
+        title: "Success",
+        description: "Package assigned successfully",
+      });
+
+      // Close this modal and show payment option
+      onClose();
+      
+      // If payment is required, show payment modal
+      if (paymentStatus === 'unpaid' && onPaymentRequired) {
+        onPaymentRequired({
+          clientId,
+          packageId: selectedPackageId,
+          packageName: selectedPackage.name,
+          amount: price,
+          clientPackageId: clientPackageData.id
+        });
+      } else if (paymentStatus === 'paid') {
+        // Create payment record immediately
         const { error: paymentError } = await supabase
           .from('payments')
           .insert({
@@ -153,15 +171,14 @@ const AssignPackageModal = ({ isOpen, onClose, clientId, onSuccess }: AssignPack
           });
 
         if (paymentError) throw paymentError;
+        
+        toast({
+          title: "Success",
+          description: "Package assigned and payment recorded",
+        });
       }
 
-      toast({
-        title: "Success",
-        description: "Package assigned successfully with financial records",
-      });
-
       onSuccess?.();
-      onClose();
     } catch (error) {
       console.error('Error assigning package:', error);
       toast({

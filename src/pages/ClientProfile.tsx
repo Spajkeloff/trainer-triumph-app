@@ -48,6 +48,7 @@ const ClientProfile = () => {
   const [activeTab, setActiveTab] = useState("summary");
   const [showAssignPackage, setShowAssignPackage] = useState(false);
   const [showAddPayment, setShowAddPayment] = useState(false);
+  const [paymentData, setPaymentData] = useState<any>(null);
 
   useEffect(() => {
     if (id) {
@@ -281,7 +282,7 @@ const ClientProfile = () => {
               {/* Summary Tab */}
               <TabsContent value="summary" className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Services Card */}
+              {/* Services Card */}
                   <Card>
                     <CardHeader className="flex flex-row items-center justify-between">
                       <CardTitle className="flex items-center">
@@ -299,10 +300,13 @@ const ClientProfile = () => {
                           {client.client_packages.slice(0, 3).map((pkg) => (
                             <div key={pkg.id} className="flex justify-between items-center p-3 bg-muted rounded-lg">
                               <div>
-                                <p className="font-medium text-sm">{pkg.packages.name}</p>
+                                <p className="font-medium text-sm">{pkg.packages?.name || 'Unknown Package'}</p>
                                 <p className="text-xs text-muted-foreground">{pkg.sessions_remaining} sessions left</p>
+                                <p className="text-xs text-muted-foreground">Expires: {new Date(pkg.expiry_date).toLocaleDateString()}</p>
                               </div>
-                              {getStatusBadge(pkg.status)}
+                              <Badge variant={pkg.status === 'active' ? 'default' : 'secondary'} className={pkg.status === 'active' ? 'bg-success text-success-foreground' : ''}>
+                                {pkg.status.toUpperCase()}
+                              </Badge>
                             </div>
                           ))}
                         </div>
@@ -460,16 +464,72 @@ const ClientProfile = () => {
                 </div>
               </TabsContent>
 
-              {/* Other tabs content - placeholder for now */}
+              {/* Services Tab */}
               <TabsContent value="services" className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Services & Packages</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-muted-foreground">Services tab content coming soon...</p>
-                  </CardContent>
-                </Card>
+                <div className="flex justify-between items-center">
+                  <h2 className="text-2xl font-bold">Services & Packages</h2>
+                  <Button onClick={() => setShowAssignPackage(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Assign Package
+                  </Button>
+                </div>
+                
+                {client.client_packages && client.client_packages.length > 0 ? (
+                  <div className="grid gap-4">
+                    {client.client_packages.map((pkg) => (
+                      <Card key={pkg.id}>
+                        <CardHeader className="pb-4">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <CardTitle className="text-lg">{pkg.packages?.name || 'Unknown Package'}</CardTitle>
+                              <p className="text-sm text-muted-foreground mt-1">
+                                Expires on {new Date(pkg.expiry_date).toLocaleDateString()}
+                              </p>
+                            </div>
+                            <Badge variant={pkg.status === 'active' ? 'default' : 'secondary'} className={pkg.status === 'active' ? 'bg-success text-success-foreground' : ''}>
+                              {pkg.status.toUpperCase()}
+                            </Badge>
+                          </div>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div>
+                              <p className="text-sm font-medium">Sessions Remaining</p>
+                              <p className="text-2xl font-bold text-primary">{pkg.sessions_remaining}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium">Total Sessions</p>
+                              <p className="text-lg font-semibold">{pkg.packages?.sessions_included || 0}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium">Expiry Date</p>
+                              <p className="text-lg font-semibold">{new Date(pkg.expiry_date).toLocaleDateString()}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium">Package Price</p>
+                              <p className="text-lg font-semibold">AED {pkg.packages?.price || 0}</p>
+                            </div>
+                          </div>
+                          {/* Package description would come from package data if available */}
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <Card>
+                    <CardContent className="py-12 text-center">
+                      <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                      <h3 className="text-lg font-medium mb-2">No packages assigned</h3>
+                      <p className="text-muted-foreground mb-4">
+                        Assign training packages to get started with this client.
+                      </p>
+                      <Button onClick={() => setShowAssignPackage(true)}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Assign First Package
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )}
               </TabsContent>
 
               <TabsContent value="bookings" className="space-y-6">
@@ -506,12 +566,117 @@ const ClientProfile = () => {
               </TabsContent>
 
               <TabsContent value="finances" className="space-y-6">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-2xl font-bold">Financial History</h2>
+                  <Button onClick={() => setShowAddPayment(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Payment
+                  </Button>
+                </div>
+                
+                {/* Financial Summary */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">Total Charges</p>
+                          <p className="text-2xl font-bold">AED {clientBalance?.totalCharges || 0}</p>
+                        </div>
+                        <div className="h-8 w-8 bg-destructive/10 rounded-full flex items-center justify-center">
+                          <DollarSign className="h-4 w-4 text-destructive" />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">Total Paid</p>
+                          <p className="text-2xl font-bold">AED {clientBalance?.totalPaid || 0}</p>
+                        </div>
+                        <div className="h-8 w-8 bg-success/10 rounded-full flex items-center justify-center">
+                          <DollarSign className="h-4 w-4 text-success" />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">Pending Payments</p>
+                          <p className="text-2xl font-bold">AED {clientBalance?.pendingPayments || 0}</p>
+                        </div>
+                        <div className="h-8 w-8 bg-warning/10 rounded-full flex items-center justify-center">
+                          <Clock className="h-4 w-4 text-warning" />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">Balance</p>
+                          <p className={`text-2xl font-bold ${clientBalance?.balance > 0 ? 'text-destructive' : 'text-success'}`}>
+                            AED {clientBalance?.balance || 0}
+                          </p>
+                        </div>
+                        <div className={`h-8 w-8 rounded-full flex items-center justify-center ${clientBalance?.balance > 0 ? 'bg-destructive/10' : 'bg-success/10'}`}>
+                          <DollarSign className={`h-4 w-4 ${clientBalance?.balance > 0 ? 'text-destructive' : 'text-success'}`} />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+                
+                {/* Payment History */}
                 <Card>
                   <CardHeader>
-                    <CardTitle>Financial History</CardTitle>
+                    <CardTitle>Payment History</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-muted-foreground">Finances tab content coming soon...</p>
+                    {client.payments && client.payments.length > 0 ? (
+                      <div className="space-y-3">
+                        {client.payments.map((payment) => (
+                          <div key={payment.id} className="flex justify-between items-center p-4 border rounded-lg">
+                            <div className="flex-1">
+                              <div className="flex items-center justify-between">
+                                <p className="font-medium">{payment.description || 'Payment'}</p>
+                                <div className="flex items-center space-x-4">
+                                  <span className={`font-bold ${payment.amount > 0 ? 'text-success' : 'text-destructive'}`}>
+                                    {payment.amount > 0 ? '+' : ''}AED {Math.abs(payment.amount)}
+                                  </span>
+                                  <Badge variant={payment.status === 'completed' ? 'default' : 'outline'} className={payment.status === 'completed' ? 'bg-success text-success-foreground' : ''}>
+                                    {payment.status.toUpperCase()}
+                                  </Badge>
+                                </div>
+                              </div>
+                              <div className="flex items-center justify-between mt-1">
+                                <p className="text-sm text-muted-foreground">
+                                  {new Date(payment.payment_date).toLocaleDateString()} • {payment.payment_method.replace('_', ' ').toUpperCase()}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-12">
+                        <DollarSign className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                        <h3 className="text-lg font-medium mb-2">No payment history</h3>
+                        <p className="text-muted-foreground mb-4">Payments will appear here once recorded.</p>
+                        <Button onClick={() => setShowAddPayment(true)}>
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add First Payment
+                        </Button>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -581,13 +746,22 @@ const ClientProfile = () => {
         onClose={() => setShowAssignPackage(false)}
         clientId={id!}
         onSuccess={fetchClientData}
+        onPaymentRequired={(data) => {
+          setPaymentData(data);
+          setShowAddPayment(true);
+        }}
       />
 
       <AddPaymentModal
         isOpen={showAddPayment}
-        onClose={() => setShowAddPayment(false)}
+        onClose={() => {
+          setShowAddPayment(false);
+          setPaymentData(null);
+        }}
         clientId={id!}
         onSuccess={fetchClientData}
+        prefilledAmount={paymentData?.amount}
+        prefilledDescription={paymentData ? `Payment for ${paymentData.packageName}` : undefined}
       />
     </div>
   );
