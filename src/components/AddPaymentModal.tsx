@@ -67,7 +67,29 @@ const AddPaymentModal = ({ isOpen, onClose, clientId, onSuccess, prefilledAmount
     try {
       setLoading(true);
 
-      const { error } = await supabase
+      // Get current user for user_id
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      // Create transaction record
+      const { error: transactionError } = await supabase
+        .from('transactions')
+        .insert({
+          user_id: user.id,
+          client_id: clientId,
+          transaction_type: 'payment',
+          category: 'Package Payment',
+          amount: data.amount,
+          description: data.description || 'Payment received',
+          payment_method: data.payment_method,
+          status: 'completed',
+          transaction_date: data.payment_date
+        });
+
+      if (transactionError) throw transactionError;
+
+      // Also create legacy payment record for compatibility
+      const { error: paymentError } = await supabase
         .from('payments')
         .insert({
           client_id: clientId,
@@ -78,7 +100,7 @@ const AddPaymentModal = ({ isOpen, onClose, clientId, onSuccess, prefilledAmount
           status: 'completed'
         });
 
-      if (error) throw error;
+      if (paymentError) throw paymentError;
 
       toast({
         title: "Success",

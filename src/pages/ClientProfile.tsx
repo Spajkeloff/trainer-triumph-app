@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { clientService, ClientWithDetails } from "@/services/clientService";
 import { paymentService } from "@/services/paymentService";
+import { financeService } from "@/services/financeService";
 import { 
   ArrowLeft,
   Edit,
@@ -63,10 +64,23 @@ const ClientProfile = () => {
     try {
       setLoading(true);
       
-      const [clientData, balanceData] = await Promise.all([
-        clientService.getById(id!),
-        paymentService.getClientBalance(id!)
-      ]);
+      const clientData = await clientService.getById(id!);
+      
+      // Calculate balance using new finance service
+      const clientBalances = await financeService.getClientBalances();
+      const balance = clientBalances.find(b => b.client_id === id);
+      
+      const balanceData = balance ? {
+        totalCharges: balance.total_charges,
+        totalPaid: balance.total_payments,
+        balance: balance.balance,
+        pendingPayments: balance.balance > 0 ? balance.balance : 0
+      } : {
+        totalCharges: 0,
+        totalPaid: 0,
+        balance: 0,
+        pendingPayments: 0
+      };
 
       setClient(clientData);
       setClientBalance(balanceData);
@@ -650,10 +664,10 @@ const ClientProfile = () => {
                   </Card>
                 </div>
                 
-                {/* Payment History */}
+                {/* Transaction History */}
                 <Card>
                   <CardHeader>
-                    <CardTitle>Payment History</CardTitle>
+                    <CardTitle>Transaction History</CardTitle>
                   </CardHeader>
                   <CardContent>
                     {client.payments && client.payments.length > 0 ? (
@@ -662,7 +676,7 @@ const ClientProfile = () => {
                           <div key={payment.id} className="flex justify-between items-center p-4 border rounded-lg">
                             <div className="flex-1">
                               <div className="flex items-center justify-between">
-                                <p className="font-medium">{payment.description || 'Payment'}</p>
+                                <p className="font-medium">{payment.description || 'Transaction'}</p>
                                 <div className="flex items-center space-x-4">
                                   <span className={`font-bold ${payment.amount > 0 ? 'text-success' : 'text-destructive'}`}>
                                     {payment.amount > 0 ? '+' : ''}AED {Math.abs(payment.amount)}
@@ -676,6 +690,9 @@ const ClientProfile = () => {
                                 <p className="text-sm text-muted-foreground">
                                   {new Date(payment.payment_date).toLocaleDateString()} • {payment.payment_method.replace('_', ' ').toUpperCase()}
                                 </p>
+                                <p className="text-xs text-muted-foreground">
+                                  {payment.amount > 0 ? 'Payment Received' : 'Package Charge'}
+                                </p>
                               </div>
                             </div>
                           </div>
@@ -684,11 +701,11 @@ const ClientProfile = () => {
                     ) : (
                       <div className="text-center py-12">
                         <DollarSign className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                        <h3 className="text-lg font-medium mb-2">No payment history</h3>
-                        <p className="text-muted-foreground mb-4">Payments will appear here once recorded.</p>
+                        <h3 className="text-lg font-medium mb-2">No transactions yet</h3>
+                        <p className="text-muted-foreground mb-4">Transactions will appear here once recorded.</p>
                         <Button onClick={() => setShowAddPayment(true)}>
                           <Plus className="h-4 w-4 mr-2" />
-                          Add First Payment
+                          Record First Payment
                         </Button>
                       </div>
                     )}

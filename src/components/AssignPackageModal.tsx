@@ -108,6 +108,10 @@ const AssignPackageModal = ({ isOpen, onClose, clientId, onSuccess, onPaymentReq
 
       const price = parseFloat(customPrice);
 
+      // Get current user for user_id
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
       // 1. Insert client package
       const { data: clientPackageData, error: packageError } = await supabase
         .from('client_packages')
@@ -124,8 +128,27 @@ const AssignPackageModal = ({ isOpen, onClose, clientId, onSuccess, onPaymentReq
 
       if (packageError) throw packageError;
 
-      // 2. Create charge in payments
+      // 2. Create charge transaction
       const { error: chargeError } = await supabase
+        .from('transactions')
+        .insert({
+          user_id: user.id,
+          client_id: clientId,
+          transaction_type: 'charge',
+          category: 'Package Purchase',
+          amount: price,
+          description: `${selectedPackage.name} Package Assignment${notes ? ` - ${notes}` : ''}`,
+          payment_method: 'package_assignment',
+          status: 'completed',
+          transaction_date: new Date().toISOString().split('T')[0],
+          reference_id: clientPackageData.id,
+          reference_type: 'package'
+        });
+
+      if (chargeError) throw chargeError;
+
+      // 3. Also create legacy payment record for compatibility (negative amount for charge)
+      const { error: legacyChargeError } = await supabase
         .from('payments')
         .insert({
           client_id: clientId,
@@ -137,27 +160,30 @@ const AssignPackageModal = ({ isOpen, onClose, clientId, onSuccess, onPaymentReq
           client_package_id: clientPackageData.id
         });
 
-      if (chargeError) throw chargeError;
+      if (legacyChargeError) throw legacyChargeError;
 
-      toast({
-        title: "Success",
-        description: "Package assigned successfully",
-      });
+      // 4. If payment is marked as paid, create payment transaction
+      if (paymentStatus === 'paid') {
+        // Create payment transaction
+        const { error: paymentTxError } = await supabase
+          .from('transactions')
+          .insert({
+            user_id: user.id,
+            client_id: clientId,
+            transaction_type: 'payment',
+            category: 'Package Payment',
+            amount: price,
+            description: `Payment for ${selectedPackage.name} Package`,
+            payment_method: paymentMethod,
+            status: 'completed',
+            transaction_date: new Date().toISOString().split('T')[0],
+            reference_id: clientPackageData.id,
+            reference_type: 'package'
+          });
 
-      // Close this modal and show payment option
-      onClose();
-      
-      // If payment is required, show payment modal
-      if (paymentStatus === 'unpaid' && onPaymentRequired) {
-        onPaymentRequired({
-          clientId,
-          packageId: selectedPackageId,
-          packageName: selectedPackage.name,
-          amount: price,
-          clientPackageId: clientPackageData.id
-        });
-      } else if (paymentStatus === 'paid') {
-        // Create payment record immediately
+        if (paymentTxError) throw paymentTxError;
+
+        // Create legacy payment record
         const { error: paymentError } = await supabase
           .from('payments')
           .insert({
@@ -175,6 +201,25 @@ const AssignPackageModal = ({ isOpen, onClose, clientId, onSuccess, onPaymentReq
         toast({
           title: "Success",
           description: "Package assigned and payment recorded",
+        });
+      } else {
+        toast({
+          title: "Success",
+          description: `Package assigned successfully. Outstanding balance: AED ${price}`,
+        });
+      }
+
+      // Close this modal and show payment option
+      onClose();
+      
+      // If payment is required, show payment modal
+      if (paymentStatus === 'unpaid' && onPaymentRequired) {
+        onPaymentRequired({
+          clientId,
+          packageId: selectedPackageId,
+          packageName: selectedPackage.name,
+          amount: price,
+          clientPackageId: clientPackageData.id
         });
       }
 
