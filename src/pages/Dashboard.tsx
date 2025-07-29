@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import SummaryCards from "../components/Dashboard/SummaryCards";
 import SessionsTable from "../components/Dashboard/SessionsTable";
-import RevenueChart from "../components/Dashboard/RevenueChart";
+import FinancialGraphs from "../components/Dashboard/FinancialGraphs";
 import { dashboardService } from "@/services/dashboardService";
 
 const Dashboard = () => {
@@ -108,8 +108,8 @@ const Dashboard = () => {
           />
         </div>
 
-        {/* Revenue Chart */}
-        <RevenueChart />
+        {/* Financial Graphs */}
+        <FinancialGraphs />
       </div>
     </div>
   );
