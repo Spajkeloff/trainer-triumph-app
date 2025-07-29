@@ -256,6 +256,58 @@ const BookSessionModal = ({ isOpen, onClose, onSuccess, selectedDate, selectedTi
     return `${endHours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
   };
 
+  const generateRecurringSessions = (baseSession: any) => {
+    const sessions = [];
+    const startDate = new Date(baseSession.date);
+    let endDate = new Date(startDate);
+    
+    // Set end date based on duration
+    if (formData.repeat_until === '3_months') {
+      endDate.setMonth(endDate.getMonth() + 3);
+    } else if (formData.repeat_until === '6_months') {
+      endDate.setMonth(endDate.getMonth() + 6);
+    } else {
+      endDate.setFullYear(endDate.getFullYear() + 1); // Default to 1 year if no end
+    }
+    
+    let currentDate = new Date(startDate);
+    
+    while (currentDate <= endDate) {
+      if (formData.repeat_type === 'weekly' || formData.repeat_type === 'fortnightly') {
+        const dayOfWeek = currentDate.getDay();
+        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const currentDay = dayNames[dayOfWeek];
+        
+        if (formData.repeat_days.includes(currentDay)) {
+          sessions.push({
+            ...baseSession,
+            date: currentDate.toISOString().split('T')[0]
+          });
+        }
+      } else {
+        sessions.push({
+          ...baseSession,
+          date: currentDate.toISOString().split('T')[0]
+        });
+      }
+      
+      // Move to next occurrence based on repeat type
+      if (formData.repeat_type === 'daily') {
+        currentDate.setDate(currentDate.getDate() + formData.repeat_frequency);
+      } else if (formData.repeat_type === 'weekly') {
+        currentDate.setDate(currentDate.getDate() + (7 * formData.repeat_frequency));
+      } else if (formData.repeat_type === 'fortnightly') {
+        currentDate.setDate(currentDate.getDate() + 14);
+      } else if (formData.repeat_type === 'monthly') {
+        currentDate.setMonth(currentDate.getMonth() + formData.repeat_frequency);
+      } else if (formData.repeat_type === 'yearly') {
+        currentDate.setFullYear(currentDate.getFullYear() + formData.repeat_frequency);
+      }
+    }
+    
+    return sessions;
+  };
+
   useEffect(() => {
     if (formData.start_time) {
       setFormData(prev => ({
