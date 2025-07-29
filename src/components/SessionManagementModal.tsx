@@ -434,10 +434,13 @@ const SessionManagementModal = ({ isOpen, onClose, session, onSuccess, onEdit }:
               
               <Button 
                 variant="outline"
-                onClick={() => handleReconcile('cancelled', false)}
+                onClick={() => {
+                  const shouldCount = confirm("Should this cancelled session count towards the package? Click OK to count it, Cancel to not count it.");
+                  handleReconcile('cancelled', shouldCount);
+                }}
                 disabled={loading}
               >
-                <UserX className="h-4 w-4 mr-2" />
+                <XCircle className="h-4 w-4 mr-2" />
                 No Show
               </Button>
             </div>
@@ -446,11 +449,8 @@ const SessionManagementModal = ({ isOpen, onClose, session, onSuccess, onEdit }:
               <Button 
                 variant="outline"
                 onClick={() => {
-                  if (confirm("Should this cancelled session still count towards the package? Click OK to count it, Cancel to not count it.")) {
-                    handleReconcile('cancelled', true);
-                  } else {
-                    handleReconcile('cancelled', false);
-                  }
+                  const shouldCount = confirm("Should this cancelled session count towards the package? Click OK to count it, Cancel to not count it.");
+                  handleReconcile('cancelled', shouldCount);
                 }}
                 disabled={loading}
               >
@@ -461,11 +461,8 @@ const SessionManagementModal = ({ isOpen, onClose, session, onSuccess, onEdit }:
               <Button 
                 variant="outline"
                 onClick={() => {
-                  if (confirm("Should this rescheduled session still count towards the package? Click OK to count it, Cancel to not count it.")) {
-                    handleReconcile('rescheduled', true);
-                  } else {
-                    handleReconcile('rescheduled', false);
-                  }
+                  const shouldCount = confirm("Should this rescheduled session count towards the package? Click OK to count it, Cancel to not count it.");
+                  handleReconcile('rescheduled', shouldCount);
                 }}
                 disabled={loading}
               >
@@ -499,35 +496,51 @@ const SessionManagementModal = ({ isOpen, onClose, session, onSuccess, onEdit }:
               
               <Button 
                 variant="outline"
-                onClick={() => handleStatusUpdate('no_show')}
-                disabled={loading || session.status === 'no_show'}
+                onClick={() => {
+                  const shouldCount = confirm("Should this rescheduled session count towards the package? Click OK to count it, Cancel to not count it.");
+                  handleReconcile('rescheduled', shouldCount);
+                }}
+                disabled={loading}
               >
-                <UserX className="h-4 w-4 mr-2" />
-                No Show
+                <RotateCcw className="h-4 w-4 mr-2" />
+                Reschedule
               </Button>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <Button 
                 variant="outline"
-                onClick={() => handleStatusUpdate('cancelled')}
-                disabled={loading || session.status === 'cancelled'}
+                onClick={() => {
+                  const shouldCount = confirm("Should this cancelled session count towards the package? Click OK to count it, Cancel to not count it.");
+                  handleReconcile('cancelled', shouldCount);
+                }}
+                disabled={loading}
               >
                 <XCircle className="h-4 w-4 mr-2" />
                 Cancel
               </Button>
               
               <Button 
-                variant="destructive"
-                onClick={handleDelete}
+                variant="outline"
+                onClick={handleEdit}
                 disabled={loading}
               >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete
+                <Edit3 className="h-4 w-4 mr-2" />
+                Edit Details
               </Button>
             </div>
           </>
         )}
+        {/* Delete Button - Always show at bottom */}
+        <Button 
+          variant="destructive"
+          onClick={handleDelete}
+          disabled={loading}
+          className="w-full"
+        >
+          <Trash2 className="h-4 w-4 mr-2" />
+          Delete Session
+        </Button>
       </DialogContent>
     </Dialog>
   );

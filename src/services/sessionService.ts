@@ -92,24 +92,8 @@ export const sessionService = {
 
     if (error) throw error;
 
-    // If marking as completed and session uses package, deduct session
-    if (status === 'completed' && session.client_package_id) {
-      const { data: packageData } = await supabase
-        .from('client_packages')
-        .select('sessions_remaining')
-        .eq('id', session.client_package_id)
-        .single();
-
-      if (packageData && packageData.sessions_remaining > 0) {
-        await supabase
-          .from('client_packages')
-          .update({ 
-            sessions_remaining: packageData.sessions_remaining - 1,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', session.client_package_id);
-      }
-    }
+    // Session deduction is now handled in the SessionManagementModal
+    // to avoid double deduction and have better control over when to deduct
 
     return data;
   },
