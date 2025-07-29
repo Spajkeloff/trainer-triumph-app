@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Switch } from "./ui/switch";
 import { X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { packageService } from "@/services/packageService";
 
 interface CreatePackageModalProps {
   open: boolean;
@@ -42,14 +43,37 @@ const CreatePackageModal = ({ open, onClose, onSuccess, editingPackage }: Create
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    try {
-      // Here you would integrate with your package service
-      // For now, we'll just show a success message
-      
+    if (!formData.name.trim()) {
       toast({
-        title: "Success",
-        description: editingPackage ? "Package updated successfully" : "Package created successfully",
+        title: "Error",
+        description: "Package name is required",
+        variant: "destructive",
       });
+      return;
+    }
+
+    try {
+      const packageData = {
+        name: formData.name,
+        description: formData.description,
+        sessions_included: parseInt(formData.numberOfSessions) || 0,
+        duration_days: getDurationInDays(formData.duration),
+        price: parseFloat(formData.price) || 0,
+      };
+
+      if (editingPackage) {
+        await packageService.update(editingPackage.id, packageData);
+        toast({
+          title: "Success",
+          description: "Package updated successfully",
+        });
+      } else {
+        await packageService.create(packageData);
+        toast({
+          title: "Success", 
+          description: "Package created successfully",
+        });
+      }
       
       onSuccess();
     } catch (error) {
@@ -62,20 +86,26 @@ const CreatePackageModal = ({ open, onClose, onSuccess, editingPackage }: Create
     }
   };
 
+  const getDurationInDays = (duration: string): number => {
+    switch (duration) {
+      case "1-month": return 30;
+      case "2-months": return 60;
+      case "3-months": return 90;
+      case "6-months": return 180;
+      case "12-months": return 365;
+      default: return 90; // Default to 3 months
+    }
+  };
+
   const isEditing = !!editingPackage;
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <div className="flex items-center justify-between">
-            <DialogTitle className="text-xl font-semibold">
-              {isEditing ? "Edit Package" : "New Package"}
-            </DialogTitle>
-            <Button variant="ghost" size="sm" onClick={onClose}>
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
+          <DialogTitle className="text-xl font-semibold">
+            {isEditing ? "Edit Package" : "New Package"}
+          </DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">

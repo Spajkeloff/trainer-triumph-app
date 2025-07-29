@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
@@ -16,67 +16,63 @@ import {
   DropdownMenuTrigger,
 } from "../components/ui/dropdown-menu";
 import CreatePackageModal from "../components/CreatePackageModal";
+import { packageService, Package } from "../services/packageService";
+import { useToast } from "@/hooks/use-toast";
 
 const Services = () => {
+  const { toast } = useToast();
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [editingPackage, setEditingPackage] = useState<any>(null);
+  const [editingPackage, setEditingPackage] = useState<Package | null>(null);
+  const [packages, setPackages] = useState<Package[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Sample data
-  const packages = [
-    {
-      id: "1",
-      name: "Premium Training Package",
-      description: "Comprehensive personal training with nutrition guidance",
-      sessions: 20,
-      duration: "60 minutes",
-      price: "AED 2,800",
-      pricePerSession: "AED 140",
-      validity: "3 months",
-      status: "active",
-      clientsActive: 12
-    },
-    {
-      id: "2",
-      name: "Basic Training Package",
-      description: "Essential personal training sessions",
-      sessions: 10,
-      duration: "45 minutes",
-      price: "AED 1,200",
-      pricePerSession: "AED 120",
-      validity: "2 months",
-      status: "active",
-      clientsActive: 8
-    },
-    {
-      id: "3",
-      name: "Fitness Assessment Package",
-      description: "Complete fitness evaluation and program design",
-      sessions: 3,
-      duration: "90 minutes",
-      price: "AED 650",
-      pricePerSession: "AED 217",
-      validity: "1 month",
-      status: "active",
-      clientsActive: 3
+  useEffect(() => {
+    fetchPackages();
+  }, []);
+
+  const fetchPackages = async () => {
+    try {
+      setLoading(true);
+      const packagesData = await packageService.getAll();
+      setPackages(packagesData);
+    } catch (error) {
+      console.error('Error fetching packages:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load packages",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
-  ];
-
-
-  const getStatusBadge = (status: string) => {
-    return status === "active" ? 
-      <Badge className="bg-success text-success-foreground">Active</Badge> : 
-      <Badge variant="secondary">Inactive</Badge>;
   };
 
-  const handleEditPackage = (pkg: any) => {
+
+
+  const handleEditPackage = (pkg: Package) => {
     setEditingPackage(pkg);
     setShowCreateModal(true);
   };
 
-  const handleDeletePackage = (pkgId: string) => {
-    if (confirm('Are you sure you want to delete this package?')) {
-      // Handle package deletion
-      console.log('Deleting package:', pkgId);
+  const handleDeletePackage = async (pkgId: string) => {
+    if (!confirm('Are you sure you want to delete this package?')) {
+      return;
+    }
+
+    try {
+      await packageService.delete(pkgId);
+      toast({
+        title: "Success",
+        description: "Package deleted successfully",
+      });
+      fetchPackages(); // Refresh the list
+    } catch (error) {
+      console.error('Error deleting package:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete package",
+        variant: "destructive",
+      });
     }
   };
 
@@ -86,13 +82,53 @@ const Services = () => {
   };
 
   const handleModalSuccess = () => {
-    // Refresh packages list
+    fetchPackages(); // Refresh the list
     handleModalClose();
   };
 
-  const renderPackages = () => (
-    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-      {packages.map((pkg) => (
+  const renderPackages = () => {
+    if (loading) {
+      return (
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+          {[...Array(3)].map((_, i) => (
+            <Card key={i} className="animate-pulse">
+              <CardHeader>
+                <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
+                <div className="h-3 bg-muted rounded w-1/2"></div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="h-3 bg-muted rounded"></div>
+                  <div className="h-3 bg-muted rounded w-2/3"></div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      );
+    }
+
+    if (packages.length === 0) {
+      return (
+        <Card>
+          <CardContent className="py-12 text-center">
+            <div className="text-muted-foreground mb-4">
+              <Plus className="h-12 w-12 mx-auto mb-4" />
+              <h3 className="text-lg font-medium mb-2">No packages found</h3>
+              <p className="text-sm">Create your first training package to get started</p>
+            </div>
+            <Button onClick={() => setShowCreateModal(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Create New Package
+            </Button>
+          </CardContent>
+        </Card>
+      );
+    }
+
+    return (
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+        {packages.map((pkg) => (
         <Card key={pkg.id} className="hover:shadow-elevated transition-all duration-300">
           <CardHeader>
             <div className="flex items-start justify-between">
@@ -101,7 +137,7 @@ const Services = () => {
                 <p className="text-sm text-muted-foreground mt-1">{pkg.description}</p>
               </div>
               <div className="flex items-center space-x-2">
-                {getStatusBadge(pkg.status)}
+                <Badge className="bg-success text-success-foreground">Active</Badge>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="sm">
@@ -134,27 +170,29 @@ const Services = () => {
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <p className="text-muted-foreground">Sessions</p>
-                  <p className="font-medium">{pkg.sessions}</p>
+                  <p className="font-medium">{pkg.sessions_included}</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Duration</p>
-                  <p className="font-medium">{pkg.duration}</p>
+                  <p className="font-medium">{pkg.duration_days} days</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">Validity</p>
-                  <p className="font-medium">{pkg.validity}</p>
+                  <p className="text-muted-foreground">Status</p>
+                  <p className="font-medium">Active</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">Active Clients</p>
-                  <p className="font-medium">{pkg.clientsActive}</p>
+                  <p className="text-muted-foreground">Created</p>
+                  <p className="font-medium">{new Date(pkg.created_at).toLocaleDateString()}</p>
                 </div>
               </div>
               
               <div className="border-t pt-4">
                 <div className="flex justify-between items-center">
                   <div>
-                    <p className="text-lg font-bold text-primary">{pkg.price}</p>
-                    <p className="text-sm text-muted-foreground">{pkg.pricePerSession} per session</p>
+                    <p className="text-lg font-bold text-primary">AED {pkg.price.toLocaleString()}</p>
+                    <p className="text-sm text-muted-foreground">
+                      AED {(pkg.price / pkg.sessions_included).toFixed(0)} per session
+                    </p>
                   </div>
                   <Button size="sm" onClick={() => handleEditPackage(pkg)}>
                     Edit Package
@@ -164,9 +202,10 @@ const Services = () => {
             </div>
           </CardContent>
         </Card>
-      ))}
-    </div>
-  );
+        ))}
+      </div>
+    );
+  };
 
 
   return (
