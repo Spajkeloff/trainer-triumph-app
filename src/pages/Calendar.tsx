@@ -159,6 +159,16 @@ const Calendar = () => {
     setCurrentDate(newDate);
   };
 
+  const navigateDay = (direction: "prev" | "next") => {
+    const newDate = new Date(currentDate);
+    if (direction === "prev") {
+      newDate.setDate(newDate.getDate() - 1);
+    } else {
+      newDate.setDate(newDate.getDate() + 1);
+    }
+    setCurrentDate(newDate);
+  };
+
   const getWeekDateRange = (date: Date) => {
     const startOfWeek = new Date(date);
     startOfWeek.setDate(date.getDate() - date.getDay());
@@ -341,11 +351,17 @@ const Calendar = () => {
             <CardContent className="p-6">
               <div className="grid grid-cols-8 gap-1">
                 <div className="p-2"></div>
-                {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
-                  <div key={day} className="p-2 text-center text-sm font-medium text-muted-foreground">
-                    {day}
-                  </div>
-                ))}
+                {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day, dayIndex) => {
+                  const dayDate = new Date(currentDate);
+                  dayDate.setDate(dayDate.getDate() - dayDate.getDay() + dayIndex);
+                  
+                  return (
+                    <div key={day} className="p-2 text-center">
+                      <div className="text-sm font-medium text-muted-foreground">{day}</div>
+                      <div className="text-lg font-semibold mt-1">{dayDate.getDate()}</div>
+                    </div>
+                  );
+                })}
                 
                 {/* Time slots */}
                 {Array.from({ length: 16 }, (_, i) => {
@@ -401,14 +417,30 @@ const Calendar = () => {
         {view === "day" && (
           <Card>
             <CardHeader>
-              <CardTitle>
-                {currentDate.toLocaleDateString('en-US', { 
-                  weekday: 'long', 
-                  year: 'numeric', 
-                  month: 'long', 
-                  day: 'numeric' 
-                })}
-              </CardTitle>
+              <div className="flex justify-between items-center">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigateDay("prev")}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <CardTitle>
+                  {currentDate.toLocaleDateString('en-US', { 
+                    weekday: 'long', 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                  })}
+                </CardTitle>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigateDay("next")}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="p-6">
               <div className="space-y-2">

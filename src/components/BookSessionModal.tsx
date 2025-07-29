@@ -343,13 +343,15 @@ const BookSessionModal = ({ isOpen, onClose, onSuccess, selectedDate, selectedTi
               {/* Service Type */}
               <div>
                 <Label htmlFor="service">Service</Label>
-                <Select value={formData.service_type} onValueChange={(value) => setFormData(prev => ({ ...prev, service_type: value }))}>
+                <Select value={formData.type} onValueChange={(value) => setFormData(prev => ({ ...prev, type: value }))}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select service type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="private">Private room</SelectItem>
-                    <SelectItem value="shared">Shared room/resource</SelectItem>
+                    <SelectItem value="EMS Trial Session">🔴 EMS Trial Session</SelectItem>
+                    <SelectItem value="PT Trial Session">🔴 PT Trial Session</SelectItem>
+                    <SelectItem value="PT Session">🔵 PT Session</SelectItem>
+                    <SelectItem value="EMS Session">🔵 EMS Session</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
