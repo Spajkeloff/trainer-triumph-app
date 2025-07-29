@@ -1,6 +1,6 @@
 import { clientService } from "./clientService";
 import { sessionService } from "./sessionService";
-import { paymentService } from "./paymentService";
+import { financeService } from "./financeService";
 
 export const dashboardService = {
   async getStats() {
@@ -9,7 +9,7 @@ export const dashboardService = {
       const [clientStats, sessionStats, financialStats] = await Promise.all([
         clientService.getStats(),
         sessionService.getStats(),
-        paymentService.getFinancialStats()
+        financeService.getFinancialStats()
       ]);
 
       return {

@@ -118,6 +118,15 @@ export const financeService = {
     return data as Transaction;
   },
 
+  async deleteTransaction(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('transactions')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+  },
+
   // Invoices
   async getAllInvoices(): Promise<Invoice[]> {
     const { data, error } = await supabase
