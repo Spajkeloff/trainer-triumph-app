@@ -9,7 +9,9 @@ import Layout from "./components/Layout";
 import Dashboard from "./pages/Dashboard";
 import Calendar from "./pages/Calendar";
 import Clients from "./pages/Clients";
+import ClientProfile from "./pages/ClientProfile";
 import Services from "./pages/Services";
+import PackageManagement from "./pages/PackageManagement";
 import Finances from "./pages/Finances";
 import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
@@ -39,10 +41,12 @@ const App = () => (
               <Route index element={<Dashboard />} />
               <Route path="calendar" element={<Calendar />} />
               <Route path="clients" element={<Clients />} />
+              <Route path="clients/:id" element={<ClientProfile />} />
               <Route path="clients/leads" element={<Clients />} />
+              <Route path="clients/active" element={<Clients />} />
               <Route path="clients/new" element={<Clients />} />
               <Route path="services" element={<Services />} />
-              <Route path="services/packages" element={<Services />} />
+              <Route path="services/packages" element={<PackageManagement />} />
               <Route path="services/memberships" element={<Services />} />
               <Route path="services/classes" element={<Services />} />
               <Route path="finances" element={<Finances />} />

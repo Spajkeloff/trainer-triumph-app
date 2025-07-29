@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
@@ -29,6 +30,7 @@ import { useToast } from "@/hooks/use-toast";
 import AddClientModal from "@/components/AddClientModal";
 
 const Clients = () => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState<"all" | "active" | "leads">("all");
   const [showAddModal, setShowAddModal] = useState(false);
@@ -159,7 +161,10 @@ const Clients = () => {
                       <User className="h-6 w-6 text-primary" />
                     </div>
                     <div>
-                      <CardTitle className="text-lg">
+                      <CardTitle 
+                        className="text-lg hover:text-primary cursor-pointer transition-colors"
+                        onClick={() => navigate(`/clients/${client.id}`)}
+                      >
                         {client.first_name} {client.last_name}
                       </CardTitle>
                       <p className="text-sm text-muted-foreground">
@@ -176,7 +181,7 @@ const Clients = () => {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => navigate(`/clients/${client.id}`)}>
                           <Eye className="h-4 w-4 mr-2" />
                           View Profile
                         </DropdownMenuItem>
