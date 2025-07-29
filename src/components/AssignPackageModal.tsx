@@ -1,8 +1,11 @@
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -25,6 +28,11 @@ interface AssignPackageModalProps {
 const AssignPackageModal = ({ isOpen, onClose, clientId, onSuccess }: AssignPackageModalProps) => {
   const [packages, setPackages] = useState<Package[]>([]);
   const [selectedPackageId, setSelectedPackageId] = useState("");
+  const [customPrice, setCustomPrice] = useState("");
+  const [expiryDate, setExpiryDate] = useState("");
+  const [notes, setNotes] = useState("");
+  const [paymentStatus, setPaymentStatus] = useState<"paid" | "unpaid">("unpaid");
+  const [paymentMethod, setPaymentMethod] = useState("cash");
   const [loading, setLoading] = useState(false);
   const [fetchingPackages, setFetchingPackages] = useState(false);
   const { toast } = useToast();
@@ -32,8 +40,30 @@ const AssignPackageModal = ({ isOpen, onClose, clientId, onSuccess }: AssignPack
   useEffect(() => {
     if (isOpen) {
       fetchPackages();
+      // Reset form
+      setSelectedPackageId("");
+      setCustomPrice("");
+      setExpiryDate("");
+      setNotes("");
+      setPaymentStatus("unpaid");
+      setPaymentMethod("cash");
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    // Auto-set price and expiry when package is selected
+    if (selectedPackageId) {
+      const selectedPackage = packages.find(p => p.id === selectedPackageId);
+      if (selectedPackage) {
+        setCustomPrice(selectedPackage.price.toString());
+        
+        // Calculate expiry date
+        const today = new Date();
+        const expiry = new Date(today.getTime() + (selectedPackage.duration_days * 24 * 60 * 60 * 1000));
+        setExpiryDate(expiry.toISOString().split('T')[0]);
+      }
+    }
+  }, [selectedPackageId, packages]);
 
   const fetchPackages = async () => {
     try {
@@ -60,10 +90,10 @@ const AssignPackageModal = ({ isOpen, onClose, clientId, onSuccess }: AssignPack
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!selectedPackageId) {
+    if (!selectedPackageId || !customPrice || !expiryDate) {
       toast({
         title: "Error",
-        description: "Please select a package",
+        description: "Please fill in all required fields",
         variant: "destructive",
       });
       return;
@@ -75,32 +105,63 @@ const AssignPackageModal = ({ isOpen, onClose, clientId, onSuccess }: AssignPack
       const selectedPackage = packages.find(p => p.id === selectedPackageId);
       if (!selectedPackage) throw new Error("Package not found");
 
-      // Calculate expiry date
-      const purchaseDate = new Date();
-      const expiryDate = new Date(purchaseDate.getTime() + (selectedPackage.duration_days * 24 * 60 * 60 * 1000));
+      const price = parseFloat(customPrice);
 
-      // Insert client package
-      const { error } = await supabase
+      // 1. Insert client package
+      const { data: clientPackageData, error: packageError } = await supabase
         .from('client_packages')
         .insert({
           client_id: clientId,
           package_id: selectedPackageId,
           sessions_remaining: selectedPackage.sessions_included,
-          purchase_date: purchaseDate.toISOString().split('T')[0],
-          expiry_date: expiryDate.toISOString().split('T')[0],
+          purchase_date: new Date().toISOString().split('T')[0],
+          expiry_date: expiryDate,
           status: 'active'
+        })
+        .select()
+        .single();
+
+      if (packageError) throw packageError;
+
+      // 2. Create charge in payments
+      const { error: chargeError } = await supabase
+        .from('payments')
+        .insert({
+          client_id: clientId,
+          amount: -price, // Negative for charge
+          payment_method: 'package_assignment',
+          status: paymentStatus === 'paid' ? 'completed' : 'pending',
+          description: `${selectedPackage.name} Package Assignment${notes ? ` - ${notes}` : ''}`,
+          payment_date: new Date().toISOString().split('T')[0],
+          client_package_id: clientPackageData.id
         });
 
-      if (error) throw error;
+      if (chargeError) throw chargeError;
+
+      // 3. If marked as paid, create payment record
+      if (paymentStatus === 'paid') {
+        const { error: paymentError } = await supabase
+          .from('payments')
+          .insert({
+            client_id: clientId,
+            amount: price, // Positive for payment
+            payment_method: paymentMethod,
+            status: 'completed',
+            description: `Payment for ${selectedPackage.name} Package`,
+            payment_date: new Date().toISOString().split('T')[0],
+            client_package_id: clientPackageData.id
+          });
+
+        if (paymentError) throw paymentError;
+      }
 
       toast({
         title: "Success",
-        description: "Package assigned successfully",
+        description: "Package assigned successfully with financial records",
       });
 
       onSuccess?.();
       onClose();
-      setSelectedPackageId("");
     } catch (error) {
       console.error('Error assigning package:', error);
       toast({
@@ -123,6 +184,7 @@ const AssignPackageModal = ({ isOpen, onClose, clientId, onSuccess }: AssignPack
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Package Selection */}
           <div className="space-y-2">
             <Label htmlFor="package">Select Package</Label>
             <Select value={selectedPackageId} onValueChange={setSelectedPackageId} disabled={fetchingPackages}>
@@ -144,9 +206,73 @@ const AssignPackageModal = ({ isOpen, onClose, clientId, onSuccess }: AssignPack
             </Select>
           </div>
 
+          {/* Price and Expiry */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="price">Price (AED)</Label>
+              <Input
+                id="price"
+                type="number"
+                value={customPrice}
+                onChange={(e) => setCustomPrice(e.target.value)}
+                placeholder="0"
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="expiry">Expiry Date</Label>
+              <Input
+                id="expiry"
+                type="date"
+                value={expiryDate}
+                onChange={(e) => setExpiryDate(e.target.value)}
+                required
+              />
+            </div>
+          </div>
+
+          {/* Payment Status */}
+          <div className="space-y-4">
+            <div className="flex items-center space-x-2">
+              <Switch
+                checked={paymentStatus === 'paid'}
+                onCheckedChange={(checked) => setPaymentStatus(checked ? 'paid' : 'unpaid')}
+              />
+              <Label>Mark as paid</Label>
+            </div>
+
+            {paymentStatus === 'paid' && (
+              <div>
+                <Label htmlFor="payment-method">Payment Method</Label>
+                <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="cash">Cash</SelectItem>
+                    <SelectItem value="card">Card</SelectItem>
+                    <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                    <SelectItem value="online">Online Payment</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+
+          {/* Notes */}
+          <div>
+            <Label htmlFor="notes">Notes (Optional)</Label>
+            <Textarea
+              id="notes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Additional notes or comments..."
+            />
+          </div>
+
           {selectedPackage && (
             <div className="bg-muted p-4 rounded-lg space-y-2">
-              <h4 className="font-medium">Package Details:</h4>
+              <h4 className="font-medium">Package Summary:</h4>
               <div className="grid grid-cols-2 gap-2 text-sm">
                 <div>
                   <span className="text-muted-foreground">Sessions:</span>
@@ -157,12 +283,12 @@ const AssignPackageModal = ({ isOpen, onClose, clientId, onSuccess }: AssignPack
                   <span className="ml-2 font-medium">{selectedPackage.duration_days} days</span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Price:</span>
-                  <span className="ml-2 font-medium">AED {selectedPackage.price}</span>
+                  <span className="text-muted-foreground">Custom Price:</span>
+                  <span className="ml-2 font-medium">AED {customPrice || 0}</span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Per Session:</span>
-                  <span className="ml-2 font-medium">AED {Math.round(selectedPackage.price / selectedPackage.sessions_included)}</span>
+                  <span className="text-muted-foreground">Payment Status:</span>
+                  <span className="ml-2 font-medium capitalize">{paymentStatus}</span>
                 </div>
               </div>
               {selectedPackage.description && (
@@ -175,7 +301,7 @@ const AssignPackageModal = ({ isOpen, onClose, clientId, onSuccess }: AssignPack
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit" disabled={loading || !selectedPackageId}>
+            <Button type="submit" disabled={loading || !selectedPackageId || !customPrice || !expiryDate}>
               {loading ? "Assigning..." : "Assign Package"}
             </Button>
           </div>

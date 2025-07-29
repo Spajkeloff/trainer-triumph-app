@@ -5,6 +5,7 @@ import { Badge } from "../components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import BookSessionModal from "@/components/BookSessionModal";
+import SessionManagementModal from "@/components/SessionManagementModal";
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -22,6 +23,9 @@ interface Session {
   type: string;
   location: string;
   notes?: string;
+  status: string;
+  client_id: string;
+  client_package_id?: string;
   clients: {
     first_name: string;
     last_name: string;
@@ -34,7 +38,9 @@ const Calendar = () => {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
   const [showBookModal, setShowBookModal] = useState(false);
+  const [showSessionModal, setShowSessionModal] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
+  const [selectedSession, setSelectedSession] = useState<Session | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -57,6 +63,9 @@ const Calendar = () => {
           type,
           location,
           notes,
+          status,
+          client_id,
+          client_package_id,
           clients (first_name, last_name)
         `)
         .gte('date', startOfMonth.toISOString().split('T')[0])
@@ -75,6 +84,11 @@ const Calendar = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSessionClick = (session: Session) => {
+    setSelectedSession(session);
+    setShowSessionModal(true);
   };
 
   const getSessionColor = (type: string) => {
@@ -226,6 +240,7 @@ const Calendar = () => {
                             <div
                               key={session.id}
                               className={`text-xs p-1 rounded text-left cursor-pointer hover:opacity-80 ${getSessionColor(session.type)}`}
+                              onClick={() => handleSessionClick(session)}
                             >
                               <div className="font-medium truncate">
                                 {session.type === 'personal' ? 'Personal Training' : session.type} - {session.clients.first_name} {session.clients.last_name}
@@ -315,6 +330,14 @@ const Calendar = () => {
           onClose={() => setShowBookModal(false)}
           onSuccess={fetchSessions}
           selectedDate={selectedDate}
+        />
+
+        {/* Session Management Modal */}
+        <SessionManagementModal
+          isOpen={showSessionModal}
+          onClose={() => setShowSessionModal(false)}
+          session={selectedSession}
+          onSuccess={fetchSessions}
         />
       </div>
     </div>

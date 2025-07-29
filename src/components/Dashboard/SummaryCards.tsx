@@ -59,7 +59,17 @@ const SummaryCard = ({ title, value, change, trend, icon: Icon, color }: Summary
   );
 };
 
-const SummaryCards = () => {
+interface SummaryCardsProps {
+  stats?: {
+    revenue: number;
+    bookings: number;
+    outstanding: number;
+    activeClients: number;
+    leadClients: number;
+  };
+}
+
+const SummaryCards = ({ stats }: SummaryCardsProps) => {
   const cards = [
     {
       title: "Revenue (This Month)",

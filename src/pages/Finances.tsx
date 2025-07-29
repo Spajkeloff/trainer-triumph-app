@@ -1,7 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import AddPaymentModal from "@/components/AddPaymentModal";
 import { 
   DollarSign,
   CreditCard,
@@ -32,8 +35,72 @@ import {
 
 const Finances = () => {
   const [activeTab, setActiveTab] = useState<"overview" | "payments" | "invoices" | "reports">("overview");
+  const [showAddPayment, setShowAddPayment] = useState(false);
+  const [selectedClientId, setSelectedClientId] = useState<string>("");
+  const [financialStats, setFinancialStats] = useState({
+    totalRevenue: 0,
+    netProfit: 0,
+    outstanding: 0,
+    totalExpenses: 0
+  });
+  const [recentPayments, setRecentPayments] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
-  // Sample data
+  useEffect(() => {
+    fetchFinancialData();
+  }, []);
+
+  const fetchFinancialData = async () => {
+    try {
+      setLoading(true);
+
+      // Fetch payments for revenue calculation
+      const { data: payments } = await supabase
+        .from('payments')
+        .select(`
+          *,
+          clients (first_name, last_name)
+        `)
+        .order('payment_date', { ascending: false });
+
+      const totalRevenue = payments?.filter(p => p.amount > 0).reduce((sum, p) => sum + Number(p.amount), 0) || 0;
+      const outstanding = payments?.filter(p => p.status === 'pending' && p.amount > 0).reduce((sum, p) => sum + Number(p.amount), 0) || 0;
+      
+      setFinancialStats({
+        totalRevenue,
+        netProfit: totalRevenue * 0.7, // Assume 70% profit margin
+        outstanding,
+        totalExpenses: totalRevenue * 0.3 // Assume 30% expenses
+      });
+
+      // Format recent payments
+      const formattedPayments = payments?.slice(0, 10).map(payment => ({
+        id: payment.id,
+        client: payment.clients ? `${payment.clients.first_name} ${payment.clients.last_name}` : 'Unknown Client',
+        amount: `AED ${Math.abs(payment.amount).toLocaleString()}`,
+        method: payment.payment_method || 'Unknown',
+        status: payment.status,
+        date: new Date(payment.payment_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        service: payment.description || 'Service Payment',
+        type: payment.amount > 0 ? 'payment' : 'charge'
+      })) || [];
+
+      setRecentPayments(formattedPayments);
+
+    } catch (error) {
+      console.error('Error fetching financial data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load financial data",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Chart data (keeping sample for now until more complex reporting is implemented)
   const revenueData = [
     { month: "Jan", revenue: 28500, expenses: 8400, profit: 20100 },
     { month: "Feb", revenue: 32400, expenses: 9200, profit: 23200 },
@@ -57,35 +124,7 @@ const Finances = () => {
     { name: "Other", value: 8, color: "#718096" }
   ];
 
-  const recentPayments = [
-    {
-      id: "1",
-      client: "Sarah Al-Zahra",
-      amount: "AED 2,800",
-      method: "Card",
-      status: "completed",
-      date: "Dec 28, 2024",
-      service: "Premium Training Package"
-    },
-    {
-      id: "2",
-      client: "Omar Hassan",
-      amount: "AED 450",
-      method: "Cash",
-      status: "completed",
-      date: "Dec 27, 2024",
-      service: "Membership Payment"
-    },
-    {
-      id: "3",
-      client: "Ahmed Al-Mansouri",
-      amount: "AED 1,200",
-      method: "Transfer",
-      status: "pending",
-      date: "Dec 26, 2024",
-      service: "Basic Training Package"
-    }
-  ];
+  // Removed static recentPayments - now using state
 
   const pendingInvoices = [
     {
@@ -128,7 +167,7 @@ const Finances = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Total Revenue</p>
-                <p className="text-2xl font-bold text-primary">AED 45,750</p>
+                <p className="text-2xl font-bold text-primary">AED {financialStats.totalRevenue.toLocaleString()}</p>
                 <p className="text-sm text-success flex items-center mt-1">
                   <TrendingUp className="h-3 w-3 mr-1" />
                   +12.5% from last month
@@ -146,7 +185,7 @@ const Finances = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Net Profit</p>
-                <p className="text-2xl font-bold text-success">AED 32,850</p>
+                <p className="text-2xl font-bold text-success">AED {financialStats.netProfit.toLocaleString()}</p>
                 <p className="text-sm text-success flex items-center mt-1">
                   <TrendingUp className="h-3 w-3 mr-1" />
                   +8.2% from last month
@@ -164,7 +203,7 @@ const Finances = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Outstanding</p>
-                <p className="text-2xl font-bold text-warning">AED 8,620</p>
+                <p className="text-2xl font-bold text-warning">AED {financialStats.outstanding.toLocaleString()}</p>
                 <p className="text-sm text-destructive flex items-center mt-1">
                   <TrendingDown className="h-3 w-3 mr-1" />
                   -15.3% from last month
@@ -182,7 +221,7 @@ const Finances = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Total Expenses</p>
-                <p className="text-2xl font-bold text-foreground">AED 12,900</p>
+                <p className="text-2xl font-bold text-foreground">AED {financialStats.totalExpenses.toLocaleString()}</p>
                 <p className="text-sm text-muted-foreground flex items-center mt-1">
                   <Calendar className="h-3 w-3 mr-1" />
                   This month
@@ -265,7 +304,7 @@ const Finances = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold">Recent Payments</h2>
-        <Button>
+        <Button onClick={() => setShowAddPayment(true)}>
           <Plus className="h-4 w-4 mr-2" />
           Record Payment
         </Button>
@@ -417,6 +456,17 @@ const Finances = () => {
           {activeTab === "reports" && renderReports()}
         </div>
       </div>
+
+      {/* Add Payment Modal */}
+      <AddPaymentModal
+        isOpen={showAddPayment}
+        onClose={() => {
+          setShowAddPayment(false);
+          setSelectedClientId("");
+        }}
+        clientId={selectedClientId}
+        onSuccess={fetchFinancialData}
+      />
     </div>
   );
 };

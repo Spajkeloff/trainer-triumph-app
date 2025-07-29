@@ -24,8 +24,15 @@ type PaymentFormData = z.infer<typeof paymentSchema>;
 interface AddPaymentModalProps {
   isOpen: boolean;
   onClose: () => void;
-  clientId: string;
+  clientId?: string;
   onSuccess?: () => void;
+}
+
+interface Client {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
 }
 
 const AddPaymentModal = ({ isOpen, onClose, clientId, onSuccess }: AddPaymentModalProps) => {
@@ -169,7 +176,7 @@ const AddPaymentModal = ({ isOpen, onClose, clientId, onSuccess }: AddPaymentMod
               <Button type="button" variant="outline" onClick={onClose}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={loading}>
+              <Button type="submit" disabled={loading || !clientId}>
                 {loading ? "Recording..." : "Record Payment"}
               </Button>
             </div>
