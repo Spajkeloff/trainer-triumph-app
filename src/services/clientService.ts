@@ -8,12 +8,25 @@ export interface Client {
   phone?: string;
   address?: string;
   emergency_contact?: string;
+  emergency_contact_name?: string;
+  emergency_contact_phone?: string;
   goals?: string;
   medical_notes?: string;
+  medical_conditions?: string;
+  injuries?: string;
+  medications?: string;
+  fitness_goals?: string;
+  preferences?: string;
   status: string;
   join_date: string;
+  date_of_birth?: string;
+  assigned_trainer_id?: string;
+  lead_source?: string;
+  tags?: string[];
+  avatar_url?: string;
   created_at: string;
   updated_at: string;
+  user_id: string;
 }
 
 export interface ClientWithDetails extends Client {
@@ -43,6 +56,38 @@ export interface ClientWithDetails extends Client {
     description?: string;
     status: string;
     payment_method: string;
+  }>;
+  notes: Array<{
+    id: string;
+    note_type: string;
+    title?: string;
+    content: string;
+    is_private: boolean;
+    created_at: string;
+  }>;
+  documents: Array<{
+    id: string;
+    document_name: string;
+    document_type: string;
+    file_url: string;
+    created_at: string;
+  }>;
+  assessments: Array<{
+    id: string;
+    assessment_date: string;
+    weight?: number;
+    body_fat_percentage?: number;
+    muscle_mass?: number;
+    measurements?: any;
+    fitness_level?: string;
+    assessment_notes?: string;
+  }>;
+  messages: Array<{
+    id: string;
+    sender_type: string;
+    message: string;
+    is_read: boolean;
+    created_at: string;
   }>;
 }
 
@@ -88,13 +133,55 @@ export const clientService = {
           description,
           status,
           payment_method
+        ),
+        client_notes!client_notes_client_id_fkey (
+          id,
+          note_type,
+          title,
+          content,
+          is_private,
+          created_at
+        ),
+        client_documents!client_documents_client_id_fkey (
+          id,
+          document_name,
+          document_type,
+          file_url,
+          created_at
+        ),
+        client_assessments!client_assessments_client_id_fkey (
+          id,
+          assessment_date,
+          weight,
+          body_fat_percentage,
+          muscle_mass,
+          measurements,
+          fitness_level,
+          assessment_notes
+        ),
+        client_messages!client_messages_client_id_fkey (
+          id,
+          sender_type,
+          message,
+          is_read,
+          created_at
         )
       `)
       .eq('id', id)
       .single();
 
     if (error) throw error;
-    return data;
+
+    // Transform the data to match our interface
+    const transformedData = data ? {
+      ...data,
+      notes: data.client_notes || [],
+      documents: data.client_documents || [],
+      assessments: data.client_assessments || [],
+      messages: data.client_messages || []
+    } : null;
+
+    return transformedData;
   },
 
   async create(clientData: Omit<Client, 'id' | 'created_at' | 'updated_at'> & { user_id: string }): Promise<Client> {
@@ -118,6 +205,114 @@ export const clientService = {
 
     if (error) throw error;
     return data;
+  },
+
+  // Client Notes Management
+  async addNote(clientId: string, trainerId: string, noteData: {
+    note_type?: string;
+    title?: string;
+    content: string;
+    is_private?: boolean;
+  }) {
+    const { data, error } = await supabase
+      .from('client_notes')
+      .insert({
+        client_id: clientId,
+        trainer_id: trainerId,
+        ...noteData
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+
+  async updateNote(noteId: string, updates: {
+    title?: string;
+    content?: string;
+    is_private?: boolean;
+  }) {
+    const { data, error } = await supabase
+      .from('client_notes')
+      .update(updates)
+      .eq('id', noteId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+
+  async deleteNote(noteId: string) {
+    const { error } = await supabase
+      .from('client_notes')
+      .delete()
+      .eq('id', noteId);
+
+    if (error) throw error;
+  },
+
+  // Client Assessment Management
+  async addAssessment(clientId: string, trainerId: string, assessmentData: {
+    assessment_date?: string;
+    weight?: number;
+    body_fat_percentage?: number;
+    muscle_mass?: number;
+    measurements?: any;
+    fitness_level?: string;
+    assessment_notes?: string;
+  }) {
+    const { data, error } = await supabase
+      .from('client_assessments')
+      .insert({
+        client_id: clientId,
+        trainer_id: trainerId,
+        ...assessmentData
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+
+  async updateAssessment(assessmentId: string, updates: any) {
+    const { data, error } = await supabase
+      .from('client_assessments')
+      .update(updates)
+      .eq('id', assessmentId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+
+  // Client Messages
+  async sendMessage(clientId: string, senderId: string, senderType: 'trainer' | 'client', message: string) {
+    const { data, error } = await supabase
+      .from('client_messages')
+      .insert({
+        client_id: clientId,
+        sender_id: senderId,
+        sender_type: senderType,
+        message
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+
+  async markMessageAsRead(messageId: string) {
+    const { error } = await supabase
+      .from('client_messages')
+      .update({ is_read: true })
+      .eq('id', messageId);
+
+    if (error) throw error;
   },
 
   async getStats() {

@@ -4,8 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { clientService, ClientWithDetails } from "@/services/clientService";
+import { paymentService } from "@/services/paymentService";
 import { 
   ArrowLeft,
   Edit,
@@ -17,65 +20,32 @@ import {
   Mail,
   MapPin,
   AlertCircle,
-  Plus
+  Plus,
+  User,
+  Activity,
+  MessageSquare,
+  FileText,
+  Upload,
+  Users,
+  Dumbbell,
+  Heart,
+  Target,
+  Scale,
+  BookOpen,
+  StickyNote
 } from "lucide-react";
 import AssignPackageModal from "@/components/AssignPackageModal";
 import AddPaymentModal from "@/components/AddPaymentModal";
-
-interface Client {
-  id: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  phone?: string;
-  address?: string;
-  emergency_contact?: string;
-  goals?: string;
-  medical_notes?: string;
-  status: string;
-  join_date: string;
-}
-
-interface ClientPackage {
-  id: string;
-  sessions_remaining: number;
-  expiry_date: string;
-  status: string;
-  packages: {
-    name: string;
-    sessions_included: number;
-    price: number;
-  };
-}
-
-interface Session {
-  id: string;
-  date: string;
-  start_time: string;
-  end_time: string;
-  status: string;
-  notes?: string;
-}
-
-interface Payment {
-  id: string;
-  amount: number;
-  payment_date: string;
-  description?: string;
-  status: string;
-  payment_method: string;
-}
 
 const ClientProfile = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  const [client, setClient] = useState<Client | null>(null);
-  const [packages, setPackages] = useState<ClientPackage[]>([]);
-  const [sessions, setSessions] = useState<Session[]>([]);
-  const [payments, setPayments] = useState<Payment[]>([]);
+  const [client, setClient] = useState<ClientWithDetails | null>(null);
+  const [clientBalance, setClientBalance] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("summary");
   const [showAssignPackage, setShowAssignPackage] = useState(false);
   const [showAddPayment, setShowAddPayment] = useState(false);
 
@@ -89,53 +59,13 @@ const ClientProfile = () => {
     try {
       setLoading(true);
       
-      // Fetch client details
-      const { data: clientData, error: clientError } = await supabase
-        .from('clients')
-        .select('*')
-        .eq('id', id)
-        .single();
+      const [clientData, balanceData] = await Promise.all([
+        clientService.getById(id!),
+        paymentService.getClientBalance(id!)
+      ]);
 
-      if (clientError) throw clientError;
       setClient(clientData);
-
-      // Fetch client packages
-      const { data: packagesData, error: packagesError } = await supabase
-        .from('client_packages')
-        .select(`
-          *,
-          packages (
-            name,
-            sessions_included,
-            price
-          )
-        `)
-        .eq('client_id', id);
-
-      if (packagesError) throw packagesError;
-      setPackages(packagesData || []);
-
-      // Fetch sessions
-      const { data: sessionsData, error: sessionsError } = await supabase
-        .from('sessions')
-        .select('*')
-        .eq('client_id', id)
-        .order('date', { ascending: false })
-        .limit(10);
-
-      if (sessionsError) throw sessionsError;
-      setSessions(sessionsData || []);
-
-      // Fetch payments
-      const { data: paymentsData, error: paymentsError } = await supabase
-        .from('payments')
-        .select('*')
-        .eq('client_id', id)
-        .order('payment_date', { ascending: false })
-        .limit(10);
-
-      if (paymentsError) throw paymentsError;
-      setPayments(paymentsData || []);
+      setClientBalance(balanceData);
 
     } catch (error) {
       console.error('Error fetching client data:', error);
@@ -153,12 +83,22 @@ const ClientProfile = () => {
     const statusConfig = {
       active: { variant: "default" as const, className: "bg-success text-success-foreground" },
       inactive: { variant: "secondary" as const, className: "" },
-      lead: { variant: "outline" as const, className: "" },
-      expired: { variant: "destructive" as const, className: "" },
+      lead: { variant: "outline" as const, className: "border-warning text-warning" },
     };
     
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.inactive;
-    return <Badge variant={config.variant} className={config.className}>{status}</Badge>;
+    return <Badge variant={config.variant} className={config.className}>{status.toUpperCase()}</Badge>;
+  };
+
+  const calculateAge = (dateOfBirth: string) => {
+    const today = new Date();
+    const birthDate = new Date(dateOfBirth);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
   };
 
   if (loading) {
@@ -167,12 +107,12 @@ const ClientProfile = () => {
         <div className="max-w-7xl mx-auto">
           <div className="animate-pulse">
             <div className="h-8 bg-muted rounded w-64 mb-8"></div>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2 space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+              <div className="space-y-6">
                 <div className="h-64 bg-muted rounded"></div>
                 <div className="h-64 bg-muted rounded"></div>
               </div>
-              <div className="space-y-6">
+              <div className="lg:col-span-3 space-y-6">
                 <div className="h-64 bg-muted rounded"></div>
                 <div className="h-64 bg-muted rounded"></div>
               </div>
@@ -225,232 +165,412 @@ const ClientProfile = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Client Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Package className="h-5 w-5 mr-2" />
-                  Client Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <div className="flex items-center space-x-3">
-                      <Mail className="h-4 w-4 text-muted-foreground" />
-                      <span>{client.email}</span>
-                    </div>
-                    {client.phone && (
-                      <div className="flex items-center space-x-3">
-                        <Phone className="h-4 w-4 text-muted-foreground" />
-                        <span>{client.phone}</span>
-                      </div>
-                    )}
-                    {client.address && (
-                      <div className="flex items-center space-x-3">
-                        <MapPin className="h-4 w-4 text-muted-foreground" />
-                        <span>{client.address}</span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="space-y-4">
-                    {client.emergency_contact && (
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">Emergency Contact</p>
-                        <p>{client.emergency_contact}</p>
-                      </div>
-                    )}
-                    {client.goals && (
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">Goals</p>
-                        <p className="text-sm">{client.goals}</p>
-                      </div>
-                    )}
-                    {client.medical_notes && (
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">Medical Notes</p>
-                        <p className="text-sm text-destructive">{client.medical_notes}</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Active Packages */}
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center">
-                    <Package className="h-5 w-5 mr-2" />
-                    Active Packages
-                  </CardTitle>
-                  <Button onClick={() => setShowAssignPackage(true)}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Assign Package
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {packages.length > 0 ? (
-                  <div className="space-y-4">
-                    {packages.map((pkg) => (
-                      <div key={pkg.id} className="border rounded-lg p-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <h3 className="font-medium">{pkg.packages.name}</h3>
-                          {getStatusBadge(pkg.status)}
-                        </div>
-                        <div className="grid grid-cols-2 gap-4 text-sm">
-                          <div>
-                            <p className="text-muted-foreground">Sessions Remaining</p>
-                            <p className="font-medium">{pkg.sessions_remaining}</p>
-                          </div>
-                          <div>
-                            <p className="text-muted-foreground">Expires</p>
-                            <p className="font-medium">{new Date(pkg.expiry_date).toLocaleDateString()}</p>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">No packages assigned</p>
-                    <Button 
-                      variant="outline" 
-                      className="mt-4"
-                      onClick={() => setShowAssignPackage(true)}
-                    >
-                      Assign First Package
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Recent Sessions */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Calendar className="h-5 w-5 mr-2" />
-                  Recent Sessions
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {sessions.length > 0 ? (
-                  <div className="space-y-4">
-                    {sessions.map((session) => (
-                      <div key={session.id} className="border rounded-lg p-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center space-x-2">
-                            <Clock className="h-4 w-4 text-muted-foreground" />
-                            <span className="font-medium">
-                              {new Date(session.date).toLocaleDateString()}
-                            </span>
-                            <span className="text-muted-foreground">
-                              {session.start_time} - {session.end_time}
-                            </span>
-                          </div>
-                          {getStatusBadge(session.status)}
-                        </div>
-                        {session.notes && (
-                          <p className="text-sm text-muted-foreground">{session.notes}</p>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">No sessions recorded</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Sidebar */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Left Sidebar - Client Information */}
           <div className="space-y-6">
-            {/* Payment History */}
+            {/* Client Avatar & Basic Info */}
+            <Card>
+              <CardContent className="p-6 text-center">
+                <Avatar className="h-24 w-24 mx-auto mb-4">
+                  <AvatarImage src={client.avatar_url} alt={`${client.first_name} ${client.last_name}`} />
+                  <AvatarFallback className="text-lg">
+                    {client.first_name[0]}{client.last_name[0]}
+                  </AvatarFallback>
+                </Avatar>
+                <h3 className="text-xl font-semibold">{client.first_name} {client.last_name}</h3>
+                <div className="mt-2">{getStatusBadge(client.status)}</div>
+                {client.date_of_birth && (
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Age: {calculateAge(client.date_of_birth)} years
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Contact Information */}
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center">
-                    <DollarSign className="h-5 w-5 mr-2" />
-                    Payment History
-                  </CardTitle>
-                  <Button size="sm" onClick={() => setShowAddPayment(true)}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Payment
-                  </Button>
-                </div>
+                <CardTitle className="text-lg">Contact Information</CardTitle>
               </CardHeader>
-              <CardContent>
-                {payments.length > 0 ? (
-                  <div className="space-y-4">
-                    {payments.map((payment) => (
-                      <div key={payment.id} className="border rounded-lg p-3">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="font-medium">AED {payment.amount}</span>
-                          {getStatusBadge(payment.status)}
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          {new Date(payment.payment_date).toLocaleDateString()}
-                        </p>
-                        <p className="text-sm text-muted-foreground">{payment.payment_method}</p>
-                        {payment.description && (
-                          <p className="text-sm">{payment.description}</p>
-                        )}
-                      </div>
-                    ))}
+              <CardContent className="space-y-3">
+                <div className="flex items-center space-x-3">
+                  <Mail className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm">{client.email}</span>
+                </div>
+                {client.phone && (
+                  <div className="flex items-center space-x-3">
+                    <Phone className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm">{client.phone}</span>
                   </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <DollarSign className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">No payments recorded</p>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="mt-4"
-                      onClick={() => setShowAddPayment(true)}
-                    >
-                      Add First Payment
-                    </Button>
+                )}
+                {client.address && (
+                  <div className="flex items-center space-x-3">
+                    <MapPin className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm">{client.address}</span>
+                  </div>
+                )}
+                {client.date_of_birth && (
+                  <div className="flex items-center space-x-3">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm">Born: {new Date(client.date_of_birth).toLocaleDateString()}</span>
                   </div>
                 )}
               </CardContent>
             </Card>
+
+            {/* Emergency Contact */}
+            {(client.emergency_contact_name || client.emergency_contact_phone) && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Emergency Contact</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {client.emergency_contact_name && (
+                    <p className="text-sm"><strong>Name:</strong> {client.emergency_contact_name}</p>
+                  )}
+                  {client.emergency_contact_phone && (
+                    <p className="text-sm"><strong>Phone:</strong> {client.emergency_contact_phone}</p>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
             {/* Quick Stats */}
             <Card>
               <CardHeader>
-                <CardTitle>Quick Stats</CardTitle>
+                <CardTitle className="text-lg">Quick Stats</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Total Sessions</span>
-                    <span className="font-medium">{sessions.length}</span>
-                  </div>
-                  <Separator />
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Active Packages</span>
-                    <span className="font-medium">{packages.filter(p => p.status === 'active').length}</span>
-                  </div>
-                  <Separator />
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Total Payments</span>
-                    <span className="font-medium">
-                      AED {payments.reduce((sum, p) => sum + Number(p.amount), 0)}
-                    </span>
-                  </div>
+              <CardContent className="space-y-4">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Active Packages</span>
+                  <span className="font-medium">{client.client_packages?.filter(p => p.status === 'active').length || 0}</span>
+                </div>
+                <Separator />
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Total Sessions</span>
+                  <span className="font-medium">{client.sessions?.length || 0}</span>
+                </div>
+                <Separator />
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Outstanding Balance</span>
+                  <span className="font-medium text-warning">
+                    AED {clientBalance?.balance || 0}
+                  </span>
                 </div>
               </CardContent>
             </Card>
+          </div>
+
+          {/* Main Content Area */}
+          <div className="lg:col-span-3">
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsList className="grid w-full grid-cols-6 lg:grid-cols-11">
+                <TabsTrigger value="summary" className="text-xs">Summary</TabsTrigger>
+                <TabsTrigger value="services" className="text-xs">Services</TabsTrigger>
+                <TabsTrigger value="bookings" className="text-xs">Bookings</TabsTrigger>
+                <TabsTrigger value="training" className="text-xs">Training</TabsTrigger>
+                <TabsTrigger value="messaging" className="text-xs">Messages</TabsTrigger>
+                <TabsTrigger value="finances" className="text-xs">Finances</TabsTrigger>
+                <TabsTrigger value="form" className="text-xs">Form</TabsTrigger>
+                <TabsTrigger value="family" className="text-xs">Family</TabsTrigger>
+                <TabsTrigger value="notes" className="text-xs">Notes</TabsTrigger>
+                <TabsTrigger value="uploads" className="text-xs">Uploads</TabsTrigger>
+                <TabsTrigger value="chat" className="text-xs">Chat</TabsTrigger>
+              </TabsList>
+
+              {/* Summary Tab */}
+              <TabsContent value="summary" className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Services Card */}
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between">
+                      <CardTitle className="flex items-center">
+                        <Package className="h-5 w-5 mr-2" />
+                        Services
+                      </CardTitle>
+                      <Button size="sm" onClick={() => setShowAssignPackage(true)}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Assign
+                      </Button>
+                    </CardHeader>
+                    <CardContent>
+                      {client.client_packages && client.client_packages.length > 0 ? (
+                        <div className="space-y-3">
+                          {client.client_packages.slice(0, 3).map((pkg) => (
+                            <div key={pkg.id} className="flex justify-between items-center p-3 bg-muted rounded-lg">
+                              <div>
+                                <p className="font-medium text-sm">{pkg.packages.name}</p>
+                                <p className="text-xs text-muted-foreground">{pkg.sessions_remaining} sessions left</p>
+                              </div>
+                              {getStatusBadge(pkg.status)}
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-muted-foreground text-center py-4">No active packages</p>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* Bookings Card */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center">
+                        <Calendar className="h-5 w-5 mr-2" />
+                        Recent Bookings
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {client.sessions && client.sessions.length > 0 ? (
+                        <div className="space-y-3">
+                          {client.sessions.slice(0, 3).map((session) => (
+                            <div key={session.id} className="flex justify-between items-center p-3 bg-muted rounded-lg">
+                              <div>
+                                <p className="font-medium text-sm">{new Date(session.date).toLocaleDateString()}</p>
+                                <p className="text-xs text-muted-foreground">{session.start_time} - {session.end_time}</p>
+                              </div>
+                              {getStatusBadge(session.status)}
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-muted-foreground text-center py-4">No recent sessions</p>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* Payments Card */}
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between">
+                      <CardTitle className="flex items-center">
+                        <DollarSign className="h-5 w-5 mr-2" />
+                        Payments
+                      </CardTitle>
+                      <Button size="sm" onClick={() => setShowAddPayment(true)}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add
+                      </Button>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        <div className="flex justify-between">
+                          <span className="text-sm text-muted-foreground">Total Paid:</span>
+                          <span className="text-sm font-medium">AED {clientBalance?.totalPaid || 0}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm text-muted-foreground">Total Charges:</span>
+                          <span className="text-sm font-medium">AED {clientBalance?.totalCharges || 0}</span>
+                        </div>
+                        <Separator />
+                        <div className="flex justify-between">
+                          <span className="text-sm font-medium">Balance:</span>
+                          <span className={`text-sm font-bold ${clientBalance?.balance > 0 ? 'text-destructive' : 'text-success'}`}>
+                            AED {clientBalance?.balance || 0}
+                          </span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Training Card */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center">
+                        <Dumbbell className="h-5 w-5 mr-2" />
+                        Training Progress
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {client.assessments && client.assessments.length > 0 ? (
+                        <div className="space-y-3">
+                          <div className="flex justify-between">
+                            <span className="text-sm text-muted-foreground">Latest Assessment:</span>
+                            <span className="text-sm font-medium">
+                              {new Date(client.assessments[0].assessment_date).toLocaleDateString()}
+                            </span>
+                          </div>
+                          {client.assessments[0].weight && (
+                            <div className="flex justify-between">
+                              <span className="text-sm text-muted-foreground">Weight:</span>
+                              <span className="text-sm font-medium">{client.assessments[0].weight} kg</span>
+                            </div>
+                          )}
+                          {client.assessments[0].fitness_level && (
+                            <div className="flex justify-between">
+                              <span className="text-sm text-muted-foreground">Fitness Level:</span>
+                              <Badge variant="outline">{client.assessments[0].fitness_level}</Badge>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-muted-foreground text-center py-4">No assessments recorded</p>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Goals and Medical Info */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Goals */}
+                  {(client.fitness_goals || client.goals) && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center">
+                          <Target className="h-5 w-5 mr-2" />
+                          Fitness Goals
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-sm">{client.fitness_goals || client.goals}</p>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Medical Information */}
+                  {(client.medical_conditions || client.injuries || client.medications) && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center">
+                          <Heart className="h-5 w-5 mr-2" />
+                          Medical Information
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-2">
+                        {client.medical_conditions && (
+                          <div>
+                            <p className="text-xs font-medium text-muted-foreground">Conditions:</p>
+                            <p className="text-sm">{client.medical_conditions}</p>
+                          </div>
+                        )}
+                        {client.injuries && (
+                          <div>
+                            <p className="text-xs font-medium text-muted-foreground">Injuries:</p>
+                            <p className="text-sm">{client.injuries}</p>
+                          </div>
+                        )}
+                        {client.medications && (
+                          <div>
+                            <p className="text-xs font-medium text-muted-foreground">Medications:</p>
+                            <p className="text-sm">{client.medications}</p>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+              </TabsContent>
+
+              {/* Other tabs content - placeholder for now */}
+              <TabsContent value="services" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Services & Packages</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground">Services tab content coming soon...</p>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="bookings" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Session Bookings</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground">Bookings tab content coming soon...</p>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="training" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Training & Progress</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground">Training tab content coming soon...</p>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="messaging" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Messages</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground">Messaging tab content coming soon...</p>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="finances" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Financial History</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground">Finances tab content coming soon...</p>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="form" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Client Assessment Form</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground">Assessment form content coming soon...</p>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="family" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Family Accounts</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground">Family accounts content coming soon...</p>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="notes" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Notes</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground">Notes content coming soon...</p>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="uploads" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Documents & Uploads</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground">Uploads content coming soon...</p>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="chat" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Live Chat</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground">Chat content coming soon...</p>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
           </div>
         </div>
       </div>
