@@ -61,7 +61,11 @@ const BookSessionModal = ({ isOpen, onClose, onSuccess, selectedDate, selectedTi
     session_category: "Personal Training",
     payment_category: "Session",
     recurring: false,
-    service_type: "private"
+    service_type: "private",
+    repeat_type: "weekly",
+    repeat_days: [] as string[],
+    repeat_until: "3_months",
+    repeat_frequency: 1
   });
 
   useEffect(() => {
@@ -227,7 +231,11 @@ const BookSessionModal = ({ isOpen, onClose, onSuccess, selectedDate, selectedTi
       session_category: "Personal Training",
       payment_category: "Session",
       recurring: false,
-      service_type: "private"
+      service_type: "private",
+      repeat_type: "weekly",
+      repeat_days: [] as string[],
+      repeat_until: "3_months",
+      repeat_frequency: 1
     });
     setSearchTerm("");
     setClientPackages([]);
@@ -481,6 +489,103 @@ const BookSessionModal = ({ isOpen, onClose, onSuccess, selectedDate, selectedTi
                 />
                 <Label>Recurring session</Label>
               </div>
+
+              {/* Recurring Options */}
+              {formData.recurring && (
+                <div className="space-y-4 border border-border rounded-lg p-4 bg-muted/30">
+                  <h4 className="font-medium">Recurring Settings</h4>
+                  
+                  {/* Repeat Type */}
+                  <div>
+                    <Label>Repeat</Label>
+                    <div className="flex gap-2 mt-2">
+                      {["daily", "weekly", "fortnightly", "monthly", "yearly"].map((type) => (
+                        <Button
+                          key={type}
+                          type="button"
+                          variant={formData.repeat_type === type ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setFormData(prev => ({ ...prev, repeat_type: type }))}
+                        >
+                          {type.charAt(0).toUpperCase() + type.slice(1)}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Days of the Week (for weekly/fortnightly) */}
+                  {(formData.repeat_type === "weekly" || formData.repeat_type === "fortnightly") && (
+                    <div>
+                      <Label>Days of the week</Label>
+                      <div className="flex gap-2 mt-2">
+                        {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => (
+                          <Button
+                            key={day}
+                            type="button"
+                            variant={formData.repeat_days.includes(day) ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => {
+                              const updatedDays = formData.repeat_days.includes(day)
+                                ? formData.repeat_days.filter(d => d !== day)
+                                : [...formData.repeat_days, day];
+                              setFormData(prev => ({ ...prev, repeat_days: updatedDays }));
+                            }}
+                          >
+                            {day}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Repeat Until */}
+                  <div>
+                    <Label>Repeat until</Label>
+                    <div className="flex gap-2 mt-2">
+                      <Button
+                        type="button"
+                        variant={formData.repeat_until === "3_months" ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setFormData(prev => ({ ...prev, repeat_until: "3_months" }))}
+                      >
+                        3 months
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={formData.repeat_until === "6_months" ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setFormData(prev => ({ ...prev, repeat_until: "6_months" }))}
+                      >
+                        6 months
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={formData.repeat_until === "no_end" ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setFormData(prev => ({ ...prev, repeat_until: "no_end" }))}
+                      >
+                        No end date (endless)
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Frequency */}
+                  <div>
+                    <Label>Frequency</Label>
+                    <div className="flex items-center gap-2 mt-2">
+                      <span className="text-sm">Every</span>
+                      <Input
+                        type="number"
+                        min="1"
+                        value={formData.repeat_frequency}
+                        onChange={(e) => setFormData(prev => ({ ...prev, repeat_frequency: parseInt(e.target.value) || 1 }))}
+                        className="w-20"
+                      />
+                      <span className="text-sm">week(s)</span>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="flex justify-between items-center pt-4">
                 <Button type="button" variant="ghost" className="text-primary">
