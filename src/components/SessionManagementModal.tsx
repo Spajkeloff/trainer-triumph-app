@@ -53,7 +53,8 @@ const SessionManagementModal = ({ isOpen, onClose, session, onSuccess, onEdit }:
     try {
       setLoading(true);
 
-      // Update session status
+      // Update session status only - no package deduction here
+      // All package deduction logic is handled in handleReconcile
       const { error: sessionError } = await supabase
         .from('sessions')
         .update({ 
@@ -63,28 +64,6 @@ const SessionManagementModal = ({ isOpen, onClose, session, onSuccess, onEdit }:
         .eq('id', session.id);
 
       if (sessionError) throw sessionError;
-
-      // If marking as completed and session uses package, deduct session
-      if (newStatus === 'completed' && session.client_package_id) {
-        // Get current sessions remaining
-        const { data: packageData } = await supabase
-          .from('client_packages')
-          .select('sessions_remaining')
-          .eq('id', session.client_package_id)
-          .single();
-
-        if (packageData && packageData.sessions_remaining > 0) {
-          const { error: packageError } = await supabase
-            .from('client_packages')
-            .update({ 
-              sessions_remaining: packageData.sessions_remaining - 1,
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', session.client_package_id);
-
-          if (packageError) throw packageError;
-        }
-      }
 
       toast({
         title: "Success",
