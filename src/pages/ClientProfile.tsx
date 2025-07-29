@@ -609,6 +609,7 @@ const ClientProfile = () => {
                               const sessionDate = new Date(session.date);
                               const today = new Date();
                               today.setHours(0, 0, 0, 0);
+                              // Only show scheduled upcoming sessions, not cancelled or deleted ones
                               return sessionDate >= today && session.status === 'scheduled';
                             })
                             .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
@@ -650,6 +651,7 @@ const ClientProfile = () => {
                             const sessionDate = new Date(session.date);
                             const today = new Date();
                             today.setHours(0, 0, 0, 0);
+                            // Only show scheduled upcoming sessions, not cancelled or deleted ones
                             return sessionDate >= today && session.status === 'scheduled';
                           }).length === 0 && (
                             <div className="text-center py-8">
@@ -697,7 +699,10 @@ const ClientProfile = () => {
                               const sessionDate = new Date(session.date);
                               const today = new Date();
                               today.setHours(0, 0, 0, 0);
-                              return sessionDate < today || session.status !== 'scheduled';
+                              // Show past sessions that were completed, or cancelled sessions that were reconciled
+                              // Don't show sessions that were just deleted/cancelled without reconciliation
+                              return (sessionDate < today && session.status !== 'scheduled') || 
+                                     (session.status === 'completed' || session.status === 'cancelled');
                             })
                             .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
                             .slice(0, 10)
@@ -727,7 +732,14 @@ const ClientProfile = () => {
                                       <div>
                                         <p className="text-sm font-medium">AED {session.price}</p>
                                         <p className="text-xs text-muted-foreground">
-                                          {session.status === 'completed' ? 'Paid' : 'Charged'}
+                                          {session.type?.includes('Trial') ? 
+                                            (clientTransactions?.some(t => 
+                                              t.reference_type === 'session' && 
+                                              t.reference_id === session.id && 
+                                              t.transaction_type === 'payment'
+                                            ) ? 'Paid' : 'Payment Overdue') 
+                                            : (session.status === 'completed' ? 'Paid' : 'Charged')
+                                          }
                                         </p>
                                       </div>
                                     )}
@@ -753,7 +765,10 @@ const ClientProfile = () => {
                             const sessionDate = new Date(session.date);
                             const today = new Date();
                             today.setHours(0, 0, 0, 0);
-                            return sessionDate < today || session.status !== 'scheduled';
+                            // Show past sessions that were completed, or cancelled sessions that were reconciled
+                            // Don't show sessions that were just deleted/cancelled without reconciliation
+                            return (sessionDate < today && session.status !== 'scheduled') || 
+                                   (session.status === 'completed' || session.status === 'cancelled');
                           }).length === 0 && (
                             <div className="text-center py-8">
                               <Activity className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
