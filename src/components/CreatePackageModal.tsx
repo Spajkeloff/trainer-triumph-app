@@ -148,9 +148,8 @@ const CreatePackageModal = ({ open, onClose, onSuccess, editingPackage }: Create
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="personal-training">Personal Training</SelectItem>
+                <SelectItem value="ems-training">EMS Training</SelectItem>
                 <SelectItem value="group-training">Group Training</SelectItem>
-                <SelectItem value="fitness-assessment">Fitness Assessment</SelectItem>
-                <SelectItem value="nutrition-coaching">Nutrition Coaching</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -209,20 +208,6 @@ const CreatePackageModal = ({ open, onClose, onSuccess, editingPackage }: Create
             />
           </div>
 
-          {/* Number of Classes */}
-          <div className="space-y-2">
-            <Label htmlFor="numberOfClasses" className="text-sm font-medium">
-              Number of classes
-            </Label>
-            <Input
-              id="numberOfClasses"
-              type="number"
-              value={formData.numberOfClasses}
-              onChange={(e) => handleInputChange("numberOfClasses", e.target.value)}
-              placeholder="Enter number of classes"
-              min="0"
-            />
-          </div>
 
           {/* Package Duration */}
           <div className="space-y-2">

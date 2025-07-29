@@ -149,6 +149,29 @@ const Calendar = () => {
     setCurrentDate(newDate);
   };
 
+  const navigateWeek = (direction: "prev" | "next") => {
+    const newDate = new Date(currentDate);
+    if (direction === "prev") {
+      newDate.setDate(newDate.getDate() - 7);
+    } else {
+      newDate.setDate(newDate.getDate() + 7);
+    }
+    setCurrentDate(newDate);
+  };
+
+  const getWeekDateRange = (date: Date) => {
+    const startOfWeek = new Date(date);
+    startOfWeek.setDate(date.getDate() - date.getDay());
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    
+    return {
+      start: startOfWeek,
+      end: endOfWeek,
+      text: `${startOfWeek.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} — ${endOfWeek.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
+    };
+  };
+
   // Generate calendar days
   const generateCalendarDays = () => {
     const year = currentDate.getFullYear();
@@ -296,6 +319,25 @@ const Calendar = () => {
         {/* Week View */}
         {view === "week" && (
           <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigateWeek("prev")}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <h2 className="text-lg font-semibold">{getWeekDateRange(currentDate).text}</h2>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigateWeek("next")}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardHeader>
             <CardContent className="p-6">
               <div className="grid grid-cols-8 gap-1">
                 <div className="p-2"></div>

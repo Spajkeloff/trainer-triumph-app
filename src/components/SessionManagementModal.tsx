@@ -162,6 +162,9 @@ const SessionManagementModal = ({ isOpen, onClose, session, onSuccess, onEdit }:
     try {
       setLoading(true);
 
+      // Check if this is a trial session
+      const isTrialSession = session.type?.includes('Trial') || session.type?.includes('trial');
+
       // Update session status
       const { error: sessionError } = await supabase
         .from('sessions')
@@ -173,8 +176,79 @@ const SessionManagementModal = ({ isOpen, onClose, session, onSuccess, onEdit }:
 
       if (sessionError) throw sessionError;
 
-      // If session should count and uses package, deduct session
-      if (shouldCount && session.client_package_id && (action === 'completed' || action === 'cancelled')) {
+      // Handle trial session billing
+      if (isTrialSession && action === 'completed') {
+        // Create a charge for trial session (250 AED)
+        const { error: paymentError } = await supabase
+          .from('payments')
+          .insert({
+            client_id: session.client_id,
+            amount: -250, // Negative for charge
+            payment_method: 'trial_session',
+            status: 'pending',
+            description: `${session.type} charge`,
+            payment_date: new Date().toISOString().split('T')[0],
+            session_id: session.id
+          });
+
+        if (paymentError) throw paymentError;
+      }
+
+      // Handle package session logic
+      if (!isTrialSession && shouldCount && action === 'completed') {
+        // Try to find matching package for this session type
+        let matchingPackage = null;
+        
+        if (session.type === 'PT Session') {
+          // Find active personal training package
+          const { data: ptPackages } = await supabase
+            .from('client_packages')
+            .select(`
+              *,
+              packages!inner(name, sessions_included)
+            `)
+            .eq('client_id', session.client_id)
+            .eq('status', 'active')
+            .gt('sessions_remaining', 0)
+            .ilike('packages.name', '%personal%training%');
+          
+          matchingPackage = ptPackages?.[0];
+        } else if (session.type === 'EMS Session') {
+          // Find active EMS package
+          const { data: emsPackages } = await supabase
+            .from('client_packages')
+            .select(`
+              *,
+              packages!inner(name, sessions_included)
+            `)
+            .eq('client_id', session.client_id)
+            .eq('status', 'active')
+            .gt('sessions_remaining', 0)
+            .ilike('packages.name', '%ems%');
+          
+          matchingPackage = emsPackages?.[0];
+        }
+
+        // If matching package found, deduct session
+        if (matchingPackage) {
+          const { error: packageError } = await supabase
+            .from('client_packages')
+            .update({ 
+              sessions_remaining: matchingPackage.sessions_remaining - 1,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', matchingPackage.id);
+
+          if (packageError) throw packageError;
+
+          // Update session to link it to the package
+          await supabase
+            .from('sessions')
+            .update({ client_package_id: matchingPackage.id })
+            .eq('id', session.id);
+        }
+      } else if (!isTrialSession && shouldCount && session.client_package_id && (action === 'completed' || action === 'cancelled')) {
+        // Original logic for sessions already linked to packages
         const { data: packageData } = await supabase
           .from('client_packages')
           .select('sessions_remaining')
@@ -194,9 +268,13 @@ const SessionManagementModal = ({ isOpen, onClose, session, onSuccess, onEdit }:
         }
       }
 
+      const successMessage = isTrialSession && action === 'completed' 
+        ? `Trial session completed and 250 AED charge added to client account`
+        : `Session ${action === 'rescheduled' ? 'rescheduled' : action}${shouldCount ? ' and deducted from package' : ''}`;
+
       toast({
         title: "Success",
-        description: `Session ${action === 'rescheduled' ? 'rescheduled' : action}${shouldCount ? ' and deducted from package' : ''}`,
+        description: successMessage,
       });
 
       onSuccess();
