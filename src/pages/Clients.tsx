@@ -32,7 +32,7 @@ import AddClientModal from "@/components/AddClientModal";
 const Clients = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterType, setFilterType] = useState<"all" | "active" | "leads">("all");
+  const [filterType, setFilterType] = useState<"all" | "active" | "leads" | "inactive">("all");
   const [showAddModal, setShowAddModal] = useState(false);
   const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -71,7 +71,10 @@ const Clients = () => {
     const clientName = `${client.first_name} ${client.last_name}`;
     const matchesSearch = clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          client.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = filterType === "all" || client.status === filterType;
+    const matchesFilter = filterType === "all" || 
+                         (filterType === "leads" && client.status === "lead") ||
+                         (filterType === "active" && client.status === "active") ||
+                         (filterType === "inactive" && client.status === "inactive");
     return matchesSearch && matchesFilter;
   });
 
@@ -173,6 +176,13 @@ const Clients = () => {
                   size="sm"
                 >
                   Leads ({clients.filter(c => c.status === "lead").length})
+                </Button>
+                <Button
+                  variant={filterType === "inactive" ? "default" : "outline"}
+                  onClick={() => setFilterType("inactive")}
+                  size="sm"
+                >
+                  Inactive ({clients.filter(c => c.status === "inactive").length})
                 </Button>
                 <Button variant="outline" size="sm">
                   <Filter className="h-4 w-4 mr-2" />
