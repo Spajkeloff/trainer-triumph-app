@@ -42,6 +42,7 @@ const Calendar = () => {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [selectedTime, setSelectedTime] = useState<string>("");
   const [selectedSession, setSelectedSession] = useState<Session | null>(null);
+  const [editSession, setEditSession] = useState<Session | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -95,6 +96,14 @@ const Calendar = () => {
   const handleTimeSlotClick = (date: Date, time?: string) => {
     setSelectedDate(date);
     setSelectedTime(time || "");
+    setEditSession(null); // Clear edit mode
+    setShowBookModal(true);
+  };
+
+  const handleEditSession = (session: Session) => {
+    setEditSession(session);
+    setSelectedDate(new Date(session.date + 'T00:00:00'));
+    setSelectedTime(session.start_time.substring(0, 5));
     setShowBookModal(true);
   };
 
@@ -508,6 +517,7 @@ const Calendar = () => {
           onClose={() => setShowSessionModal(false)}
           session={selectedSession}
           onSuccess={fetchSessions}
+          onEdit={handleEditSession}
         />
       </div>
     </div>

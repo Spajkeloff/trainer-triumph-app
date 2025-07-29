@@ -153,14 +153,22 @@ const BookSessionModal = ({ isOpen, onClose, onSuccess, selectedDate, selectedTi
         duration: 60 // Default 60 minutes
       };
 
+      let sessionsToCreate = [sessionData];
+
+      // Generate recurring sessions if enabled
+      if (formData.recurring) {
+        sessionsToCreate = generateRecurringSessions(sessionData);
+      }
+
       const { error: sessionError } = await supabase
         .from('sessions')
-        .insert([sessionData]);
+        .insert(sessionsToCreate);
 
       if (sessionError) throw sessionError;
 
-      // If using package, deduct session
+      // If using package, deduct sessions based on number created
       if (formData.use_package && formData.client_package_id) {
+        const sessionsCount = sessionsToCreate.length;
         // Get current sessions remaining and decrement
         const { data: packageData } = await supabase
           .from('client_packages')
@@ -171,7 +179,7 @@ const BookSessionModal = ({ isOpen, onClose, onSuccess, selectedDate, selectedTi
         const { error: packageError } = await supabase
           .from('client_packages')
           .update({ 
-            sessions_remaining: (packageData?.sessions_remaining || 1) - 1,
+            sessions_remaining: Math.max(0, (packageData?.sessions_remaining || sessionsCount) - sessionsCount),
             updated_at: new Date().toISOString()
           })
           .eq('id', formData.client_package_id);
@@ -181,14 +189,15 @@ const BookSessionModal = ({ isOpen, onClose, onSuccess, selectedDate, selectedTi
 
       // Create payment record if not using package
       if (!formData.use_package && formData.price) {
+        const totalAmount = parseFloat(formData.price) * sessionsToCreate.length;
         const { error: paymentError } = await supabase
           .from('payments')
           .insert([{
             client_id: formData.client_id,
-            amount: parseFloat(formData.price),
+            amount: totalAmount,
             payment_method: 'cash',
             status: 'pending',
-            description: `Session on ${formData.date}`
+            description: `${sessionsToCreate.length} session(s) on ${formData.date}${formData.recurring ? ' (recurring)' : ''}`
           }]);
 
         if (paymentError) throw paymentError;
@@ -196,7 +205,7 @@ const BookSessionModal = ({ isOpen, onClose, onSuccess, selectedDate, selectedTi
 
       toast({
         title: "Success",
-        description: "Session booked successfully",
+        description: `${sessionsToCreate.length} session(s) booked successfully`,
       });
 
       onSuccess();
