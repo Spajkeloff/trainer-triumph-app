@@ -20,6 +20,60 @@ export type Database = {
         Update: {}
         Relationships: []
       }
+      profiles: {
+        Row: {
+          address: string | null
+          avatar_url: string | null
+          created_at: string
+          date_of_birth: string | null
+          emergency_contact: string | null
+          first_name: string | null
+          goals: string | null
+          id: string
+          last_name: string | null
+          medical_notes: string | null
+          phone: string | null
+          preferences: string | null
+          role: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address?: string | null
+          avatar_url?: string | null
+          created_at?: string
+          date_of_birth?: string | null
+          emergency_contact?: string | null
+          first_name?: string | null
+          goals?: string | null
+          id?: string
+          last_name?: string | null
+          medical_notes?: string | null
+          phone?: string | null
+          preferences?: string | null
+          role?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address?: string | null
+          avatar_url?: string | null
+          created_at?: string
+          date_of_birth?: string | null
+          emergency_contact?: string | null
+          first_name?: string | null
+          goals?: string | null
+          id?: string
+          last_name?: string | null
+          medical_notes?: string | null
+          phone?: string | null
+          preferences?: string | null
+          role?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
