@@ -47,6 +47,7 @@ const ClientProfile = () => {
   
   const [client, setClient] = useState<ClientWithDetails | null>(null);
   const [clientBalance, setClientBalance] = useState<any>(null);
+  const [clientTransactions, setClientTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("summary");
   const [showAssignPackage, setShowAssignPackage] = useState(false);
@@ -90,8 +91,13 @@ const ClientProfile = () => {
       const clientData = await clientService.getById(id!);
       
       // Calculate balance using new finance service
-      const clientBalances = await financeService.getClientBalances();
+      const [clientBalances, allTransactions] = await Promise.all([
+        financeService.getClientBalances(),
+        financeService.getAllTransactions()
+      ]);
+      
       const balance = clientBalances.find(b => b.client_id === id);
+      const transactions = allTransactions.filter(t => t.client_id === id);
       
       const balanceData = balance ? {
         totalCharges: balance.total_charges,
@@ -107,6 +113,7 @@ const ClientProfile = () => {
 
       setClient(clientData);
       setClientBalance(balanceData);
+      setClientTransactions(transactions);
 
     } catch (error) {
       console.error('Error fetching client data:', error);
@@ -693,53 +700,53 @@ const ClientProfile = () => {
                     <CardTitle>Transaction History</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    {client.payments && client.payments.length > 0 ? (
-                      <div className="space-y-3">
-                        {client.payments.map((payment) => (
-                           <div key={payment.id} className="flex justify-between items-center p-4 border rounded-lg">
-                             <div className="flex-1">
-                               <div className="flex items-center justify-between">
-                                 <p className="font-medium">{payment.description || 'Transaction'}</p>
-                                 <div className="flex items-center space-x-4">
-                                   <span className={`font-bold ${payment.amount > 0 ? 'text-success' : 'text-destructive'}`}>
-                                     {payment.amount > 0 ? '+' : ''}AED {Math.abs(payment.amount)}
-                                   </span>
-                                   <Badge variant={payment.status === 'completed' ? 'default' : 'outline'} className={payment.status === 'completed' ? 'bg-success text-success-foreground' : ''}>
-                                     {payment.status.toUpperCase()}
-                                   </Badge>
-                                   <Button
-                                     variant="ghost"
-                                     size="sm"
-                                     onClick={() => handleDeleteTransaction(payment.id)}
-                                     className="text-destructive hover:text-destructive"
-                                   >
-                                     <Trash2 className="h-4 w-4" />
-                                   </Button>
-                                 </div>
-                               </div>
-                               <div className="flex items-center justify-between mt-1">
-                                 <p className="text-sm text-muted-foreground">
-                                   {new Date(payment.payment_date).toLocaleDateString()} • {payment.payment_method.replace('_', ' ').toUpperCase()}
-                                 </p>
-                                 <p className="text-xs text-muted-foreground">
-                                   {payment.amount > 0 ? 'Payment Received' : 'Package Charge'}
-                                 </p>
-                               </div>
-                             </div>
-                           </div>
-                         ))}
-                      </div>
-                     ) : (
-                      <div className="text-center py-12">
-                        <DollarSign className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                        <h3 className="text-lg font-medium mb-2">No transactions yet</h3>
-                        <p className="text-muted-foreground mb-4">Transactions will appear here once recorded.</p>
-                        <Button onClick={() => setShowAddPayment(true)}>
-                          <Plus className="h-4 w-4 mr-2" />
-                          Record First Payment
-                        </Button>
-                      </div>
-                     )}
+                     {clientTransactions && clientTransactions.length > 0 ? (
+                       <div className="space-y-3">
+                         {clientTransactions.map((transaction) => (
+                            <div key={transaction.id} className="flex justify-between items-center p-4 border rounded-lg">
+                              <div className="flex-1">
+                                <div className="flex items-center justify-between">
+                                  <p className="font-medium">{transaction.description || 'Transaction'}</p>
+                                  <div className="flex items-center space-x-4">
+                                    <span className={`font-bold ${transaction.transaction_type === 'payment' ? 'text-success' : 'text-destructive'}`}>
+                                      {transaction.transaction_type === 'payment' ? '+' : ''}AED {Math.abs(transaction.amount)}
+                                    </span>
+                                    <Badge variant={transaction.status === 'completed' ? 'default' : 'outline'} className={transaction.status === 'completed' ? 'bg-success text-success-foreground' : ''}>
+                                      {transaction.status.toUpperCase()}
+                                    </Badge>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleDeleteTransaction(transaction.id)}
+                                      className="text-destructive hover:text-destructive"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                </div>
+                                <div className="flex items-center justify-between mt-1">
+                                  <p className="text-sm text-muted-foreground">
+                                    {new Date(transaction.transaction_date).toLocaleDateString()} • {transaction.payment_method?.replace('_', ' ').toUpperCase() || transaction.category?.toUpperCase()}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {transaction.transaction_type === 'payment' ? 'Payment Received' : 'Package Charge'}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                       </div>
+                      ) : (
+                       <div className="text-center py-12">
+                         <DollarSign className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                         <h3 className="text-lg font-medium mb-2">No transactions yet</h3>
+                         <p className="text-muted-foreground mb-4">Transactions will appear here once recorded.</p>
+                         <Button onClick={() => setShowAddPayment(true)}>
+                           <Plus className="h-4 w-4 mr-2" />
+                           Record First Payment
+                         </Button>
+                       </div>
+                      )}
                   </CardContent>
                 </Card>
               </TabsContent>

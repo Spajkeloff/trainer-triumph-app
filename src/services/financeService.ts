@@ -234,9 +234,10 @@ export const financeService = {
 
   // Financial Statistics
   async getFinancialStats() {
-    const [transactions, expenses] = await Promise.all([
+    const [transactions, expenses, clientBalances] = await Promise.all([
       this.getAllTransactions(),
-      this.getAllExpenses()
+      this.getAllExpenses(),
+      this.getClientBalances()
     ]);
 
     const totalRevenue = transactions
@@ -247,9 +248,9 @@ export const financeService = {
       .filter(e => e.status === 'completed')
       .reduce((sum, e) => sum + Number(e.amount), 0);
 
-    const outstanding = transactions
-      .filter(t => t.transaction_type === 'charge' && t.status === 'pending')
-      .reduce((sum, t) => sum + Number(t.amount), 0);
+    // Calculate outstanding balance from all client balances
+    const outstanding = clientBalances
+      .reduce((sum, client) => sum + Number(client.balance), 0);
 
     const netProfit = totalRevenue - totalExpenses;
 
