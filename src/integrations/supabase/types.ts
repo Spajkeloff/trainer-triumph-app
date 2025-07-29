@@ -62,6 +62,13 @@ export type Database = {
             foreignKeyName: "client_assessments_client_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
+            referencedRelation: "client_balances"
+            referencedColumns: ["client_id"]
+          },
+          {
+            foreignKeyName: "client_assessments_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
             referencedRelation: "clients"
             referencedColumns: ["id"]
           },
@@ -106,6 +113,13 @@ export type Database = {
             foreignKeyName: "client_documents_client_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
+            referencedRelation: "client_balances"
+            referencedColumns: ["client_id"]
+          },
+          {
+            foreignKeyName: "client_documents_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
             referencedRelation: "clients"
             referencedColumns: ["id"]
           },
@@ -140,6 +154,13 @@ export type Database = {
           sender_type?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "client_messages_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "client_balances"
+            referencedColumns: ["client_id"]
+          },
           {
             foreignKeyName: "client_messages_client_id_fkey"
             columns: ["client_id"]
@@ -188,6 +209,13 @@ export type Database = {
             foreignKeyName: "client_notes_client_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
+            referencedRelation: "client_balances"
+            referencedColumns: ["client_id"]
+          },
+          {
+            foreignKeyName: "client_notes_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
             referencedRelation: "clients"
             referencedColumns: ["id"]
           },
@@ -228,6 +256,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "client_packages_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "client_balances"
+            referencedColumns: ["client_id"]
+          },
           {
             foreignKeyName: "client_packages_client_id_fkey"
             columns: ["client_id"]
@@ -331,11 +366,143 @@ export type Database = {
         }
         Relationships: []
       }
+      expenses: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string
+          description: string
+          expense_date: string
+          id: string
+          is_recurring: boolean | null
+          payment_method: string | null
+          receipt_url: string | null
+          recurring_frequency: string | null
+          status: string
+          subcategory: string | null
+          tax_deductible: boolean | null
+          updated_at: string
+          user_id: string
+          vendor: string | null
+        }
+        Insert: {
+          amount: number
+          category: string
+          created_at?: string
+          description: string
+          expense_date?: string
+          id?: string
+          is_recurring?: boolean | null
+          payment_method?: string | null
+          receipt_url?: string | null
+          recurring_frequency?: string | null
+          status?: string
+          subcategory?: string | null
+          tax_deductible?: boolean | null
+          updated_at?: string
+          user_id: string
+          vendor?: string | null
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string
+          description?: string
+          expense_date?: string
+          id?: string
+          is_recurring?: boolean | null
+          payment_method?: string | null
+          receipt_url?: string | null
+          recurring_frequency?: string | null
+          status?: string
+          subcategory?: string | null
+          tax_deductible?: boolean | null
+          updated_at?: string
+          user_id?: string
+          vendor?: string | null
+        }
+        Relationships: []
+      }
       feedback: {
         Row: {}
         Insert: {}
         Update: {}
         Relationships: []
+      }
+      invoices: {
+        Row: {
+          amount: number
+          client_id: string | null
+          created_at: string
+          description: string | null
+          due_date: string
+          id: string
+          invoice_number: string
+          issue_date: string
+          line_items: Json | null
+          notes: string | null
+          paid_date: string | null
+          payment_terms: number | null
+          status: string
+          tax_amount: number | null
+          total_amount: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          client_id?: string | null
+          created_at?: string
+          description?: string | null
+          due_date: string
+          id?: string
+          invoice_number: string
+          issue_date?: string
+          line_items?: Json | null
+          notes?: string | null
+          paid_date?: string | null
+          payment_terms?: number | null
+          status?: string
+          tax_amount?: number | null
+          total_amount: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          client_id?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string
+          id?: string
+          invoice_number?: string
+          issue_date?: string
+          line_items?: Json | null
+          notes?: string | null
+          paid_date?: string | null
+          payment_terms?: number | null
+          status?: string
+          tax_amount?: number | null
+          total_amount?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "client_balances"
+            referencedColumns: ["client_id"]
+          },
+          {
+            foreignKeyName: "invoices_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       packages: {
         Row: {
@@ -411,6 +578,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "payments_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "client_balances"
+            referencedColumns: ["client_id"]
+          },
           {
             foreignKeyName: "payments_client_id_fkey"
             columns: ["client_id"]
@@ -545,6 +719,13 @@ export type Database = {
             foreignKeyName: "sessions_client_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
+            referencedRelation: "client_balances"
+            referencedColumns: ["client_id"]
+          },
+          {
+            foreignKeyName: "sessions_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
             referencedRelation: "clients"
             referencedColumns: ["id"]
           },
@@ -557,9 +738,88 @@ export type Database = {
           },
         ]
       }
+      transactions: {
+        Row: {
+          amount: number
+          category: string
+          client_id: string | null
+          created_at: string
+          description: string | null
+          id: string
+          notes: string | null
+          payment_method: string | null
+          reference_id: string | null
+          reference_type: string | null
+          status: string
+          transaction_date: string
+          transaction_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          category: string
+          client_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          notes?: string | null
+          payment_method?: string | null
+          reference_id?: string | null
+          reference_type?: string | null
+          status?: string
+          transaction_date?: string
+          transaction_type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          client_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          notes?: string | null
+          payment_method?: string | null
+          reference_id?: string | null
+          reference_type?: string | null
+          status?: string
+          transaction_date?: string
+          transaction_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "client_balances"
+            referencedColumns: ["client_id"]
+          },
+          {
+            foreignKeyName: "transactions_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
-      [_ in never]: never
+      client_balances: {
+        Row: {
+          balance: number | null
+          client_id: string | null
+          first_name: string | null
+          last_name: string | null
+          total_charges: number | null
+          total_payments: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       get_current_user_role: {
