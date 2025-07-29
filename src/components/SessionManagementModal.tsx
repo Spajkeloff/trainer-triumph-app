@@ -195,77 +195,76 @@ const SessionManagementModal = ({ isOpen, onClose, session, onSuccess, onEdit }:
         });
       }
 
-      // Handle package session logic
-      if (!isTrialSession && shouldCount && action === 'completed') {
-        // Try to find matching package for this session type
-        let matchingPackage = null;
+      // Handle package session logic - only if should count and not a trial session
+      if (!isTrialSession && shouldCount) {
+        let packageToUpdate = null;
         
-        if (session.type === 'PT Session') {
-          // Find active personal training package
-          const { data: ptPackages } = await supabase
+        // If session is already linked to a package, use that package
+        if (session.client_package_id) {
+          const { data: packageData } = await supabase
             .from('client_packages')
-            .select(`
-              *,
-              packages!inner(name, sessions_included)
-            `)
-            .eq('client_id', session.client_id)
-            .eq('status', 'active')
-            .gt('sessions_remaining', 0)
-            .ilike('packages.name', '%personal%training%');
+            .select('sessions_remaining')
+            .eq('id', session.client_package_id)
+            .single();
           
-          matchingPackage = ptPackages?.[0];
-        } else if (session.type === 'EMS Session') {
-          // Find active EMS package
-          const { data: emsPackages } = await supabase
-            .from('client_packages')
-            .select(`
-              *,
-              packages!inner(name, sessions_included)
-            `)
-            .eq('client_id', session.client_id)
-            .eq('status', 'active')
-            .gt('sessions_remaining', 0)
-            .ilike('packages.name', '%ems%');
-          
-          matchingPackage = emsPackages?.[0];
+          if (packageData && packageData.sessions_remaining > 0) {
+            packageToUpdate = { 
+              id: session.client_package_id, 
+              sessions_remaining: packageData.sessions_remaining 
+            };
+          }
+        } else {
+          // Try to find matching package for this session type
+          if (session.type === 'PT Session') {
+            // Find active personal training package
+            const { data: ptPackages } = await supabase
+              .from('client_packages')
+              .select(`
+                *,
+                packages!inner(name, sessions_included)
+              `)
+              .eq('client_id', session.client_id)
+              .eq('status', 'active')
+              .gt('sessions_remaining', 0)
+              .ilike('packages.name', '%personal%training%');
+            
+            packageToUpdate = ptPackages?.[0];
+          } else if (session.type === 'EMS Session') {
+            // Find active EMS package
+            const { data: emsPackages } = await supabase
+              .from('client_packages')
+              .select(`
+                *,
+                packages!inner(name, sessions_included)
+              `)
+              .eq('client_id', session.client_id)
+              .eq('status', 'active')
+              .gt('sessions_remaining', 0)
+              .ilike('packages.name', '%ems%');
+            
+            packageToUpdate = emsPackages?.[0];
+          }
         }
 
-        // If matching package found, deduct session
-        if (matchingPackage) {
+        // If we found a package to update, deduct the session
+        if (packageToUpdate) {
           const { error: packageError } = await supabase
             .from('client_packages')
             .update({ 
-              sessions_remaining: matchingPackage.sessions_remaining - 1,
+              sessions_remaining: packageToUpdate.sessions_remaining - 1,
               updated_at: new Date().toISOString()
             })
-            .eq('id', matchingPackage.id);
+            .eq('id', packageToUpdate.id);
 
           if (packageError) throw packageError;
 
-          // Update session to link it to the package
-          await supabase
-            .from('sessions')
-            .update({ client_package_id: matchingPackage.id })
-            .eq('id', session.id);
-        }
-      } else if (!isTrialSession && shouldCount && session.client_package_id && (action === 'completed' || action === 'cancelled')) {
-        // Original logic for sessions already linked to packages
-        const { data: packageData } = await supabase
-          .from('client_packages')
-          .select('sessions_remaining')
-          .eq('id', session.client_package_id)
-          .single();
-
-        if (packageData && packageData.sessions_remaining > 0) {
-          const { error: packageError } = await supabase
-            .from('client_packages')
-            .update({ 
-              sessions_remaining: packageData.sessions_remaining - 1,
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', session.client_package_id);
-
-          if (packageError) throw packageError;
+          // Link session to package if not already linked
+          if (!session.client_package_id) {
+            await supabase
+              .from('sessions')
+              .update({ client_package_id: packageToUpdate.id })
+              .eq('id', session.id);
+          }
         }
       }
 
