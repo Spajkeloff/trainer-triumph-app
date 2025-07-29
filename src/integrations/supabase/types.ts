@@ -14,6 +14,185 @@ export type Database = {
   }
   public: {
     Tables: {
+      client_assessments: {
+        Row: {
+          assessment_date: string | null
+          assessment_notes: string | null
+          body_fat_percentage: number | null
+          client_id: string | null
+          created_at: string | null
+          fitness_level: string | null
+          id: string
+          measurements: Json | null
+          muscle_mass: number | null
+          trainer_id: string
+          updated_at: string | null
+          weight: number | null
+        }
+        Insert: {
+          assessment_date?: string | null
+          assessment_notes?: string | null
+          body_fat_percentage?: number | null
+          client_id?: string | null
+          created_at?: string | null
+          fitness_level?: string | null
+          id?: string
+          measurements?: Json | null
+          muscle_mass?: number | null
+          trainer_id: string
+          updated_at?: string | null
+          weight?: number | null
+        }
+        Update: {
+          assessment_date?: string | null
+          assessment_notes?: string | null
+          body_fat_percentage?: number | null
+          client_id?: string | null
+          created_at?: string | null
+          fitness_level?: string | null
+          id?: string
+          measurements?: Json | null
+          muscle_mass?: number | null
+          trainer_id?: string
+          updated_at?: string | null
+          weight?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_assessments_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_documents: {
+        Row: {
+          client_id: string | null
+          created_at: string | null
+          document_name: string
+          document_type: string
+          file_size: number | null
+          file_url: string
+          id: string
+          mime_type: string | null
+          trainer_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string | null
+          document_name: string
+          document_type: string
+          file_size?: number | null
+          file_url: string
+          id?: string
+          mime_type?: string | null
+          trainer_id: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string | null
+          document_name?: string
+          document_type?: string
+          file_size?: number | null
+          file_url?: string
+          id?: string
+          mime_type?: string | null
+          trainer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_documents_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_messages: {
+        Row: {
+          client_id: string | null
+          created_at: string | null
+          id: string
+          is_read: boolean | null
+          message: string
+          sender_id: string
+          sender_type: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message: string
+          sender_id: string
+          sender_type: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message?: string
+          sender_id?: string
+          sender_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_messages_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_notes: {
+        Row: {
+          client_id: string | null
+          content: string
+          created_at: string | null
+          id: string
+          is_private: boolean | null
+          note_type: string
+          title: string | null
+          trainer_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          client_id?: string | null
+          content: string
+          created_at?: string | null
+          id?: string
+          is_private?: boolean | null
+          note_type?: string
+          title?: string | null
+          trainer_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          client_id?: string | null
+          content?: string
+          created_at?: string | null
+          id?: string
+          is_private?: boolean | null
+          note_type?: string
+          title?: string | null
+          trainer_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_notes_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_packages: {
         Row: {
           client_id: string
@@ -68,49 +247,85 @@ export type Database = {
       clients: {
         Row: {
           address: string | null
+          assigned_trainer_id: string | null
+          avatar_url: string | null
           created_at: string
+          date_of_birth: string | null
           email: string
           emergency_contact: string | null
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
           first_name: string
+          fitness_goals: string | null
           goals: string | null
           id: string
+          injuries: string | null
           join_date: string
           last_name: string
+          lead_source: string | null
+          medical_conditions: string | null
           medical_notes: string | null
+          medications: string | null
           phone: string | null
+          preferences: string | null
           status: string
+          tags: string[] | null
           updated_at: string
           user_id: string
         }
         Insert: {
           address?: string | null
+          assigned_trainer_id?: string | null
+          avatar_url?: string | null
           created_at?: string
+          date_of_birth?: string | null
           email: string
           emergency_contact?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
           first_name: string
+          fitness_goals?: string | null
           goals?: string | null
           id?: string
+          injuries?: string | null
           join_date?: string
           last_name: string
+          lead_source?: string | null
+          medical_conditions?: string | null
           medical_notes?: string | null
+          medications?: string | null
           phone?: string | null
+          preferences?: string | null
           status?: string
+          tags?: string[] | null
           updated_at?: string
           user_id: string
         }
         Update: {
           address?: string | null
+          assigned_trainer_id?: string | null
+          avatar_url?: string | null
           created_at?: string
+          date_of_birth?: string | null
           email?: string
           emergency_contact?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
           first_name?: string
+          fitness_goals?: string | null
           goals?: string | null
           id?: string
+          injuries?: string | null
           join_date?: string
           last_name?: string
+          lead_source?: string | null
+          medical_conditions?: string | null
           medical_notes?: string | null
+          medications?: string | null
           phone?: string | null
+          preferences?: string | null
           status?: string
+          tags?: string[] | null
           updated_at?: string
           user_id?: string
         }
