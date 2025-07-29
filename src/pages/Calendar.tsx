@@ -306,8 +306,8 @@ const Calendar = () => {
                 ))}
                 
                 {/* Time slots */}
-                {Array.from({ length: 13 }, (_, i) => {
-                  const hour = i + 8; // 8 AM to 8 PM
+                {Array.from({ length: 16 }, (_, i) => {
+                  const hour = i + 6; // 6 AM to 10 PM
                   const timeStr = `${hour}:00`;
                   
                   return (
@@ -370,8 +370,8 @@ const Calendar = () => {
             </CardHeader>
             <CardContent className="p-6">
               <div className="space-y-2">
-                {Array.from({ length: 13 }, (_, i) => {
-                  const hour = i + 8; // 8 AM to 8 PM
+                {Array.from({ length: 16 }, (_, i) => {
+                  const hour = i + 6; // 6 AM to 10 PM
                   const timeStr = `${hour}:00`;
                   const dayKey = currentDate.toISOString().split('T')[0];
                   

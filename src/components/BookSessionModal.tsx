@@ -334,10 +334,8 @@ const BookSessionModal = ({ isOpen, onClose, onSuccess, selectedDate, selectedTi
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-1">
             <TabsTrigger value="book-session">Book Session</TabsTrigger>
-            <TabsTrigger value="book-class">Book Class</TabsTrigger>
-            <TabsTrigger value="availability">Set Availability</TabsTrigger>
           </TabsList>
 
           <TabsContent value="book-session" className="space-y-6 mt-6">
@@ -516,12 +514,10 @@ const BookSessionModal = ({ isOpen, onClose, onSuccess, selectedDate, selectedTi
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Personal Training">🔴 Personal Training</SelectItem>
-                    <SelectItem value="EMS Training">⚡ EMS Training</SelectItem>
-                    <SelectItem value="Group PT">👥 Group PT</SelectItem>
-                    <SelectItem value="Trial Session">🎯 Trial Session</SelectItem>
-                    <SelectItem value="EMS Trial Session">⚡ EMS Trial Session</SelectItem>
-                    <SelectItem value="Personal Training Trial Session">🔴 Personal Training Trial Session</SelectItem>
+                    <SelectItem value="EMS Trial Session">🔴 EMS Trial Session</SelectItem>
+                    <SelectItem value="PT Trial Session">🔴 PT Trial Session</SelectItem>
+                    <SelectItem value="PT Session">🔵 PT Session</SelectItem>
+                    <SelectItem value="EMS Session">🔵 EMS Session</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -535,8 +531,7 @@ const BookSessionModal = ({ isOpen, onClose, onSuccess, selectedDate, selectedTi
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Gym">Gym</SelectItem>
-                    <SelectItem value="Studio A">Studio A</SelectItem>
-                    <SelectItem value="Studio B">Studio B</SelectItem>
+                    <SelectItem value="Home">Home</SelectItem>
                     <SelectItem value="Outdoor">Outdoor</SelectItem>
                   </SelectContent>
                 </Select>
@@ -648,10 +643,7 @@ const BookSessionModal = ({ isOpen, onClose, onSuccess, selectedDate, selectedTi
                 </div>
               )}
 
-              <div className="flex justify-between items-center pt-4">
-                <Button type="button" variant="ghost" className="text-primary">
-                  Set trainer rate overrides
-                </Button>
+              <div className="flex justify-end items-center pt-4">
                 <Button type="submit" disabled={loading || !formData.client_id}>
                   {loading ? "Saving..." : "Save"}
                 </Button>
