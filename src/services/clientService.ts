@@ -47,6 +47,9 @@ export interface ClientWithDetails extends Client {
     start_time: string;
     end_time: string;
     status: string;
+    type: string;
+    location?: string;
+    price?: number;
     notes?: string;
   }>;
   payments: Array<{
@@ -124,6 +127,9 @@ export const clientService = {
           start_time,
           end_time,
           status,
+          type,
+          location,
+          price,
           notes
         ),
         payments (

@@ -178,20 +178,21 @@ const SessionManagementModal = ({ isOpen, onClose, session, onSuccess, onEdit }:
 
       // Handle trial session billing
       if (isTrialSession && action === 'completed') {
-        // Create a charge for trial session (250 AED)
-        const { error: paymentError } = await supabase
-          .from('payments')
-          .insert({
-            client_id: session.client_id,
-            amount: -250, // Negative for charge
-            payment_method: 'trial_session',
-            status: 'pending',
-            description: `${session.type} charge`,
-            payment_date: new Date().toISOString().split('T')[0],
-            session_id: session.id
-          });
-
-        if (paymentError) throw paymentError;
+        // Import finance service at the top
+        const { financeService } = await import('@/services/financeService');
+        
+        // Create a charge transaction for trial session (250 AED)
+        await financeService.createTransaction({
+          client_id: session.client_id,
+          transaction_type: 'charge',
+          amount: 250, // Positive amount for charge
+          category: 'session',
+          description: `${session.type} - ${new Date(session.date).toLocaleDateString()}`,
+          reference_type: 'session',
+          reference_id: session.id,
+          status: 'completed',
+          transaction_date: new Date().toISOString().split('T')[0]
+        });
       }
 
       // Handle package session logic

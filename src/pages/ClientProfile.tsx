@@ -592,14 +592,184 @@ const ClientProfile = () => {
               </TabsContent>
 
               <TabsContent value="bookings" className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Session Bookings</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-muted-foreground">Bookings tab content coming soon...</p>
-                  </CardContent>
-                </Card>
+                <div className="space-y-4">
+                  {/* Upcoming Sessions */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center">
+                        <Clock className="h-5 w-5 mr-2" />
+                        Upcoming
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {client.sessions && client.sessions.length > 0 ? (
+                        <div className="space-y-3">
+                          {client.sessions
+                            .filter(session => {
+                              const sessionDate = new Date(session.date);
+                              const today = new Date();
+                              today.setHours(0, 0, 0, 0);
+                              return sessionDate >= today && session.status === 'scheduled';
+                            })
+                            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+                            .map((session) => (
+                              <div key={session.id} className="flex justify-between items-center p-4 bg-muted rounded-lg">
+                                <div className="flex-1">
+                                  <div className="flex items-center space-x-4">
+                                    <div>
+                                      <p className="font-medium text-sm">
+                                        {new Date(session.date).toLocaleDateString('en-US', { 
+                                          weekday: 'short', 
+                                          month: 'short', 
+                                          day: 'numeric' 
+                                        })}
+                                      </p>
+                                      <p className="text-xs text-muted-foreground">
+                                        {session.start_time} - {session.end_time}
+                                      </p>
+                                    </div>
+                                    <div>
+                                      <p className="text-sm font-medium">{session.type}</p>
+                                      {session.location && (
+                                        <p className="text-xs text-muted-foreground">{session.location}</p>
+                                      )}
+                                    </div>
+                                    {session.price && (
+                                      <div>
+                                        <p className="text-sm font-medium">AED {session.price}</p>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                                <Badge variant={session.status === 'scheduled' ? 'default' : 'secondary'}>
+                                  {session.status.toUpperCase()}
+                                </Badge>
+                              </div>
+                            ))}
+                          {client.sessions.filter(session => {
+                            const sessionDate = new Date(session.date);
+                            const today = new Date();
+                            today.setHours(0, 0, 0, 0);
+                            return sessionDate >= today && session.status === 'scheduled';
+                          }).length === 0 && (
+                            <div className="text-center py-8">
+                              <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                              <p className="text-muted-foreground">No upcoming bookings</p>
+                              <Button 
+                                size="sm" 
+                                className="mt-2"
+                                onClick={() => navigate('/calendar')}
+                              >
+                                + New booking
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="text-center py-8">
+                          <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                          <p className="text-muted-foreground">No upcoming bookings</p>
+                          <Button 
+                            size="sm" 
+                            className="mt-2"
+                            onClick={() => navigate('/calendar')}
+                          >
+                            + New booking
+                          </Button>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* Past Sessions */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center">
+                        <Activity className="h-5 w-5 mr-2" />
+                        Past Sessions
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {client.sessions && client.sessions.length > 0 ? (
+                        <div className="space-y-3">
+                          {client.sessions
+                            .filter(session => {
+                              const sessionDate = new Date(session.date);
+                              const today = new Date();
+                              today.setHours(0, 0, 0, 0);
+                              return sessionDate < today || session.status !== 'scheduled';
+                            })
+                            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                            .slice(0, 10)
+                            .map((session) => (
+                              <div key={session.id} className="flex justify-between items-center p-4 bg-muted rounded-lg">
+                                <div className="flex-1">
+                                  <div className="flex items-center space-x-4">
+                                    <div>
+                                      <p className="font-medium text-sm">
+                                        {new Date(session.date).toLocaleDateString('en-US', { 
+                                          weekday: 'short', 
+                                          month: 'short', 
+                                          day: 'numeric' 
+                                        })}
+                                      </p>
+                                      <p className="text-xs text-muted-foreground">
+                                        {session.start_time} - {session.end_time}
+                                      </p>
+                                    </div>
+                                    <div>
+                                      <p className="text-sm font-medium">{session.type}</p>
+                                      {session.location && (
+                                        <p className="text-xs text-muted-foreground">{session.location}</p>
+                                      )}
+                                    </div>
+                                    {session.price && (
+                                      <div>
+                                        <p className="text-sm font-medium">AED {session.price}</p>
+                                        <p className="text-xs text-muted-foreground">
+                                          {session.status === 'completed' ? 'Paid' : 'Charged'}
+                                        </p>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <Badge 
+                                    variant={
+                                      session.status === 'completed' ? 'default' : 
+                                      session.status === 'cancelled' ? 'destructive' : 
+                                      'secondary'
+                                    }
+                                    className={
+                                      session.status === 'completed' ? 'bg-success text-success-foreground' : ''
+                                    }
+                                  >
+                                    {session.status.toUpperCase()}
+                                  </Badge>
+                                </div>
+                              </div>
+                            ))}
+                          {client.sessions.filter(session => {
+                            const sessionDate = new Date(session.date);
+                            const today = new Date();
+                            today.setHours(0, 0, 0, 0);
+                            return sessionDate < today || session.status !== 'scheduled';
+                          }).length === 0 && (
+                            <div className="text-center py-8">
+                              <Activity className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                              <p className="text-muted-foreground">No past sessions</p>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="text-center py-8">
+                          <Activity className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                          <p className="text-muted-foreground">No past sessions</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
               </TabsContent>
 
               <TabsContent value="training" className="space-y-6">
