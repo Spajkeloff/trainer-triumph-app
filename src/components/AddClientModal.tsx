@@ -84,32 +84,11 @@ const AddClientModal = ({ onClose, onSuccess }: AddClientModalProps) => {
     setIsSubmitting(true);
 
     try {
-      // First, create a user account for the client
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: data.email,
-        password: "temppassword123", // Temporary password
-        options: {
-          data: {
-            first_name: data.first_name,
-            last_name: data.last_name,
-            role: "client",
-          },
-        },
-      });
-
-      if (authError) {
-        throw authError;
-      }
-
-      if (!authData.user) {
-        throw new Error("Failed to create user account");
-      }
-
-      // Create the client record
+      // Create the client record directly
       const { error: clientError } = await supabase
         .from("clients")
         .insert({
-          user_id: authData.user.id,
+          user_id: user.id, // Use the current logged-in user as the trainer/admin creating this client
           first_name: data.first_name,
           last_name: data.last_name,
           email: data.email,
@@ -124,7 +103,6 @@ const AddClientModal = ({ onClose, onSuccess }: AddClientModalProps) => {
       if (clientError) {
         throw clientError;
       }
-
       toast({
         title: "Success",
         description: "Client added successfully",

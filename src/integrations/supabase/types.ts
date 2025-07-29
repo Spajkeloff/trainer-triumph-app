@@ -14,11 +14,210 @@ export type Database = {
   }
   public: {
     Tables: {
+      client_packages: {
+        Row: {
+          client_id: string
+          created_at: string
+          expiry_date: string
+          id: string
+          package_id: string
+          purchase_date: string
+          sessions_remaining: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          expiry_date: string
+          id?: string
+          package_id: string
+          purchase_date?: string
+          sessions_remaining: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          expiry_date?: string
+          id?: string
+          package_id?: string
+          purchase_date?: string
+          sessions_remaining?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_packages_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_packages_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "packages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clients: {
+        Row: {
+          address: string | null
+          created_at: string
+          email: string
+          emergency_contact: string | null
+          first_name: string
+          goals: string | null
+          id: string
+          join_date: string
+          last_name: string
+          medical_notes: string | null
+          phone: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          email: string
+          emergency_contact?: string | null
+          first_name: string
+          goals?: string | null
+          id?: string
+          join_date?: string
+          last_name: string
+          medical_notes?: string | null
+          phone?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          email?: string
+          emergency_contact?: string | null
+          first_name?: string
+          goals?: string | null
+          id?: string
+          join_date?: string
+          last_name?: string
+          medical_notes?: string | null
+          phone?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       feedback: {
         Row: {}
         Insert: {}
         Update: {}
         Relationships: []
+      }
+      packages: {
+        Row: {
+          created_at: string
+          description: string | null
+          duration_days: number
+          id: string
+          name: string
+          price: number
+          sessions_included: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          duration_days: number
+          id?: string
+          name: string
+          price: number
+          sessions_included: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          duration_days?: number
+          id?: string
+          name?: string
+          price?: number
+          sessions_included?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      payments: {
+        Row: {
+          amount: number
+          client_id: string
+          client_package_id: string | null
+          created_at: string
+          description: string | null
+          id: string
+          payment_date: string
+          payment_method: string
+          session_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          client_id: string
+          client_package_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          payment_date?: string
+          payment_method: string
+          session_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          client_id?: string
+          client_package_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          payment_date?: string
+          payment_method?: string
+          session_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_client_package_id_fkey"
+            columns: ["client_package_id"]
+            isOneToOne: false
+            referencedRelation: "client_packages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -73,6 +272,75 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      sessions: {
+        Row: {
+          client_id: string
+          client_package_id: string | null
+          created_at: string
+          date: string
+          duration: number
+          end_time: string
+          id: string
+          location: string | null
+          notes: string | null
+          price: number | null
+          start_time: string
+          status: string
+          trainer_id: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          client_package_id?: string | null
+          created_at?: string
+          date: string
+          duration: number
+          end_time: string
+          id?: string
+          location?: string | null
+          notes?: string | null
+          price?: number | null
+          start_time: string
+          status?: string
+          trainer_id: string
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          client_package_id?: string | null
+          created_at?: string
+          date?: string
+          duration?: number
+          end_time?: string
+          id?: string
+          location?: string | null
+          notes?: string | null
+          price?: number | null
+          start_time?: string
+          status?: string
+          trainer_id?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sessions_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sessions_client_package_id_fkey"
+            columns: ["client_package_id"]
+            isOneToOne: false
+            referencedRelation: "client_packages"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
