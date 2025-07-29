@@ -40,6 +40,7 @@ const Calendar = () => {
   const [showBookModal, setShowBookModal] = useState(false);
   const [showSessionModal, setShowSessionModal] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
+  const [selectedTime, setSelectedTime] = useState<string>("");
   const [selectedSession, setSelectedSession] = useState<Session | null>(null);
   const { toast } = useToast();
 
@@ -89,6 +90,12 @@ const Calendar = () => {
   const handleSessionClick = (session: Session) => {
     setSelectedSession(session);
     setShowSessionModal(true);
+  };
+
+  const handleTimeSlotClick = (date: Date, time?: string) => {
+    setSelectedDate(date);
+    setSelectedTime(time || "");
+    setShowBookModal(true);
   };
 
   const getSessionColor = (type: string) => {
@@ -220,9 +227,10 @@ const Calendar = () => {
                   return (
                     <div
                       key={index}
-                      className={`min-h-[120px] p-2 border border-border rounded-lg ${
+                      className={`min-h-[120px] p-2 border border-border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors ${
                         isCurrentMonth ? "bg-card" : "bg-muted/30"
                       } ${isToday ? "ring-2 ring-primary" : ""}`}
+                      onClick={() => handleTimeSlotClick(day)}
                     >
                       <div className={`text-sm font-medium mb-2 ${
                         isCurrentMonth ? "text-card-foreground" : "text-muted-foreground"
@@ -240,7 +248,10 @@ const Calendar = () => {
                             <div
                               key={session.id}
                               className={`text-xs p-1 rounded text-left cursor-pointer hover:opacity-80 ${getSessionColor(session.type)}`}
-                              onClick={() => handleSessionClick(session)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleSessionClick(session);
+                              }}
                             >
                               <div className="font-medium truncate">
                                 {session.type === 'personal' ? 'Personal Training' : session.type} - {session.clients.first_name} {session.clients.last_name}
@@ -292,12 +303,19 @@ const Calendar = () => {
                         });
                         
                         return (
-                          <div key={dayIndex} className="p-1 min-h-[60px] border border-border">
+                          <div 
+                            key={dayIndex} 
+                            className="p-1 min-h-[60px] border border-border cursor-pointer hover:bg-muted/50 transition-colors"
+                            onClick={() => handleTimeSlotClick(dayDate, timeStr)}
+                          >
                             {hourSessions.map((session) => (
                               <div
                                 key={session.id}
                                 className={`text-xs p-1 rounded mb-1 cursor-pointer ${getSessionColor(session.type)}`}
-                                onClick={() => handleSessionClick(session)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleSessionClick(session);
+                                }}
                               >
                                 {session.clients.first_name} {session.clients.last_name}
                               </div>
@@ -344,7 +362,10 @@ const Calendar = () => {
                       <div className="w-20 text-sm text-muted-foreground pt-2">
                         {timeStr}
                       </div>
-                      <div className="flex-1 min-h-[60px] p-2">
+                      <div 
+                        className="flex-1 min-h-[60px] p-2 cursor-pointer hover:bg-muted/30 rounded transition-colors"
+                        onClick={() => handleTimeSlotClick(currentDate, timeStr)}
+                      >
                         {hourSessions.map((session) => {
                           const startTime = new Date(`2000-01-01T${session.start_time}`);
                           const endTime = new Date(`2000-01-01T${session.end_time}`);
@@ -354,7 +375,10 @@ const Calendar = () => {
                             <div
                               key={session.id}
                               className={`p-3 rounded-lg cursor-pointer ${getSessionColor(session.type)} mb-2`}
-                              onClick={() => handleSessionClick(session)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleSessionClick(session);
+                              }}
                             >
                               <div className="font-medium">
                                 {session.type === 'personal' ? 'Personal Training' : session.type}
@@ -370,7 +394,7 @@ const Calendar = () => {
                         })}
                         {hourSessions.length === 0 && (
                           <div className="text-sm text-muted-foreground italic">
-                            No sessions scheduled
+                            Click to book a session
                           </div>
                         )}
                       </div>
@@ -468,9 +492,14 @@ const Calendar = () => {
         {/* Book Session Modal */}
         <BookSessionModal
           isOpen={showBookModal}
-          onClose={() => setShowBookModal(false)}
+          onClose={() => {
+            setShowBookModal(false);
+            setSelectedDate(undefined);
+            setSelectedTime("");
+          }}
           onSuccess={fetchSessions}
           selectedDate={selectedDate}
+          selectedTime={selectedTime}
         />
 
         {/* Session Management Modal */}

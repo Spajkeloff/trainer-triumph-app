@@ -48,7 +48,7 @@ const BookSessionModal = ({ isOpen, onClose, onSuccess, selectedDate, selectedTi
 
   const [formData, setFormData] = useState({
     date: selectedDate ? selectedDate.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-    start_time: selectedTime || "09:00",
+    start_time: selectedTime ? selectedTime.split(':')[0].padStart(2, '0') + ':00' : "09:00",
     end_time: "10:00",
     client_id: "",
     trainer_id: "", // Will be set to current user
@@ -67,8 +67,16 @@ const BookSessionModal = ({ isOpen, onClose, onSuccess, selectedDate, selectedTi
   useEffect(() => {
     if (isOpen) {
       fetchClients();
+      // Update form data when modal opens with selected date and time
+      if (selectedDate || selectedTime) {
+        setFormData(prev => ({
+          ...prev,
+          date: selectedDate ? selectedDate.toISOString().split('T')[0] : prev.date,
+          start_time: selectedTime ? selectedTime.split(':')[0].padStart(2, '0') + ':00' : prev.start_time
+        }));
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, selectedDate, selectedTime]);
 
   useEffect(() => {
     if (formData.client_id) {
