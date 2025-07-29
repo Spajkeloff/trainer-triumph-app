@@ -75,6 +75,39 @@ const Clients = () => {
     return matchesSearch && matchesFilter;
   });
 
+  const handleEditClient = (clientId: string) => {
+    navigate(`/clients/${clientId}?tab=edit`);
+  };
+
+  const handleDeleteClient = async (clientId: string) => {
+    if (!confirm('Are you sure you want to delete this client? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('clients')
+        .delete()
+        .eq('id', clientId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Client deleted successfully",
+      });
+      
+      fetchClients();
+    } catch (error) {
+      console.error('Error deleting client:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete client",
+        variant: "destructive",
+      });
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "active":
@@ -185,11 +218,14 @@ const Clients = () => {
                           <Eye className="h-4 w-4 mr-2" />
                           View Profile
                         </DropdownMenuItem>
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleEditClient(client.id)}>
                           <Edit className="h-4 w-4 mr-2" />
                           Edit Client
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive">
+                        <DropdownMenuItem 
+                          className="text-destructive"
+                          onClick={() => handleDeleteClient(client.id)}
+                        >
                           <Trash2 className="h-4 w-4 mr-2" />
                           Delete Client
                         </DropdownMenuItem>

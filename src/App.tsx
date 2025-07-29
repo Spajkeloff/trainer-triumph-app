@@ -13,6 +13,7 @@ import ClientProfile from "./pages/ClientProfile";
 import Services from "./pages/Services";
 import PackageManagement from "./pages/PackageManagement";
 import Finances from "./pages/Finances";
+import Reporting from "./pages/Reporting";
 import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
 import Landing from "./pages/Landing";
@@ -55,8 +56,9 @@ const App = () => (
               <Route path="finances/invoices" element={<Finances />} />
               <Route path="finances/expenses" element={<Finances />} />
               <Route path="finances/reports" element={<Finances />} />
-              <Route path="reporting" element={<Finances />} />
-              <Route path="reporting/revenue" element={<Finances />} />
+              <Route path="reporting" element={<Reporting />} />
+              <Route path="reporting/revenue" element={<Reporting />} />
+              <Route path="reporting/clients" element={<Reporting />} />
               <Route path="settings" element={<Settings />} />
             </Route>
             

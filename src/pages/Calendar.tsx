@@ -258,6 +258,130 @@ const Calendar = () => {
           </Card>
         )}
 
+        {/* Week View */}
+        {view === "week" && (
+          <Card>
+            <CardContent className="p-6">
+              <div className="grid grid-cols-8 gap-1">
+                <div className="p-2"></div>
+                {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
+                  <div key={day} className="p-2 text-center text-sm font-medium text-muted-foreground">
+                    {day}
+                  </div>
+                ))}
+                
+                {/* Time slots */}
+                {Array.from({ length: 13 }, (_, i) => {
+                  const hour = i + 8; // 8 AM to 8 PM
+                  const timeStr = `${hour}:00`;
+                  
+                  return (
+                    <div key={hour} className="contents">
+                      <div className="p-2 text-sm text-muted-foreground text-right">
+                        {timeStr}
+                      </div>
+                      {Array.from({ length: 7 }, (_, dayIndex) => {
+                        const dayDate = new Date(currentDate);
+                        dayDate.setDate(dayDate.getDate() - dayDate.getDay() + dayIndex);
+                        const dayKey = dayDate.toISOString().split('T')[0];
+                        
+                        const hourSessions = sessions.filter(session => {
+                          if (session.date !== dayKey) return false;
+                          const sessionStart = new Date(`2000-01-01T${session.start_time}`);
+                          return sessionStart.getHours() === hour;
+                        });
+                        
+                        return (
+                          <div key={dayIndex} className="p-1 min-h-[60px] border border-border">
+                            {hourSessions.map((session) => (
+                              <div
+                                key={session.id}
+                                className={`text-xs p-1 rounded mb-1 cursor-pointer ${getSessionColor(session.type)}`}
+                                onClick={() => handleSessionClick(session)}
+                              >
+                                {session.clients.first_name} {session.clients.last_name}
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Day View */}
+        {view === "day" && (
+          <Card>
+            <CardHeader>
+              <CardTitle>
+                {currentDate.toLocaleDateString('en-US', { 
+                  weekday: 'long', 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric' 
+                })}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="space-y-2">
+                {Array.from({ length: 13 }, (_, i) => {
+                  const hour = i + 8; // 8 AM to 8 PM
+                  const timeStr = `${hour}:00`;
+                  const dayKey = currentDate.toISOString().split('T')[0];
+                  
+                  const hourSessions = sessions.filter(session => {
+                    if (session.date !== dayKey) return false;
+                    const sessionStart = new Date(`2000-01-01T${session.start_time}`);
+                    return sessionStart.getHours() === hour;
+                  });
+                  
+                  return (
+                    <div key={hour} className="flex items-start border-b border-border pb-2">
+                      <div className="w-20 text-sm text-muted-foreground pt-2">
+                        {timeStr}
+                      </div>
+                      <div className="flex-1 min-h-[60px] p-2">
+                        {hourSessions.map((session) => {
+                          const startTime = new Date(`2000-01-01T${session.start_time}`);
+                          const endTime = new Date(`2000-01-01T${session.end_time}`);
+                          const timeStr = `${startTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })} - ${endTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`;
+                          
+                          return (
+                            <div
+                              key={session.id}
+                              className={`p-3 rounded-lg cursor-pointer ${getSessionColor(session.type)} mb-2`}
+                              onClick={() => handleSessionClick(session)}
+                            >
+                              <div className="font-medium">
+                                {session.type === 'personal' ? 'Personal Training' : session.type}
+                              </div>
+                              <div className="text-sm opacity-90">
+                                {session.clients.first_name} {session.clients.last_name}
+                              </div>
+                              <div className="text-sm opacity-75">
+                                {timeStr} • {session.location}
+                              </div>
+                            </div>
+                          );
+                        })}
+                        {hourSessions.length === 0 && (
+                          <div className="text-sm text-muted-foreground italic">
+                            No sessions scheduled
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Agenda View */}
         {view === "agenda" && (
           <div className="grid gap-6">
@@ -265,39 +389,56 @@ const Calendar = () => {
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <CalendarIcon className="h-5 w-5 mr-2" />
-                  Today's Sessions
+                  Upcoming Sessions
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {sessions.map((session) => {
-                    const startTime = new Date(`2000-01-01T${session.start_time}`);
-                    const endTime = new Date(`2000-01-01T${session.end_time}`);
-                    const timeStr = `${startTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })} - ${endTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`;
-                    
-                    return (
-                      <div key={session.id} className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors">
-                        <div className="flex items-center space-x-4">
-                          <div className={`w-4 h-4 rounded-full ${getSessionColor(session.type).split(' ')[0]}`} />
-                          <div>
-                            <h3 className="font-medium text-card-foreground">
-                              {session.type === 'personal' ? 'Personal Training' : session.type} - {session.clients.first_name} {session.clients.last_name}
-                            </h3>
-                            <div className="flex items-center text-sm text-muted-foreground mt-1">
-                              <Clock className="h-3 w-3 mr-1" />
-                              {timeStr}
-                              <MapPin className="h-3 w-3 ml-3 mr-1" />
-                              {session.location}
+                {sessions.length > 0 ? (
+                  <div className="space-y-4">
+                    {sessions
+                      .filter(session => new Date(session.date) >= new Date())
+                      .slice(0, 10)
+                      .map((session) => {
+                        const startTime = new Date(`2000-01-01T${session.start_time}`);
+                        const endTime = new Date(`2000-01-01T${session.end_time}`);
+                        const timeStr = `${startTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })} - ${endTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`;
+                        
+                        return (
+                          <div key={session.id} className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => handleSessionClick(session)}>
+                            <div className="flex items-center space-x-4">
+                              <div className={`w-4 h-4 rounded-full ${getSessionColor(session.type).split(' ')[0]}`} />
+                              <div>
+                                <h3 className="font-medium text-card-foreground">
+                                  {session.type === 'personal' ? 'Personal Training' : session.type} - {session.clients.first_name} {session.clients.last_name}
+                                </h3>
+                                <div className="flex items-center text-sm text-muted-foreground mt-1">
+                                  <CalendarIcon className="h-3 w-3 mr-1" />
+                                  {new Date(session.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                  <Clock className="h-3 w-3 ml-3 mr-1" />
+                                  {timeStr}
+                                  <MapPin className="h-3 w-3 ml-3 mr-1" />
+                                  {session.location}
+                                </div>
+                              </div>
                             </div>
+                            <Badge variant={session.type === "personal" ? "default" : "secondary"}>
+                              {session.type === "personal" ? "Personal" : "Group"}
+                            </Badge>
                           </div>
-                        </div>
-                        <Badge variant={session.type === "personal" ? "default" : "secondary"}>
-                          {session.type === "personal" ? "Personal" : "Group"}
-                        </Badge>
-                      </div>
-                    );
-                  })}
-                </div>
+                        );
+                      })}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <CalendarIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-card-foreground mb-2">No sessions found</h3>
+                    <p className="text-muted-foreground mb-4">Book your first session to get started</p>
+                    <Button onClick={() => setShowBookModal(true)}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Book Session
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>

@@ -73,41 +73,41 @@ const SummaryCards = ({ stats }: SummaryCardsProps) => {
   const cards = [
     {
       title: "Revenue (This Month)",
-      value: "AED 45,750",
-      change: "+12.5%",
-      trend: "up" as const,
+      value: stats ? `AED ${stats.revenue.toLocaleString()}` : "AED 0",
+      change: undefined,
+      trend: undefined,
       icon: DollarSign,
       color: "primary" as const
     },
     {
       title: "Bookings (This Month)",
-      value: "148",
-      change: "+8.2%",
-      trend: "up" as const,
+      value: stats ? stats.bookings.toString() : "0",
+      change: undefined,
+      trend: undefined,
       icon: Calendar,
       color: "success" as const
     },
     {
       title: "Outstanding",
-      value: "AED 8,620",
-      change: "-15.3%",
-      trend: "down" as const,
+      value: stats ? `AED ${stats.outstanding.toLocaleString()}` : "AED 0",
+      change: undefined,
+      trend: undefined,
       icon: CreditCard,
       color: "warning" as const
     },
     {
       title: "Active Clients",
-      value: "87",
-      change: "+5.1%",
-      trend: "up" as const,
+      value: stats ? stats.activeClients.toString() : "0",
+      change: undefined,
+      trend: undefined,
       icon: Users,
       color: "secondary" as const
     },
     {
       title: "Lead Clients",
-      value: "23",
-      change: "+18.7%",
-      trend: "up" as const,
+      value: stats ? stats.leadClients.toString() : "0",
+      change: undefined,
+      trend: undefined,
       icon: Target,
       color: "primary" as const
     }
