@@ -107,12 +107,27 @@ const Calendar = () => {
     setShowBookModal(true);
   };
 
-  const getSessionColor = (type: string) => {
+  const getSessionColor = (type: string, status: string) => {
+    // Completed sessions are always green
+    if (status === 'completed') {
+      return "bg-success text-success-foreground";
+    }
+    
+    // Other status-based colors
+    if (status === 'cancelled') {
+      return "bg-destructive text-destructive-foreground";
+    }
+    
+    if (status === 'no_show') {
+      return "bg-warning text-warning-foreground";
+    }
+
+    // Default colors for scheduled sessions
     switch (type) {
       case "personal":
         return "bg-primary text-primary-foreground";
       case "group":
-        return "bg-success text-success-foreground";
+        return "bg-secondary text-secondary-foreground";
       case "blocked":
         return "bg-muted text-muted-foreground";
       default:
@@ -256,7 +271,7 @@ const Calendar = () => {
                           return (
                             <div
                               key={session.id}
-                              className={`text-xs p-1 rounded text-left cursor-pointer hover:opacity-80 ${getSessionColor(session.type)}`}
+                              className={`text-xs p-1 rounded text-left cursor-pointer hover:opacity-80 ${getSessionColor(session.type, session.status)}`}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleSessionClick(session);
@@ -318,9 +333,9 @@ const Calendar = () => {
                             onClick={() => handleTimeSlotClick(dayDate, timeStr)}
                           >
                             {hourSessions.map((session) => (
-                              <div
+                            <div
                                 key={session.id}
-                                className={`text-xs p-1 rounded mb-1 cursor-pointer ${getSessionColor(session.type)}`}
+                                className={`text-xs p-1 rounded mb-1 cursor-pointer ${getSessionColor(session.type, session.status)}`}
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleSessionClick(session);
@@ -383,7 +398,7 @@ const Calendar = () => {
                           return (
                             <div
                               key={session.id}
-                              className={`p-3 rounded-lg cursor-pointer ${getSessionColor(session.type)} mb-2`}
+                              className={`p-3 rounded-lg cursor-pointer ${getSessionColor(session.type, session.status)} mb-2`}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleSessionClick(session);
@@ -439,7 +454,7 @@ const Calendar = () => {
                         return (
                           <div key={session.id} className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => handleSessionClick(session)}>
                             <div className="flex items-center space-x-4">
-                              <div className={`w-4 h-4 rounded-full ${getSessionColor(session.type).split(' ')[0]}`} />
+                              <div className={`w-4 h-4 rounded-full ${getSessionColor(session.type, session.status).split(' ')[0]}`} />
                               <div>
                                 <h3 className="font-medium text-card-foreground">
                                   {session.type === 'personal' ? 'Personal Training' : session.type} - {session.clients.first_name} {session.clients.last_name}

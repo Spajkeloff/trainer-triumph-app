@@ -13,7 +13,8 @@ import {
   XCircle,
   UserX,
   Trash2,
-  Edit3
+  Edit3,
+  RotateCcw
 } from "lucide-react";
 
 interface Session {
@@ -43,6 +44,7 @@ interface SessionManagementModalProps {
 
 const SessionManagementModal = ({ isOpen, onClose, session, onSuccess, onEdit }: SessionManagementModalProps) => {
   const [loading, setLoading] = useState(false);
+  const [showReconcileOptions, setShowReconcileOptions] = useState(false);
   const { toast } = useToast();
 
   const handleStatusUpdate = async (newStatus: string) => {
@@ -144,6 +146,74 @@ const SessionManagementModal = ({ isOpen, onClose, session, onSuccess, onEdit }:
 
   if (!session) return null;
 
+  // Check if session is ready for reconciliation (past scheduled time)
+  const isReadyForReconciliation = () => {
+    const now = new Date();
+    const sessionDate = new Date(session.date);
+    const [hours, minutes] = session.end_time.split(':');
+    sessionDate.setHours(parseInt(hours), parseInt(minutes));
+    
+    return now > sessionDate && session.status === 'scheduled';
+  };
+
+  const handleReconcile = async (action: 'completed' | 'cancelled' | 'rescheduled', shouldCount: boolean = true) => {
+    if (!session) return;
+
+    try {
+      setLoading(true);
+
+      // Update session status
+      const { error: sessionError } = await supabase
+        .from('sessions')
+        .update({ 
+          status: action === 'rescheduled' ? 'cancelled' : action,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', session.id);
+
+      if (sessionError) throw sessionError;
+
+      // If session should count and uses package, deduct session
+      if (shouldCount && session.client_package_id && (action === 'completed' || action === 'cancelled')) {
+        const { data: packageData } = await supabase
+          .from('client_packages')
+          .select('sessions_remaining')
+          .eq('id', session.client_package_id)
+          .single();
+
+        if (packageData && packageData.sessions_remaining > 0) {
+          const { error: packageError } = await supabase
+            .from('client_packages')
+            .update({ 
+              sessions_remaining: packageData.sessions_remaining - 1,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', session.client_package_id);
+
+          if (packageError) throw packageError;
+        }
+      }
+
+      toast({
+        title: "Success",
+        description: `Session ${action === 'rescheduled' ? 'rescheduled' : action}${shouldCount ? ' and deducted from package' : ''}`,
+      });
+
+      onSuccess();
+      onClose();
+      setShowReconcileOptions(false);
+    } catch (error) {
+      console.error('Error reconciling session:', error);
+      toast({
+        title: "Error",
+        description: "Failed to reconcile session",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const formatTime = (time: string) => {
     const [hours, minutes] = time.split(':');
     const date = new Date();
@@ -221,46 +291,130 @@ const SessionManagementModal = ({ isOpen, onClose, session, onSuccess, onEdit }:
           Edit Details
         </Button>
 
-        {/* Action Buttons */}
-        <div className="grid grid-cols-2 gap-3 mb-4">
+        {/* Reconcile Button - Only show if session is ready for reconciliation */}
+        {isReadyForReconciliation() && !showReconcileOptions && (
           <Button 
-            onClick={() => handleStatusUpdate('completed')}
-            disabled={loading || session.status === 'completed'}
-            className="bg-success hover:bg-success/90"
+            className="w-full mb-4 bg-primary hover:bg-primary/90"
+            onClick={() => setShowReconcileOptions(true)}
           >
-            <CheckCircle className="h-4 w-4 mr-2" />
-            Complete
+            <RotateCcw className="h-4 w-4 mr-2" />
+            Reconcile Session
           </Button>
-          
-          <Button 
-            variant="outline"
-            onClick={() => handleStatusUpdate('no_show')}
-            disabled={loading || session.status === 'no_show'}
-          >
-            <UserX className="h-4 w-4 mr-2" />
-            No Show
-          </Button>
-        </div>
+        )}
 
-        <div className="grid grid-cols-2 gap-3">
-          <Button 
-            variant="outline"
-            onClick={() => handleStatusUpdate('cancelled')}
-            disabled={loading || session.status === 'cancelled'}
-          >
-            <XCircle className="h-4 w-4 mr-2" />
-            Cancel
-          </Button>
-          
-          <Button 
-            variant="destructive"
-            onClick={handleDelete}
-            disabled={loading}
-          >
-            <Trash2 className="h-4 w-4 mr-2" />
-            Delete
-          </Button>
-        </div>
+        {/* Reconciliation Options */}
+        {showReconcileOptions && (
+          <div className="space-y-4 mb-4">
+            <div className="text-sm font-medium text-center mb-3">
+              How did this session conclude?
+            </div>
+            
+            <div className="grid grid-cols-2 gap-3">
+              <Button 
+                onClick={() => handleReconcile('completed')}
+                disabled={loading}
+                className="bg-success hover:bg-success/90"
+              >
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Completed
+              </Button>
+              
+              <Button 
+                variant="outline"
+                onClick={() => handleReconcile('cancelled', false)}
+                disabled={loading}
+              >
+                <UserX className="h-4 w-4 mr-2" />
+                No Show
+              </Button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <Button 
+                variant="outline"
+                onClick={() => {
+                  if (confirm("Should this cancelled session still count towards the package? Click OK to count it, Cancel to not count it.")) {
+                    handleReconcile('cancelled', true);
+                  } else {
+                    handleReconcile('cancelled', false);
+                  }
+                }}
+                disabled={loading}
+              >
+                <XCircle className="h-4 w-4 mr-2" />
+                Cancel
+              </Button>
+              
+              <Button 
+                variant="outline"
+                onClick={() => {
+                  if (confirm("Should this rescheduled session still count towards the package? Click OK to count it, Cancel to not count it.")) {
+                    handleReconcile('rescheduled', true);
+                  } else {
+                    handleReconcile('rescheduled', false);
+                  }
+                }}
+                disabled={loading}
+              >
+                <RotateCcw className="h-4 w-4 mr-2" />
+                Reschedule
+              </Button>
+            </div>
+
+            <Button 
+              variant="ghost"
+              onClick={() => setShowReconcileOptions(false)}
+              className="w-full"
+            >
+              Back
+            </Button>
+          </div>
+        )}
+
+        {/* Standard Action Buttons - Only show if not in reconcile mode */}
+        {!showReconcileOptions && !isReadyForReconciliation() && (
+          <>
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              <Button 
+                onClick={() => handleStatusUpdate('completed')}
+                disabled={loading || session.status === 'completed'}
+                className="bg-success hover:bg-success/90"
+              >
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Complete
+              </Button>
+              
+              <Button 
+                variant="outline"
+                onClick={() => handleStatusUpdate('no_show')}
+                disabled={loading || session.status === 'no_show'}
+              >
+                <UserX className="h-4 w-4 mr-2" />
+                No Show
+              </Button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <Button 
+                variant="outline"
+                onClick={() => handleStatusUpdate('cancelled')}
+                disabled={loading || session.status === 'cancelled'}
+              >
+                <XCircle className="h-4 w-4 mr-2" />
+                Cancel
+              </Button>
+              
+              <Button 
+                variant="destructive"
+                onClick={handleDelete}
+                disabled={loading}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete
+              </Button>
+            </div>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   );

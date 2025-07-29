@@ -29,7 +29,8 @@ const FinancialGraphs = () => {
     { month: "MAR 2025", payments: 34750, reconciled: 33900, expenses: 4200, profit: 30550, projected: 33000 },
     { month: "APR 2025", payments: 11220, reconciled: 10800, expenses: 2200, profit: 9020, projected: 12000 },
     { month: "MAY 2025", payments: 12700, reconciled: 12200, expenses: 2300, profit: 10400, projected: 13000 },
-    { month: "JUN 2025", payments: 26640, reconciled: 25800, expenses: 3800, profit: 22840, projected: 25000 }
+    { month: "JUN 2025", payments: 26640, reconciled: 25800, expenses: 3800, profit: 22840, projected: 25000 },
+    { month: "JUL 2025", payments: 28500, reconciled: 27800, expenses: 4000, profit: 24500, projected: 27000 }
   ];
 
   // Real-time data calculation (from August 2025 onwards)
