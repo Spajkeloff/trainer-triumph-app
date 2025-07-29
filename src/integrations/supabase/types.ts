@@ -62,13 +62,6 @@ export type Database = {
             foreignKeyName: "client_assessments_client_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
-            referencedRelation: "client_balances"
-            referencedColumns: ["client_id"]
-          },
-          {
-            foreignKeyName: "client_assessments_client_id_fkey"
-            columns: ["client_id"]
-            isOneToOne: false
             referencedRelation: "clients"
             referencedColumns: ["id"]
           },
@@ -113,13 +106,6 @@ export type Database = {
             foreignKeyName: "client_documents_client_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
-            referencedRelation: "client_balances"
-            referencedColumns: ["client_id"]
-          },
-          {
-            foreignKeyName: "client_documents_client_id_fkey"
-            columns: ["client_id"]
-            isOneToOne: false
             referencedRelation: "clients"
             referencedColumns: ["id"]
           },
@@ -154,13 +140,6 @@ export type Database = {
           sender_type?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "client_messages_client_id_fkey"
-            columns: ["client_id"]
-            isOneToOne: false
-            referencedRelation: "client_balances"
-            referencedColumns: ["client_id"]
-          },
           {
             foreignKeyName: "client_messages_client_id_fkey"
             columns: ["client_id"]
@@ -209,13 +188,6 @@ export type Database = {
             foreignKeyName: "client_notes_client_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
-            referencedRelation: "client_balances"
-            referencedColumns: ["client_id"]
-          },
-          {
-            foreignKeyName: "client_notes_client_id_fkey"
-            columns: ["client_id"]
-            isOneToOne: false
             referencedRelation: "clients"
             referencedColumns: ["id"]
           },
@@ -256,13 +228,6 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "client_packages_client_id_fkey"
-            columns: ["client_id"]
-            isOneToOne: false
-            referencedRelation: "client_balances"
-            referencedColumns: ["client_id"]
-          },
           {
             foreignKeyName: "client_packages_client_id_fkey"
             columns: ["client_id"]
@@ -492,13 +457,6 @@ export type Database = {
             foreignKeyName: "invoices_client_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
-            referencedRelation: "client_balances"
-            referencedColumns: ["client_id"]
-          },
-          {
-            foreignKeyName: "invoices_client_id_fkey"
-            columns: ["client_id"]
-            isOneToOne: false
             referencedRelation: "clients"
             referencedColumns: ["id"]
           },
@@ -578,13 +536,6 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "payments_client_id_fkey"
-            columns: ["client_id"]
-            isOneToOne: false
-            referencedRelation: "client_balances"
-            referencedColumns: ["client_id"]
-          },
           {
             foreignKeyName: "payments_client_id_fkey"
             columns: ["client_id"]
@@ -719,13 +670,6 @@ export type Database = {
             foreignKeyName: "sessions_client_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
-            referencedRelation: "client_balances"
-            referencedColumns: ["client_id"]
-          },
-          {
-            foreignKeyName: "sessions_client_id_fkey"
-            columns: ["client_id"]
-            isOneToOne: false
             referencedRelation: "clients"
             referencedColumns: ["id"]
           },
@@ -795,13 +739,6 @@ export type Database = {
             foreignKeyName: "transactions_client_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
-            referencedRelation: "client_balances"
-            referencedColumns: ["client_id"]
-          },
-          {
-            foreignKeyName: "transactions_client_id_fkey"
-            columns: ["client_id"]
-            isOneToOne: false
             referencedRelation: "clients"
             referencedColumns: ["id"]
           },
@@ -809,19 +746,20 @@ export type Database = {
       }
     }
     Views: {
-      client_balances: {
-        Row: {
-          balance: number | null
-          client_id: string | null
-          first_name: string | null
-          last_name: string | null
-          total_charges: number | null
-          total_payments: number | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
+      get_client_balances: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          client_id: string
+          first_name: string
+          last_name: string
+          total_charges: number
+          total_payments: number
+          balance: number
+        }[]
+      }
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: string

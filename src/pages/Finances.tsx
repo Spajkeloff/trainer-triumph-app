@@ -1,23 +1,23 @@
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
-import { Button } from "../components/ui/button";
-import { Badge } from "../components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import AddPaymentModal from "@/components/AddPaymentModal";
+import { financeService, Transaction, Invoice, Expense, ClientBalance } from "@/services/financeService";
 import { 
   DollarSign,
   CreditCard,
   TrendingUp,
   TrendingDown,
-  Calendar,
-  FileText,
   Plus,
   Download,
   Search,
-  Filter
+  Filter,
+  FileText,
+  Receipt,
+  Users
 } from "lucide-react";
-import { Input } from "../components/ui/input";
 import {
   BarChart, 
   Bar, 
@@ -33,17 +33,22 @@ import {
   Cell
 } from "recharts";
 
+type ActiveTab = "balances" | "transactions" | "payments" | "invoices" | "expenses";
+
 const Finances = () => {
-  const [activeTab, setActiveTab] = useState<"overview" | "payments" | "invoices" | "reports">("overview");
-  const [showAddPayment, setShowAddPayment] = useState(false);
-  const [selectedClientId, setSelectedClientId] = useState<string>("");
+  const [activeTab, setActiveTab] = useState<ActiveTab>("balances");
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [clientBalances, setClientBalances] = useState<ClientBalance[]>([]);
   const [financialStats, setFinancialStats] = useState({
     totalRevenue: 0,
+    totalExpenses: 0,
     netProfit: 0,
     outstanding: 0
   });
-  const [recentPayments, setRecentPayments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -53,39 +58,19 @@ const Finances = () => {
   const fetchFinancialData = async () => {
     try {
       setLoading(true);
+      const [statsData, transactionsData, invoicesData, expensesData, balancesData] = await Promise.all([
+        financeService.getFinancialStats(),
+        financeService.getAllTransactions(),
+        financeService.getAllInvoices(),
+        financeService.getAllExpenses(),
+        financeService.getClientBalances()
+      ]);
 
-      // Fetch payments for revenue calculation
-      const { data: payments } = await supabase
-        .from('payments')
-        .select(`
-          *,
-          clients (first_name, last_name)
-        `)
-        .order('payment_date', { ascending: false });
-
-      const totalRevenue = payments?.filter(p => p.amount > 0).reduce((sum, p) => sum + Number(p.amount), 0) || 0;
-      const outstanding = payments?.filter(p => p.status === 'pending' && p.amount > 0).reduce((sum, p) => sum + Number(p.amount), 0) || 0;
-      
-      setFinancialStats({
-        totalRevenue,
-        netProfit: totalRevenue * 0.7, // Assume 70% profit margin
-        outstanding
-      });
-
-      // Format recent payments
-      const formattedPayments = payments?.slice(0, 10).map(payment => ({
-        id: payment.id,
-        client: payment.clients ? `${payment.clients.first_name} ${payment.clients.last_name}` : 'Unknown Client',
-        amount: `AED ${Math.abs(payment.amount).toLocaleString()}`,
-        method: payment.payment_method || 'Unknown',
-        status: payment.status,
-        date: new Date(payment.payment_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-        service: payment.description || 'Service Payment',
-        type: payment.amount > 0 ? 'payment' : 'charge'
-      })) || [];
-
-      setRecentPayments(formattedPayments);
-
+      setFinancialStats(statsData);
+      setTransactions(transactionsData);
+      setInvoices(invoicesData);
+      setExpenses(expensesData);
+      setClientBalances(balancesData);
     } catch (error) {
       console.error('Error fetching financial data:', error);
       toast({
@@ -98,219 +83,252 @@ const Finances = () => {
     }
   };
 
-  // Chart data (keeping sample for now until more complex reporting is implemented)
-  const revenueData = [
-    { month: "Jan", revenue: 28500, expenses: 8400, profit: 20100 },
-    { month: "Feb", revenue: 32400, expenses: 9200, profit: 23200 },
-    { month: "Mar", revenue: 38100, expenses: 10500, profit: 27600 },
-    { month: "Apr", revenue: 35600, expenses: 9800, profit: 25800 },
-    { month: "May", revenue: 41200, expenses: 11200, profit: 30000 },
-    { month: "Jun", revenue: 44800, expenses: 12100, profit: 32700 },
-    { month: "Jul", revenue: 42300, expenses: 11800, profit: 30500 },
-    { month: "Aug", revenue: 46700, expenses: 12800, profit: 33900 },
-    { month: "Sep", revenue: 48200, expenses: 13200, profit: 35000 },
-    { month: "Oct", revenue: 51800, expenses: 14100, profit: 37700 },
-    { month: "Nov", revenue: 49600, expenses: 13500, profit: 36100 },
-    { month: "Dec", revenue: 45750, expenses: 12900, profit: 32850 }
-  ];
+  const getStatusBadge = (status: string, type: 'transaction' | 'invoice' | 'expense' = 'transaction') => {
+    const statusClasses = {
+      completed: "bg-success text-success-foreground",
+      pending: "bg-warning text-warning-foreground",
+      overdue: "bg-destructive text-destructive-foreground",
+      paid: "bg-success text-success-foreground",
+      draft: "bg-muted text-muted-foreground",
+      sent: "bg-primary text-primary-foreground",
+      failed: "bg-destructive text-destructive-foreground",
+      cancelled: "bg-muted text-muted-foreground",
+      reimbursed: "bg-info text-info-foreground"
+    };
 
-  const expenseBreakdown = [
-    { name: "Equipment", value: 35, color: "#1a73e8" },
-    { name: "Rent", value: 30, color: "#48bb78" },
-    { name: "Marketing", value: 15, color: "#ed8936" },
-    { name: "Utilities", value: 12, color: "#9f7aea" },
-    { name: "Other", value: 8, color: "#718096" }
-  ];
-
-  // Removed static recentPayments - now using state
-
-  const pendingInvoices = [
-    {
-      id: "INV-001",
-      client: "Fatima Al-Rashid",
-      amount: "AED 1,500",
-      dueDate: "Jan 5, 2025",
-      status: "overdue",
-      service: "Personal Training Sessions"
-    },
-    {
-      id: "INV-002",
-      client: "Mohammed Al-Kaabi",
-      amount: "AED 850",
-      dueDate: "Jan 10, 2025",
-      status: "pending",
-      service: "Group Class Membership"
-    }
-  ];
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "completed":
-        return <Badge className="bg-success text-success-foreground">Completed</Badge>;
-      case "pending":
-        return <Badge variant="outline">Pending</Badge>;
-      case "overdue":
-        return <Badge className="bg-destructive text-destructive-foreground">Overdue</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
-    }
+    return (
+      <Badge className={statusClasses[status as keyof typeof statusClasses] || "bg-muted text-muted-foreground"}>
+        {status.charAt(0).toUpperCase() + status.slice(1)}
+      </Badge>
+    );
   };
 
-  const renderOverview = () => (
+  const formatAmount = (amount: number, type: 'charge' | 'payment' | 'refund' | 'discount' | null = null) => {
+    const prefix = type === 'charge' ? '+' : type === 'payment' ? '-' : '';
+    const color = type === 'charge' ? 'text-destructive' : type === 'payment' ? 'text-success' : 'text-foreground';
+    return <span className={color}>{prefix}DH{Math.abs(amount).toLocaleString()}</span>;
+  };
+
+  const renderBalances = () => (
     <div className="space-y-6">
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Total Revenue</p>
-                <p className="text-2xl font-bold text-primary">AED {financialStats.totalRevenue.toLocaleString()}</p>
-                <p className="text-sm text-success flex items-center mt-1">
-                  <TrendingUp className="h-3 w-3 mr-1" />
-                  +12.5% from last month
-                </p>
-              </div>
-              <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
-                <DollarSign className="h-6 w-6 text-primary" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Net Profit</p>
-                <p className="text-2xl font-bold text-success">AED {financialStats.netProfit.toLocaleString()}</p>
-                <p className="text-sm text-success flex items-center mt-1">
-                  <TrendingUp className="h-3 w-3 mr-1" />
-                  +8.2% from last month
-                </p>
-              </div>
-              <div className="w-12 h-12 bg-success/10 rounded-lg flex items-center justify-center">
-                <TrendingUp className="h-6 w-6 text-success" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Outstanding</p>
-                <p className="text-2xl font-bold text-warning">AED {financialStats.outstanding.toLocaleString()}</p>
-                <p className="text-sm text-destructive flex items-center mt-1">
-                  <TrendingDown className="h-3 w-3 mr-1" />
-                  -15.3% from last month
-                </p>
-              </div>
-              <div className="w-12 h-12 bg-warning/10 rounded-lg flex items-center justify-center">
-                <CreditCard className="h-6 w-6 text-warning" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-xl font-semibold">Client balances</h2>
+          <p className="text-sm text-muted-foreground">All (7)</p>
+        </div>
+        <div className="flex items-center space-x-2">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 w-64"
+            />
+          </div>
+        </div>
       </div>
 
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Revenue & Profit Trend</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={revenueData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                  <XAxis dataKey="month" stroke="#64748b" fontSize={12} />
-                  <YAxis stroke="#64748b" fontSize={12} tickFormatter={(value) => `${value / 1000}k`} />
-                  <Tooltip formatter={(value: any) => [`AED ${value.toLocaleString()}`, ""]} />
-                  <Line 
-                    type="monotone" 
-                    dataKey="revenue" 
-                    stroke="#1a73e8" 
-                    strokeWidth={2}
-                    name="Revenue"
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="profit" 
-                    stroke="#48bb78" 
-                    strokeWidth={2}
-                    name="Profit"
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+      <Card>
+        <CardContent className="p-0">
+          <div className="space-y-0 divide-y">
+            <div className="grid grid-cols-5 gap-4 p-4 text-sm font-medium text-muted-foreground bg-muted">
+              <div>NAME</div>
+              <div>AMOUNT DUE</div>
+              <div>IN CREDIT</div>
+              <div>BALANCED</div>
+              <div></div>
             </div>
-          </CardContent>
-        </Card>
+            {clientBalances
+              .filter(client => 
+                `${client.first_name} ${client.last_name}`.toLowerCase().includes(searchTerm.toLowerCase())
+              )
+              .map((client) => (
+                <div key={client.client_id} className="grid grid-cols-5 gap-4 p-4 items-center hover:bg-muted/50">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                      <span className="text-sm font-medium text-primary">
+                        {client.first_name.charAt(0)}{client.last_name.charAt(0)}
+                      </span>
+                    </div>
+                    <span className="font-medium">{client.first_name} {client.last_name}</span>
+                  </div>
+                  <div>
+                    {client.balance > 0 ? (
+                      <span className="text-destructive">-DH{client.balance.toLocaleString()}</span>
+                    ) : (
+                      <span>DH0</span>
+                    )}
+                  </div>
+                  <div>
+                    {client.balance < 0 ? (
+                      <span className="text-success">+DH{Math.abs(client.balance).toLocaleString()}</span>
+                    ) : (
+                      <span>DH0</span>
+                    )}
+                  </div>
+                  <div>
+                    <span className={client.balance === 0 ? 'text-success' : 'text-muted-foreground'}>
+                      DH{client.balance === 0 ? '0' : Math.abs(client.balance).toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="text-right">
+                    <Button variant="ghost" size="sm">
+                      →
+                    </Button>
+                  </div>
+                </div>
+              ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Expense Breakdown</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={expenseBreakdown}
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                    label={({ name, value }) => `${name}: ${value}%`}
-                  >
-                    {expenseBreakdown.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
+  const renderTransactions = () => (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-xl font-semibold">Transaction history</h2>
+          <p className="text-sm text-muted-foreground">All clients selected</p>
+        </div>
+        <div className="flex items-center space-x-2">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search description"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 w-64"
+            />
+          </div>
+          <Button variant="outline">
+            <Plus className="h-4 w-4 mr-2" />
+            New charge
+          </Button>
+          <Button>
+            <Plus className="h-4 w-4 mr-2" />
+            New payment
+          </Button>
+        </div>
       </div>
+
+      <Card>
+        <CardContent className="p-0">
+          <div className="space-y-0 divide-y">
+            <div className="grid grid-cols-7 gap-4 p-4 text-sm font-medium text-muted-foreground bg-muted">
+              <div>DATE</div>
+              <div>NAME</div>
+              <div>DESCRIPTION</div>
+              <div>CHARGE</div>
+              <div>PAYMENT</div>
+              <div>STATUS</div>
+              <div>TYPE</div>
+            </div>
+            {transactions
+              .filter(transaction => 
+                transaction.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                transaction.clients?.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                transaction.clients?.last_name.toLowerCase().includes(searchTerm.toLowerCase())
+              )
+              .map((transaction) => (
+                <div key={transaction.id} className="grid grid-cols-7 gap-4 p-4 items-center hover:bg-muted/50">
+                  <div className="text-sm text-muted-foreground">
+                    {new Date(transaction.transaction_date).toLocaleDateString('en-US', { 
+                      day: 'numeric',
+                      month: 'short',
+                      year: 'numeric'
+                    })}
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center text-xs">
+                      {transaction.clients?.first_name.charAt(0)}{transaction.clients?.last_name.charAt(0)}
+                    </div>
+                    <span className="text-sm">
+                      {transaction.clients?.first_name} {transaction.clients?.last_name}
+                    </span>
+                  </div>
+                  <div className="text-sm">{transaction.description}</div>
+                  <div>
+                    {transaction.transaction_type === 'charge' && formatAmount(transaction.amount, 'charge')}
+                  </div>
+                  <div>
+                    {transaction.transaction_type === 'payment' && formatAmount(transaction.amount, 'payment')}
+                  </div>
+                  <div>
+                    {getStatusBadge(transaction.status)}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    {transaction.payment_method || transaction.category}
+                  </div>
+                </div>
+              ))}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 
   const renderPayments = () => (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold">Recent Payments</h2>
-        <Button onClick={() => setShowAddPayment(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Record Payment
-        </Button>
+        <div>
+          <h2 className="text-xl font-semibold">Payments received</h2>
+        </div>
+        <div className="flex items-center space-x-2">
+          <Button variant="outline">
+            <Filter className="h-4 w-4 mr-2" />
+            Filter
+          </Button>
+          <Button>
+            <Plus className="h-4 w-4 mr-2" />
+            New payment
+          </Button>
+        </div>
       </div>
 
       <Card>
-        <CardContent className="p-6">
-          <div className="space-y-4">
-            {recentPayments.map((payment) => (
-              <div key={payment.id} className="flex items-center justify-between p-4 border border-border rounded-lg">
-                <div className="flex-1">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-medium">{payment.client}</h3>
+        <CardContent className="p-0">
+          <div className="space-y-0 divide-y">
+            <div className="grid grid-cols-6 gap-4 p-4 text-sm font-medium text-muted-foreground bg-muted">
+              <div>DATE</div>
+              <div>NAME</div>
+              <div>AMOUNT</div>
+              <div>STATUS</div>
+              <div>TYPE</div>
+              <div>CATEGORY</div>
+              <div>NOTES</div>
+            </div>
+            {transactions
+              .filter(t => t.transaction_type === 'payment')
+              .map((payment) => (
+                <div key={payment.id} className="grid grid-cols-6 gap-4 p-4 items-center hover:bg-muted/50">
+                  <div className="text-sm text-muted-foreground">
+                    {new Date(payment.transaction_date).toLocaleDateString('en-US', { 
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric'
+                    })}
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center text-xs">
+                      {payment.clients?.first_name.charAt(0)}{payment.clients?.last_name.charAt(0)}
+                    </div>
+                    <span className="text-sm">
+                      {payment.clients?.first_name} {payment.clients?.last_name}
+                    </span>
+                  </div>
+                  <div className="text-success font-medium">
+                    +DH{payment.amount.toLocaleString()}
+                  </div>
+                  <div>
                     {getStatusBadge(payment.status)}
                   </div>
-                  <p className="text-sm text-muted-foreground mt-1">{payment.service}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {payment.date} • {payment.method}
-                  </p>
+                  <div className="text-sm">{payment.payment_method}</div>
+                  <div className="text-sm">{payment.category}</div>
+                  <div className="text-sm text-muted-foreground">{payment.notes}</div>
                 </div>
-                <div className="text-right">
-                  <p className="text-lg font-bold text-primary">{payment.amount}</p>
-                </div>
-              </div>
-            ))}
+              ))}
           </div>
         </CardContent>
       </Card>
@@ -328,77 +346,77 @@ const Finances = () => {
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Pending Invoices</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {pendingInvoices.map((invoice) => (
-              <div key={invoice.id} className="flex items-center justify-between p-4 border border-border rounded-lg">
-                <div className="flex-1">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-medium">{invoice.client}</h3>
-                    {getStatusBadge(invoice.status)}
-                  </div>
-                  <p className="text-sm text-muted-foreground mt-1">{invoice.service}</p>
-                  <p className="text-sm text-muted-foreground">
-                    Invoice {invoice.id} • Due: {invoice.dueDate}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-lg font-bold text-primary">{invoice.amount}</p>
-                  <Button size="sm" variant="outline" className="mt-2">
-                    Send Reminder
-                  </Button>
-                </div>
-              </div>
-            ))}
+        <CardContent className="p-6">
+          <div className="text-center py-8">
+            <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-medium mb-2">No invoices yet</h3>
+            <p className="text-muted-foreground mb-4">Create your first invoice to start tracking payments</p>
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              Create Invoice
+            </Button>
           </div>
         </CardContent>
       </Card>
     </div>
   );
 
-  const renderReports = () => (
+  const renderExpenses = () => (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold">Financial Reports</h2>
-        <Button>
-          <Download className="h-4 w-4 mr-2" />
-          Export Report
-        </Button>
+        <div>
+          <h2 className="text-xl font-semibold">Expenses</h2>
+        </div>
+        <div className="flex items-center space-x-2">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search"
+              className="pl-10 w-64"
+            />
+          </div>
+          <Button>
+            <Plus className="h-4 w-4 mr-2" />
+            New expense
+          </Button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <Card className="hover:shadow-elevated transition-all duration-300 cursor-pointer">
-          <CardContent className="p-6 text-center">
-            <DollarSign className="h-12 w-12 text-primary mx-auto mb-4" />
-            <h3 className="font-semibold mb-2">Revenue Report</h3>
-            <p className="text-sm text-muted-foreground mb-4">Detailed revenue breakdown by services and time periods</p>
-            <Button variant="outline" size="sm">Generate</Button>
-          </CardContent>
-        </Card>
+      <Card>
+        <CardContent className="p-6">
+          <div className="text-center py-8">
+            <Receipt className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-medium mb-2">No expenses to display</h3>
+            <p className="text-muted-foreground mb-4">Add expenses to track your business costs</p>
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Expense
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
-        <Card className="hover:shadow-elevated transition-all duration-300 cursor-pointer">
-          <CardContent className="p-6 text-center">
-            <TrendingUp className="h-12 w-12 text-success mx-auto mb-4" />
-            <h3 className="font-semibold mb-2">Profit & Loss</h3>
-            <p className="text-sm text-muted-foreground mb-4">Comprehensive P&L statement with expense analysis</p>
-            <Button variant="outline" size="sm">Generate</Button>
-          </CardContent>
-        </Card>
-
-        <Card className="hover:shadow-elevated transition-all duration-300 cursor-pointer">
-          <CardContent className="p-6 text-center">
-            <CreditCard className="h-12 w-12 text-warning mx-auto mb-4" />
-            <h3 className="font-semibold mb-2">Outstanding Report</h3>
-            <p className="text-sm text-muted-foreground mb-4">Track unpaid invoices and overdue accounts</p>
-            <Button variant="outline" size="sm">Generate</Button>
+      <div className="mt-8">
+        <h3 className="text-lg font-semibold mb-4">Upcoming recurring expenses</h3>
+        <Card>
+          <CardContent className="p-6">
+            <div className="text-center py-8">
+              <Receipt className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium mb-2">No recurring expenses to display</h3>
+            </div>
           </CardContent>
         </Card>
       </div>
     </div>
   );
+
+  const tabs = [
+    { id: "balances", label: "Balances" },
+    { id: "transactions", label: "Transactions" },
+    { id: "payments", label: "Payments" },
+    { id: "invoices", label: "Invoices" },
+    { id: "expenses", label: "Expenses" }
+  ];
 
   return (
     <div className="min-h-screen bg-background">
@@ -407,22 +425,18 @@ const Finances = () => {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
           <div>
             <h1 className="text-3xl font-bold text-foreground mb-2">Finances</h1>
-            <p className="text-muted-foreground">Track revenue, manage payments, and generate financial reports</p>
+            <p className="text-muted-foreground">Comprehensive financial management for your business</p>
           </div>
         </div>
 
-        {/* Tabs */}
+        {/* Navigation Tabs */}
         <div className="flex space-x-1 bg-muted p-1 rounded-lg mb-8 w-fit">
-          {[
-            { id: "overview", label: "Overview" },
-            { id: "payments", label: "Payments" },
-            { id: "invoices", label: "Invoices" },
-            { id: "reports", label: "Reports" }
-          ].map((tab) => (
+          {tabs.map((tab) => (
             <Button
               key={tab.id}
               variant={activeTab === tab.id ? "default" : "ghost"}
-              onClick={() => setActiveTab(tab.id as any)}
+              onClick={() => setActiveTab(tab.id as ActiveTab)}
+              className="px-6"
             >
               {tab.label}
             </Button>
@@ -431,23 +445,21 @@ const Finances = () => {
 
         {/* Content */}
         <div>
-          {activeTab === "overview" && renderOverview()}
-          {activeTab === "payments" && renderPayments()}
-          {activeTab === "invoices" && renderInvoices()}
-          {activeTab === "reports" && renderReports()}
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          ) : (
+            <>
+              {activeTab === "balances" && renderBalances()}
+              {activeTab === "transactions" && renderTransactions()}
+              {activeTab === "payments" && renderPayments()}
+              {activeTab === "invoices" && renderInvoices()}
+              {activeTab === "expenses" && renderExpenses()}
+            </>
+          )}
         </div>
       </div>
-
-      {/* Add Payment Modal */}
-      <AddPaymentModal
-        isOpen={showAddPayment}
-        onClose={() => {
-          setShowAddPayment(false);
-          setSelectedClientId("");
-        }}
-        clientId={selectedClientId}
-        onSuccess={fetchFinancialData}
-      />
     </div>
   );
 };
