@@ -49,10 +49,14 @@ const App = () => (
               <Route path="services/packages" element={<PackageManagement />} />
               <Route path="services/memberships" element={<Services />} />
               <Route path="services/classes" element={<Services />} />
+              <Route path="services/discounts" element={<Services />} />
               <Route path="finances" element={<Finances />} />
               <Route path="finances/payments" element={<Finances />} />
               <Route path="finances/invoices" element={<Finances />} />
+              <Route path="finances/expenses" element={<Finances />} />
               <Route path="finances/reports" element={<Finances />} />
+              <Route path="reporting" element={<Finances />} />
+              <Route path="reporting/revenue" element={<Finances />} />
               <Route path="settings" element={<Settings />} />
             </Route>
             
