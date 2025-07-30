@@ -595,10 +595,12 @@ const BookSessionModal = ({ isOpen, onClose, onSuccess, selectedDate, selectedTi
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-background border border-border shadow-md z-50">
-                    <SelectItem value="PT Session" className="bg-background hover:bg-muted">PT Session</SelectItem>
+                    <SelectItem value="Personal Training" className="bg-background hover:bg-muted">🔵 Personal Training</SelectItem>
+                    <SelectItem value="EMS Training" className="bg-background hover:bg-muted">🔵 EMS Training</SelectItem>
                     <SelectItem value="PT Trial Session" className="bg-background hover:bg-muted">🔴 PT Trial Session</SelectItem>
-                    <SelectItem value="EMS Session" className="bg-background hover:bg-muted">EMS Session</SelectItem>
                     <SelectItem value="EMS Trial Session" className="bg-background hover:bg-muted">🔴 EMS Trial Session</SelectItem>
+                    <SelectItem value="PT Session" className="bg-background hover:bg-muted">🔵 PT Session</SelectItem>
+                    <SelectItem value="EMS Session" className="bg-background hover:bg-muted">🔵 EMS Session</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

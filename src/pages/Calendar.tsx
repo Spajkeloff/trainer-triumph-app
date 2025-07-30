@@ -108,35 +108,38 @@ const Calendar = () => {
   };
 
   const getSessionColor = (type: string, status: string) => {
-    // Completed sessions are always green
+    // Status-based colors (override type colors)
     if (status === 'completed') {
       return "bg-success text-success-foreground";
     }
     
-    // Cancelled and rescheduled sessions are yellow
-    if (status === 'cancelled' || status === 'rescheduled') {
-      return "bg-warning text-warning-foreground";
+    if (status === 'cancelled' || status === 'no_show') {
+      return "bg-warning text-warning-foreground"; // Yellow
     }
     
-    if (status === 'no_show') {
-      return "bg-destructive text-destructive-foreground";
+    if (status === 'rescheduled') {
+      return "bg-orange-500 text-white"; // Orange
     }
 
-    // Trial sessions appear red
+    // Type-based colors for scheduled sessions
+    // Red: Trial sessions
     if (type === 'EMS Trial Session' || type === 'PT Trial Session') {
-      return "bg-destructive text-destructive-foreground";
+      return "bg-destructive text-destructive-foreground"; // Red
     }
 
-    // Default colors for scheduled sessions
+    // Blue: Regular training sessions
+    if (type === 'Personal Training' || type === 'PT Session' || type === 'EMS Training' || type === 'EMS Session') {
+      return "bg-primary text-primary-foreground"; // Blue
+    }
+
+    // Default colors
     switch (type) {
-      case "personal":
-        return "bg-primary text-primary-foreground";
       case "group":
         return "bg-secondary text-secondary-foreground";
       case "blocked":
         return "bg-muted text-muted-foreground";
       default:
-        return "bg-primary text-primary-foreground";
+        return "bg-primary text-primary-foreground"; // Default to blue
     }
   };
 
@@ -581,12 +584,28 @@ const Calendar = () => {
                 <span className="text-sm">Personal Training</span>
               </div>
               <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 rounded bg-success" />
-                <span className="text-sm">Group Classes</span>
+                <div className="w-3 h-3 rounded bg-primary" />
+                <span className="text-sm">EMS Training</span>
               </div>
               <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 rounded bg-muted" />
-                <span className="text-sm">Blocked Time</span>
+                <div className="w-3 h-3 rounded bg-destructive" />
+                <span className="text-sm">EMS Trial Session</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 rounded bg-destructive" />
+                <span className="text-sm">PT Trial Session</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 rounded bg-warning" />
+                <span className="text-sm">Cancelled/No-Show</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 rounded bg-orange-500" />
+                <span className="text-sm">Rescheduled</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 rounded bg-success" />
+                <span className="text-sm">Completed</span>
               </div>
             </div>
           </CardContent>
