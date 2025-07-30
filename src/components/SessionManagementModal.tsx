@@ -175,24 +175,16 @@ const SessionManagementModal = ({ isOpen, onClose, session, onSuccess, onEdit }:
       }
 
       // Handle package session logic - only if should count and not a trial session
-      if (!isTrialSession && shouldCount) {
-        let packageToUpdate = null;
+      if (!isTrialSession && shouldCount && action === 'completed') {
+        // Only deduct sessions for completion, not cancellation or rescheduling
+        // Sessions are already deducted when created via BookSessionModal
+        // This is for sessions that were paid individually (not from package) but now need to count against package
         
-        // If session is already linked to a package, use that package
-        if (session.client_package_id) {
-          const { data: packageData } = await supabase
-            .from('client_packages')
-            .select('sessions_remaining')
-            .eq('id', session.client_package_id)
-            .single();
+        // Only deduct if session is NOT already linked to a package
+        // If it's already linked, it was already deducted when created
+        if (!session.client_package_id) {
+          let packageToUpdate = null;
           
-          if (packageData && packageData.sessions_remaining > 0) {
-            packageToUpdate = { 
-              id: session.client_package_id, 
-              sessions_remaining: packageData.sessions_remaining 
-            };
-          }
-        } else {
           // Try to find matching package for this session type
           if (session.type === 'PT Session') {
             // Find active personal training package
@@ -223,22 +215,20 @@ const SessionManagementModal = ({ isOpen, onClose, session, onSuccess, onEdit }:
             
             packageToUpdate = emsPackages?.[0];
           }
-        }
 
-        // If we found a package to update, deduct the session
-        if (packageToUpdate) {
-          const { error: packageError } = await supabase
-            .from('client_packages')
-            .update({ 
-              sessions_remaining: packageToUpdate.sessions_remaining - 1,
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', packageToUpdate.id);
+          // If we found a package to update, deduct the session and link it
+          if (packageToUpdate) {
+            const { error: packageError } = await supabase
+              .from('client_packages')
+              .update({ 
+                sessions_remaining: packageToUpdate.sessions_remaining - 1,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', packageToUpdate.id);
 
-          if (packageError) throw packageError;
+            if (packageError) throw packageError;
 
-          // Link session to package if not already linked
-          if (!session.client_package_id) {
+            // Link session to package
             await supabase
               .from('sessions')
               .update({ client_package_id: packageToUpdate.id })
