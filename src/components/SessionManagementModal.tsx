@@ -196,8 +196,12 @@ const SessionManagementModal = ({ isOpen, onClose, session, onSuccess, onEdit }:
         if (session.client_package_id) {
           console.log('Session already linked to package:', session.client_package_id);
           
+          // CRITICAL: For completed sessions, do NOTHING - they were already deducted when created
+          if (action === 'completed') {
+            console.log('Session completed - no additional deduction needed as it was already deducted when created');
+          }
           // For cancelled/no-show sessions that shouldn't count, restore the session to the package
-          if ((action === 'cancelled' || action === 'rescheduled') && !shouldCount) {
+          else if ((action === 'cancelled' || action === 'rescheduled') && !shouldCount) {
             console.log('Restoring session to package since it should not count');
             
             // Get the current package to restore session
@@ -205,7 +209,7 @@ const SessionManagementModal = ({ isOpen, onClose, session, onSuccess, onEdit }:
               .from('client_packages')
               .select('sessions_remaining')
               .eq('id', session.client_package_id)
-              .single();
+              .maybeSingle();
 
             if (currentPackage) {
               const { error: packageError } = await supabase
