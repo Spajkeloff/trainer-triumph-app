@@ -183,23 +183,49 @@ const SessionManagementModal = ({ isOpen, onClose, session, onSuccess, onEdit }:
         });
       }
 
-      // Handle package session logic - only if should count and not a trial session
+      // Handle package session logic
       console.log('Checking package deduction conditions:', {
         isTrialSession,
         shouldCount,
-        hasClientPackageId: !!session.client_package_id
+        hasClientPackageId: !!session.client_package_id,
+        action
       });
 
-      if (!isTrialSession && shouldCount) {
-        console.log('Will attempt package deduction...');
-        // Only deduct sessions if user explicitly chose to count them
-        // Sessions are already deducted when created via BookSessionModal
-        // This is for sessions that were paid individually (not from package) but now need to count against package
-        
-        // Only deduct if session is NOT already linked to a package
-        // If it's already linked, it was already deducted when created
-        if (!session.client_package_id) {
-          console.log('Session not linked to package, looking for matching package...');
+      if (!isTrialSession) {
+        // If session is already linked to a package (was deducted when created)
+        if (session.client_package_id) {
+          console.log('Session already linked to package:', session.client_package_id);
+          
+          // For cancelled/no-show sessions that shouldn't count, restore the session to the package
+          if ((action === 'cancelled' || action === 'rescheduled') && !shouldCount) {
+            console.log('Restoring session to package since it should not count');
+            
+            // Get the current package to restore session
+            const { data: currentPackage } = await supabase
+              .from('client_packages')
+              .select('sessions_remaining')
+              .eq('id', session.client_package_id)
+              .single();
+
+            if (currentPackage) {
+              const { error: packageError } = await supabase
+                .from('client_packages')
+                .update({ 
+                  sessions_remaining: currentPackage.sessions_remaining + 1,
+                  updated_at: new Date().toISOString()
+                })
+                .eq('id', session.client_package_id);
+
+              if (packageError) throw packageError;
+              console.log('Session restored to package');
+            }
+          } else {
+            console.log('Session already deducted, no further action needed');
+          }
+        } 
+        // If session is NOT linked to a package and should count, try to deduct from available package
+        else if (shouldCount) {
+          console.log('Session not linked to package, looking for matching package to deduct...');
           let packageToUpdate = null;
           
           // Try to find matching package for this session type
@@ -258,10 +284,10 @@ const SessionManagementModal = ({ isOpen, onClose, session, onSuccess, onEdit }:
             console.log('No matching package found for deduction');
           }
         } else {
-          console.log('Session already linked to package, no deduction needed');
+          console.log('Session not linked to package and should not count - no action needed');
         }
       } else {
-        console.log('Skipping package deduction - conditions not met');
+        console.log('Skipping package logic for trial session');
       }
 
       const successMessage = isTrialSession && action === 'completed' 
