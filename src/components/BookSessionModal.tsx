@@ -226,11 +226,10 @@ const BookSessionModal = ({ isOpen, onClose, onSuccess, selectedDate, selectedTi
         if (sessionError) throw sessionError;
 
         // ONLY deduct from package for NEW sessions (not edits)
-        // If using package, deduct sessions based on number created
+        // When using a package, don't deduct here - sessions are deducted during reconciliation
+        // This prevents double deduction when booking multiple sessions
         if (formData.use_package && formData.client_package_id) {
-          const sessionsCount = sessionsToCreate.length;
-          
-          // Get current package data and verify sufficient sessions
+          // Just verify that the package has enough sessions available
           const { data: packageData, error: fetchError } = await supabase
             .from('client_packages')
             .select('sessions_remaining')
@@ -239,22 +238,11 @@ const BookSessionModal = ({ isOpen, onClose, onSuccess, selectedDate, selectedTi
 
           if (fetchError) throw fetchError;
 
-          if ((packageData?.sessions_remaining || 0) < sessionsCount) {
-            throw new Error(`Insufficient sessions remaining. Package has ${packageData?.sessions_remaining || 0} sessions, but ${sessionsCount} sessions were requested.`);
+          if ((packageData?.sessions_remaining || 0) < sessionsToCreate.length) {
+            throw new Error(`Insufficient sessions remaining. Package has ${packageData?.sessions_remaining || 0} sessions, but ${sessionsToCreate.length} sessions were requested.`);
           }
-
-          // Deduct sessions from package atomically
-          const { error: packageError } = await supabase
-            .from('client_packages')
-            .update({ 
-              sessions_remaining: packageData.sessions_remaining - sessionsCount,
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', formData.client_package_id);
-
-          if (packageError) throw packageError;
           
-          console.log(`Deducted ${sessionsCount} sessions from package ${formData.client_package_id} at booking time`);
+          console.log(`Verified package ${formData.client_package_id} has sufficient sessions for ${sessionsToCreate.length} bookings`);
         }
 
         // Create payment record if not using package
