@@ -183,14 +183,19 @@ const Reporting = () => {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="thisMonth">This Month</SelectItem>
-                <SelectItem value="lastMonth">Last Month</SelectItem>
-                <SelectItem value="thisYear">This Year</SelectItem>
+                <SelectItem value="last30days">Last 30 days</SelectItem>
+                <SelectItem value="last14days">Last 14 days</SelectItem>
+                <SelectItem value="last7days">Last 7 days</SelectItem>
+                <SelectItem value="lastmonth">Last month</SelectItem>
+                <SelectItem value="lastyear">Last year</SelectItem>
+                <SelectItem value="monthtodate">Month to date</SelectItem>
+                <SelectItem value="yeartodate">Year to date</SelectItem>
+                <SelectItem value="alltime">All time</SelectItem>
+                <SelectItem value="specific">Specific date range</SelectItem>
               </SelectContent>
             </Select>
-            <Button variant="outline">
-              <Download className="h-4 w-4 mr-2" />
-              Export
+            <Button className="bg-cyan-500 hover:bg-cyan-600">
+              Generate report
             </Button>
           </div>
         </div>
@@ -266,35 +271,141 @@ const Reporting = () => {
         </div>
 
         {/* Detailed Reports */}
-        <Tabs defaultValue="revenue" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="revenue">Revenue</TabsTrigger>
-            <TabsTrigger value="clients">Clients</TabsTrigger>
-            <TabsTrigger value="sessions">Sessions</TabsTrigger>
-            <TabsTrigger value="packages">Packages</TabsTrigger>
+        <Tabs defaultValue="summary" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-6">
+            <TabsTrigger value="summary">Summary</TabsTrigger>
+            <TabsTrigger value="schedule">Daily Schedule</TabsTrigger>
+            <TabsTrigger value="sessions">Session/Class Summary</TabsTrigger>
+            <TabsTrigger value="clients">Client List</TabsTrigger>
+            <TabsTrigger value="packages">Packages & Memberships</TabsTrigger>
+            <TabsTrigger value="attendance">Attendance</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="revenue" className="space-y-6">
-            <RevenueChart />
+          <TabsContent value="summary" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Clients Section */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Clients</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-3 gap-4 text-center">
+                    <div>
+                      <p className="text-2xl font-bold">{reportData?.clients.active}</p>
+                      <p className="text-sm text-muted-foreground">Active clients</p>
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold">{reportData?.clients.leads}</p>
+                      <p className="text-sm text-muted-foreground">Lead clients</p>
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold">0</p>
+                      <p className="text-sm text-muted-foreground">Inactive clients</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Services Section */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Services</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-3 gap-4 text-center">
+                    <div>
+                      <p className="text-2xl font-bold">0</p>
+                      <p className="text-sm text-muted-foreground">Memberships assigned</p>
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold">{reportData?.packages.sold}</p>
+                      <p className="text-sm text-muted-foreground">Packages assigned</p>
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold">0</p>
+                      <p className="text-sm text-muted-foreground">Products sold</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Bookings Section */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Bookings</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-3 gap-4 text-center">
+                    <div>
+                      <p className="text-2xl font-bold">{reportData?.sessions.total}</p>
+                      <p className="text-sm text-muted-foreground">Session bookings</p>
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold">0</p>
+                      <p className="text-sm text-muted-foreground">Class bookings</p>
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold">{reportData?.sessions.total}</p>
+                      <p className="text-sm text-muted-foreground">Total bookings</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Finances Section */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Finances</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-4 text-center">
+                    <div>
+                      <p className="text-2xl font-bold">AED {reportData?.revenue.total.toLocaleString()}</p>
+                      <p className="text-sm text-muted-foreground">Payments recorded</p>
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold">AED 0</p>
+                      <p className="text-sm text-muted-foreground">Expenses recorded</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="schedule" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Revenue Breakdown</CardTitle>
+                <CardTitle>Daily Schedule</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <p className="text-muted-foreground">Daily schedule report will be implemented here.</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="sessions" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Session/Class Summary</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div>
-                    <p className="text-sm text-muted-foreground">This Month</p>
-                    <p className="text-xl font-bold">AED {reportData?.revenue.thisMonth.toLocaleString()}</p>
+                    <p className="text-sm text-muted-foreground">Total Sessions</p>
+                    <p className="text-xl font-bold">{reportData?.sessions.total}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Last Month</p>
-                    <p className="text-xl font-bold">AED {reportData?.revenue.lastMonth.toLocaleString()}</p>
+                    <p className="text-sm text-muted-foreground">Completed</p>
+                    <p className="text-xl font-bold text-success">{reportData?.sessions.completed}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Growth</p>
-                    <p className={`text-xl font-bold ${reportData?.revenue.growth > 0 ? 'text-success' : 'text-destructive'}`}>
-                      {reportData?.revenue.growth > 0 ? '+' : ''}{reportData?.revenue.growth.toFixed(1)}%
-                    </p>
+                    <p className="text-sm text-muted-foreground">Scheduled</p>
+                    <p className="text-xl font-bold text-warning">{reportData?.sessions.scheduled}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Cancelled</p>
+                    <p className="text-xl font-bold text-destructive">{reportData?.sessions.cancelled}</p>
                   </div>
                 </div>
               </CardContent>
@@ -354,7 +465,7 @@ const Reporting = () => {
           <TabsContent value="packages" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Package Performance</CardTitle>
+                <CardTitle>Packages & Memberships</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -371,6 +482,17 @@ const Reporting = () => {
                     <p className="text-xl font-bold">{reportData?.packages.popular}</p>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="attendance" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Attendance Report</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">Attendance tracking report will be implemented here.</p>
               </CardContent>
             </Card>
           </TabsContent>

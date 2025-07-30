@@ -490,7 +490,7 @@ const Settings = () => {
                       onChange={(e) => updateClientAreaSetting('client_area_name', e.target.value)}
                       className="w-32"
                     />
-                    <span className="text-muted-foreground">.ptminder.com</span>
+                    <span className="text-muted-foreground">.trainwithus.com</span>
                     <Button variant="outline" size="sm">
                       <ExternalLink className="h-4 w-4 mr-1" />
                       Preview
