@@ -19,6 +19,7 @@ interface BookSessionModalProps {
   selectedDate?: Date;
   selectedTime?: string;
   editSession?: Session | null;
+  clientId?: string;
 }
 
 interface Session {
@@ -56,7 +57,7 @@ interface ClientPackage {
   };
 }
 
-const BookSessionModal = ({ isOpen, onClose, onSuccess, selectedDate, selectedTime, editSession }: BookSessionModalProps) => {
+const BookSessionModal = ({ isOpen, onClose, onSuccess, selectedDate, selectedTime, editSession, clientId }: BookSessionModalProps) => {
   const [activeTab, setActiveTab] = useState("book-session");
   const [clients, setClients] = useState<Client[]>([]);
   const [clientPackages, setClientPackages] = useState<ClientPackage[]>([]);
@@ -110,6 +111,21 @@ const BookSessionModal = ({ isOpen, onClose, onSuccess, selectedDate, selectedTi
           setSearchTerm(`${client.first_name} ${client.last_name}`);
         }
       } 
+      // If clientId is provided (from client profile), pre-select the client
+      else if (clientId) {
+        setFormData(prev => ({
+          ...prev,
+          client_id: clientId,
+          date: selectedDate ? selectedDate.toISOString().split('T')[0] : prev.date,
+          start_time: selectedTime ? selectedTime.split(':')[0].padStart(2, '0') + ':00' : prev.start_time
+        }));
+        
+        // Set search term to show selected client
+        const client = clients.find(c => c.id === clientId);
+        if (client) {
+          setSearchTerm(`${client.first_name} ${client.last_name}`);
+        }
+      }
       // Otherwise, use selected date and time for new session
       else if (selectedDate || selectedTime) {
         setFormData(prev => ({
@@ -119,7 +135,7 @@ const BookSessionModal = ({ isOpen, onClose, onSuccess, selectedDate, selectedTi
         }));
       }
     }
-  }, [isOpen, selectedDate, selectedTime, editSession, clients]);
+  }, [isOpen, selectedDate, selectedTime, editSession, clientId, clients]);
 
   useEffect(() => {
     if (formData.client_id) {

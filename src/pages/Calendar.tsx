@@ -122,6 +122,11 @@ const Calendar = () => {
       return "bg-destructive text-destructive-foreground";
     }
 
+    // Trial sessions appear red
+    if (type === 'EMS Trial Session' || type === 'PT Trial Session') {
+      return "bg-destructive text-destructive-foreground";
+    }
+
     // Default colors for scheduled sessions
     switch (type) {
       case "personal":

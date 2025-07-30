@@ -1066,6 +1066,7 @@ const ClientProfile = () => {
         isOpen={showBookSession}
         onClose={() => setShowBookSession(false)}
         onSuccess={fetchClientData}
+        clientId={client?.id}
       />
     </div>
   );

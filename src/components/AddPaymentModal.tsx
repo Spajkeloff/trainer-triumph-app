@@ -53,9 +53,16 @@ const AddPaymentModal = ({ isOpen, onClose, clientId, onSuccess, prefilledAmount
 
   // Update form when prefilled data changes
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && prefilledAmount) {
       form.reset({
-        amount: prefilledAmount || 0,
+        amount: prefilledAmount,
+        payment_method: "",
+        description: prefilledDescription || "",
+        payment_date: new Date().toISOString().split('T')[0],
+      });
+    } else if (isOpen) {
+      form.reset({
+        amount: 0,
         payment_method: "",
         description: prefilledDescription || "",
         payment_date: new Date().toISOString().split('T')[0],
