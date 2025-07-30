@@ -599,8 +599,6 @@ const BookSessionModal = ({ isOpen, onClose, onSuccess, selectedDate, selectedTi
                     <SelectItem value="EMS Training" className="bg-background hover:bg-muted">🔵 EMS Training</SelectItem>
                     <SelectItem value="PT Trial Session" className="bg-background hover:bg-muted">🔴 PT Trial Session</SelectItem>
                     <SelectItem value="EMS Trial Session" className="bg-background hover:bg-muted">🔴 EMS Trial Session</SelectItem>
-                    <SelectItem value="PT Session" className="bg-background hover:bg-muted">🔵 PT Session</SelectItem>
-                    <SelectItem value="EMS Session" className="bg-background hover:bg-muted">🔵 EMS Session</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
