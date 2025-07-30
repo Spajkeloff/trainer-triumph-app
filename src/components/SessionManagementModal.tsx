@@ -175,8 +175,8 @@ const SessionManagementModal = ({ isOpen, onClose, session, onSuccess, onEdit }:
       }
 
       // Handle package session logic - only if should count and not a trial session
-      if (!isTrialSession && shouldCount && action === 'completed') {
-        // Only deduct sessions for completion, not cancellation or rescheduling
+      if (!isTrialSession && shouldCount) {
+        // Only deduct sessions if user explicitly chose to count them
         // Sessions are already deducted when created via BookSessionModal
         // This is for sessions that were paid individually (not from package) but now need to count against package
         
