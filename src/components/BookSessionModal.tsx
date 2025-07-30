@@ -18,6 +18,24 @@ interface BookSessionModalProps {
   onSuccess: () => void;
   selectedDate?: Date;
   selectedTime?: string;
+  editSession?: Session | null;
+}
+
+interface Session {
+  id: string;
+  date: string;
+  start_time: string;
+  end_time: string;
+  type: string;
+  location: string;
+  notes?: string;
+  status: string;
+  client_id: string;
+  client_package_id?: string;
+  clients: {
+    first_name: string;
+    last_name: string;
+  };
 }
 
 interface Client {
@@ -38,7 +56,7 @@ interface ClientPackage {
   };
 }
 
-const BookSessionModal = ({ isOpen, onClose, onSuccess, selectedDate, selectedTime }: BookSessionModalProps) => {
+const BookSessionModal = ({ isOpen, onClose, onSuccess, selectedDate, selectedTime, editSession }: BookSessionModalProps) => {
   const [activeTab, setActiveTab] = useState("book-session");
   const [clients, setClients] = useState<Client[]>([]);
   const [clientPackages, setClientPackages] = useState<ClientPackage[]>([]);
@@ -71,8 +89,30 @@ const BookSessionModal = ({ isOpen, onClose, onSuccess, selectedDate, selectedTi
   useEffect(() => {
     if (isOpen) {
       fetchClients();
-      // Update form data when modal opens with selected date and time
-      if (selectedDate || selectedTime) {
+      
+      // If editing a session, populate form with session data
+      if (editSession) {
+        setFormData(prev => ({
+          ...prev,
+          date: editSession.date,
+          start_time: editSession.start_time.substring(0, 5),
+          end_time: editSession.end_time.substring(0, 5),
+          client_id: editSession.client_id,
+          type: editSession.type,
+          location: editSession.location,
+          notes: editSession.notes || "",
+          use_package: !!editSession.client_package_id,
+          client_package_id: editSession.client_package_id || ""
+        }));
+        
+        // Set search term to show selected client
+        const client = clients.find(c => c.id === editSession.client_id);
+        if (client) {
+          setSearchTerm(`${client.first_name} ${client.last_name}`);
+        }
+      } 
+      // Otherwise, use selected date and time for new session
+      else if (selectedDate || selectedTime) {
         setFormData(prev => ({
           ...prev,
           date: selectedDate ? selectedDate.toISOString().split('T')[0] : prev.date,
@@ -80,7 +120,7 @@ const BookSessionModal = ({ isOpen, onClose, onSuccess, selectedDate, selectedTi
         }));
       }
     }
-  }, [isOpen, selectedDate, selectedTime]);
+  }, [isOpen, selectedDate, selectedTime, editSession, clients]);
 
   useEffect(() => {
     if (formData.client_id) {
@@ -153,80 +193,101 @@ const BookSessionModal = ({ isOpen, onClose, onSuccess, selectedDate, selectedTi
         duration: 60 // Default 60 minutes
       };
 
-      let sessionsToCreate = [sessionData];
-
-      // Generate recurring sessions if enabled
-      if (formData.recurring) {
-        sessionsToCreate = generateRecurringSessions(sessionData);
-      }
-
-      const { error: sessionError } = await supabase
-        .from('sessions')
-        .insert(sessionsToCreate);
-
-      if (sessionError) throw sessionError;
-
-      // If using package, deduct sessions based on number created
-      if (formData.use_package && formData.client_package_id) {
-        const sessionsCount = sessionsToCreate.length;
-        
-        // Get current package data and verify sufficient sessions
-        const { data: packageData, error: fetchError } = await supabase
-          .from('client_packages')
-          .select('sessions_remaining')
-          .eq('id', formData.client_package_id)
-          .single();
-
-        if (fetchError) throw fetchError;
-
-        if ((packageData?.sessions_remaining || 0) < sessionsCount) {
-          throw new Error(`Insufficient sessions remaining. Package has ${packageData?.sessions_remaining || 0} sessions, but ${sessionsCount} sessions were requested.`);
-        }
-
-        // Deduct sessions from package atomically
-        const { error: packageError } = await supabase
-          .from('client_packages')
-          .update({ 
-            sessions_remaining: packageData.sessions_remaining - sessionsCount,
+      // If editing, update the existing session
+      if (editSession) {
+        const { error: sessionError } = await supabase
+          .from('sessions')
+          .update({
+            ...sessionData,
             updated_at: new Date().toISOString()
           })
-          .eq('id', formData.client_package_id);
+          .eq('id', editSession.id);
 
-        if (packageError) throw packageError;
-        
-        console.log(`Deducted ${sessionsCount} sessions from package ${formData.client_package_id} at booking time`);
+        if (sessionError) throw sessionError;
+
+        toast({
+          title: "Success",
+          description: "Session updated successfully",
+        });
+      } 
+      // Otherwise, create new session(s)
+      else {
+        let sessionsToCreate = [sessionData];
+
+        // Generate recurring sessions if enabled
+        if (formData.recurring) {
+          sessionsToCreate = generateRecurringSessions(sessionData);
+        }
+
+        const { error: sessionError } = await supabase
+          .from('sessions')
+          .insert(sessionsToCreate);
+
+        if (sessionError) throw sessionError;
+
+        // ONLY deduct from package for NEW sessions (not edits)
+        // If using package, deduct sessions based on number created
+        if (formData.use_package && formData.client_package_id) {
+          const sessionsCount = sessionsToCreate.length;
+          
+          // Get current package data and verify sufficient sessions
+          const { data: packageData, error: fetchError } = await supabase
+            .from('client_packages')
+            .select('sessions_remaining')
+            .eq('id', formData.client_package_id)
+            .maybeSingle();
+
+          if (fetchError) throw fetchError;
+
+          if ((packageData?.sessions_remaining || 0) < sessionsCount) {
+            throw new Error(`Insufficient sessions remaining. Package has ${packageData?.sessions_remaining || 0} sessions, but ${sessionsCount} sessions were requested.`);
+          }
+
+          // Deduct sessions from package atomically
+          const { error: packageError } = await supabase
+            .from('client_packages')
+            .update({ 
+              sessions_remaining: packageData.sessions_remaining - sessionsCount,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', formData.client_package_id);
+
+          if (packageError) throw packageError;
+          
+          console.log(`Deducted ${sessionsCount} sessions from package ${formData.client_package_id} at booking time`);
+        }
+
+        // Create payment record if not using package
+        if (!formData.use_package && formData.price) {
+          const totalAmount = parseFloat(formData.price) * sessionsToCreate.length;
+          const { error: paymentError } = await supabase
+            .from('payments')
+            .insert([{
+              client_id: formData.client_id,
+              amount: totalAmount,
+              payment_method: 'cash',
+              status: 'pending',
+              description: `${sessionsToCreate.length} session(s) on ${formData.date}${formData.recurring ? ' (recurring)' : ''}`
+            }]);
+
+          if (paymentError) throw paymentError;
+        }
+
+        toast({
+          title: "Success",
+          description: `${sessionsToCreate.length} session(s) booked successfully`,
+        });
       }
-
-      // Create payment record if not using package
-      if (!formData.use_package && formData.price) {
-        const totalAmount = parseFloat(formData.price) * sessionsToCreate.length;
-        const { error: paymentError } = await supabase
-          .from('payments')
-          .insert([{
-            client_id: formData.client_id,
-            amount: totalAmount,
-            payment_method: 'cash',
-            status: 'pending',
-            description: `${sessionsToCreate.length} session(s) on ${formData.date}${formData.recurring ? ' (recurring)' : ''}`
-          }]);
-
-        if (paymentError) throw paymentError;
-      }
-
-      toast({
-        title: "Success",
-        description: `${sessionsToCreate.length} session(s) booked successfully`,
-      });
 
       onSuccess();
       onClose();
       resetForm();
 
     } catch (error) {
-      console.error('Error booking session:', error);
+      console.error('Error booking/updating session:', error);
       toast({
         title: "Error",
-        description: "Failed to book session",
+        description: editSession ? "Failed to update session" : "Failed to book session",
         variant: "destructive",
       });
     } finally {
@@ -333,9 +394,9 @@ const BookSessionModal = ({ isOpen, onClose, onSuccess, selectedDate, selectedTi
         <DialogHeader>
           <div className="flex items-center justify-between">
             <div>
-              <DialogTitle className="text-xl">
-                {selectedDate ? selectedDate.toLocaleDateString() : "Book Session"}
-              </DialogTitle>
+               <DialogTitle className="text-xl">
+                 {editSession ? "Edit Session" : (selectedDate ? selectedDate.toLocaleDateString() : "Book Session")}
+               </DialogTitle>
               <p className="text-sm text-muted-foreground mt-1">
                 {formData.start_time} - {formData.end_time} • 60 mins
               </p>
@@ -655,11 +716,11 @@ const BookSessionModal = ({ isOpen, onClose, onSuccess, selectedDate, selectedTi
                 </div>
               )}
 
-              <div className="flex justify-end items-center pt-4">
-                <Button type="submit" disabled={loading || !formData.client_id}>
-                  {loading ? "Saving..." : "Save"}
-                </Button>
-              </div>
+               <div className="flex justify-end items-center pt-4">
+                 <Button type="submit" disabled={loading || !formData.client_id}>
+                   {loading ? "Saving..." : (editSession ? "Update Session" : "Save")}
+                 </Button>
+               </div>
             </form>
           </TabsContent>
 

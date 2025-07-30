@@ -594,9 +594,11 @@ const Calendar = () => {
             setShowBookModal(false);
             setSelectedDate(undefined);
             setSelectedTime("");
+            setEditSession(null); // Clear edit session when closing
           }}
           onSuccess={() => {
             fetchSessions();
+            setEditSession(null); // Clear edit session on success
             // Navigate to the month of the selected date if it's different
             if (selectedDate && selectedDate.getMonth() !== currentDate.getMonth()) {
               setCurrentDate(selectedDate);
@@ -604,6 +606,7 @@ const Calendar = () => {
           }}
           selectedDate={selectedDate}
           selectedTime={selectedTime}
+          editSession={editSession} // Pass the edit session to the modal
         />
 
         {/* Session Management Modal */}
