@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
@@ -19,9 +19,74 @@ import {
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import { Checkbox } from "../components/ui/checkbox";
+import { clientAreaService, type ClientAreaSettings } from "../services/clientAreaService";
+import { useToast } from "../hooks/use-toast";
 
 const Settings = () => {
   const [activeTab, setActiveTab] = useState<"business" | "staff" | "hours" | "notifications" | "payments" | "tax" | "clientarea">("business");
+  const [clientAreaSettings, setClientAreaSettings] = useState<ClientAreaSettings | null>(null);
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
+
+  // Load client area settings on component mount
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        setLoading(true);
+        const settings = await clientAreaService.getSettings();
+        if (settings) {
+          setClientAreaSettings(settings);
+        } else {
+          // Use default settings if none exist
+          const defaultSettings = await clientAreaService.getDefaultSettings();
+          setClientAreaSettings(defaultSettings);
+        }
+      } catch (error) {
+        console.error('Error loading client area settings:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load client area settings",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (activeTab === "clientarea") {
+      loadSettings();
+    }
+  }, [activeTab, toast]);
+
+  const handleSaveClientAreaSettings = async () => {
+    if (!clientAreaSettings) return;
+
+    try {
+      setLoading(true);
+      await clientAreaService.createOrUpdateSettings(clientAreaSettings);
+      toast({
+        title: "Success",
+        description: "Client area settings saved successfully",
+      });
+    } catch (error) {
+      console.error('Error saving client area settings:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save client area settings",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateClientAreaSetting = (key: keyof ClientAreaSettings, value: any) => {
+    if (!clientAreaSettings) return;
+    setClientAreaSettings({
+      ...clientAreaSettings,
+      [key]: value,
+    });
+  };
 
   const renderBusinessInfo = () => (
     <Card>
@@ -375,203 +440,290 @@ const Settings = () => {
     </Card>
   );
 
-  const renderClientArea = () => (
-    <div className="space-y-6">
-      {/* Client Settings Tab */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Globe className="h-5 w-5 mr-2" />
-            Client Area
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Enable Client Area */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h4 className="font-medium">Enable Client Area</h4>
-              <p className="text-sm text-muted-foreground">Allow clients to access their portal</p>
+  const renderClientArea = () => {
+    if (!clientAreaSettings) {
+      return (
+        <Card>
+          <CardContent className="flex items-center justify-center py-8">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+              <p className="text-muted-foreground">Loading client area settings...</p>
             </div>
-            <Switch defaultChecked />
-          </div>
+          </CardContent>
+        </Card>
+      );
+    }
 
-          {/* Client Area Website */}
-          <div className="space-y-4 pt-4 border-t">
-            <h4 className="font-medium">Client Area Website</h4>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="clientAreaName">Client area name:</Label>
+    return (
+      <div className="space-y-6">
+        {/* Client Settings Tab */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Globe className="h-5 w-5 mr-2" />
+              Client Area
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Enable Client Area */}
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="font-medium">Enable Client Area</h4>
+                <p className="text-sm text-muted-foreground">Allow clients to access their portal</p>
+              </div>
+              <Switch 
+                checked={clientAreaSettings.enabled} 
+                onCheckedChange={(checked) => updateClientAreaSetting('enabled', checked)}
+              />
+            </div>
+
+            {/* Client Area Website */}
+            <div className="space-y-4 pt-4 border-t">
+              <h4 className="font-medium">Client Area Website</h4>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="clientAreaName">Client area name:</Label>
+                  <div className="flex items-center space-x-2">
+                    <Input 
+                      id="clientAreaName" 
+                      value={clientAreaSettings.client_area_name}
+                      onChange={(e) => updateClientAreaSetting('client_area_name', e.target.value)}
+                      className="w-32"
+                    />
+                    <span className="text-muted-foreground">.ptminder.com</span>
+                    <Button variant="outline" size="sm">
+                      <ExternalLink className="h-4 w-4 mr-1" />
+                      Preview
+                    </Button>
+                    <Button variant="outline" size="sm">
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+                
                 <div className="flex items-center space-x-2">
-                  <Input 
-                    id="clientAreaName" 
-                    defaultValue="trainwithus" 
-                    className="w-32"
+                  <Checkbox 
+                    id="customWebsite" 
+                    checked={clientAreaSettings.custom_website_enabled}
+                    onCheckedChange={(checked) => updateClientAreaSetting('custom_website_enabled', checked)}
                   />
-                  <span className="text-muted-foreground">.ptminder.com</span>
-                  <Button variant="outline" size="sm">
-                    <ExternalLink className="h-4 w-4 mr-1" />
-                    Preview
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    <Copy className="h-4 w-4" />
-                  </Button>
+                  <Label htmlFor="customWebsite">I already have my own website</Label>
+                  <Input 
+                    value={clientAreaSettings.custom_website_url || ''}
+                    onChange={(e) => updateClientAreaSetting('custom_website_url', e.target.value)}
+                    className="flex-1"
+                    placeholder="https://yourwebsite.com"
+                  />
+                  <Button variant="outline" size="sm">Edit</Button>
                 </div>
               </div>
-              
-              <div className="flex items-center space-x-2">
-                <Checkbox id="customWebsite" defaultChecked />
-                <Label htmlFor="customWebsite">I already have my own website</Label>
-                <Input 
-                  defaultValue="http://trainwithus.ae" 
-                  className="flex-1"
-                />
-                <Button variant="outline" size="sm">Edit</Button>
-              </div>
             </div>
-          </div>
 
-          {/* Available Features */}
-          <div className="space-y-4 pt-4 border-t">
-            <h4 className="font-medium">Available Features</h4>
-            <div className="space-y-3">
-              <div className="flex items-center space-x-2">
-                <Switch />
-                <Label>Allow online Session bookings</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Switch />
-                <Label>Allow online Class bookings</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Switch />
-                <Label>Allow online Store purchases</Label>
-              </div>
-            </div>
-          </div>
-
-          {/* Client Homepage Area */}
-          <div className="space-y-4 pt-4 border-t">
-            <h4 className="font-medium">Client Homepage Area</h4>
-            <div className="space-y-3">
-              <div className="flex items-center space-x-2">
-                <Checkbox />
-                <Label>Hide the Session bookings button</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox />
-                <Label>Hide the Class bookings button</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox />
-                <Label>Hide the Store button</Label>
-              </div>
-            </div>
-          </div>
-
-          {/* Client Logged In Area */}
-          <div className="space-y-4 pt-4 border-t">
-            <h4 className="font-medium">Client Logged In Area</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Available Features */}
+            <div className="space-y-4 pt-4 border-t">
+              <h4 className="font-medium">Available Features</h4>
               <div className="space-y-3">
                 <div className="flex items-center space-x-2">
-                  <Checkbox defaultChecked />
-                  <Label>Hide My Bookings</Label>
+                  <Switch 
+                    checked={clientAreaSettings.allow_session_bookings}
+                    onCheckedChange={(checked) => updateClientAreaSetting('allow_session_bookings', checked)}
+                  />
+                  <Label>Allow online Session bookings</Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Checkbox defaultChecked />
-                  <Label>Hide Class Booking</Label>
+                  <Switch 
+                    checked={clientAreaSettings.allow_class_bookings}
+                    onCheckedChange={(checked) => updateClientAreaSetting('allow_class_bookings', checked)}
+                  />
+                  <Label>Allow online Class bookings</Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Checkbox defaultChecked />
-                  <Label>Hide Session Booking</Label>
+                  <Switch 
+                    checked={clientAreaSettings.allow_store_purchases}
+                    onCheckedChange={(checked) => updateClientAreaSetting('allow_store_purchases', checked)}
+                  />
+                  <Label>Allow online Store purchases</Label>
+                </div>
+              </div>
+            </div>
+
+            {/* Client Homepage Area */}
+            <div className="space-y-4 pt-4 border-t">
+              <h4 className="font-medium">Client Homepage Area</h4>
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    checked={clientAreaSettings.hide_session_bookings_button}
+                    onCheckedChange={(checked) => updateClientAreaSetting('hide_session_bookings_button', checked)}
+                  />
+                  <Label>Hide the Session bookings button</Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Checkbox />
-                  <Label>Hide Workout</Label>
+                  <Checkbox 
+                    checked={clientAreaSettings.hide_class_bookings_button}
+                    onCheckedChange={(checked) => updateClientAreaSetting('hide_class_bookings_button', checked)}
+                  />
+                  <Label>Hide the Class bookings button</Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Checkbox />
-                  <Label>Hide Nutrition</Label>
+                  <Checkbox 
+                    checked={clientAreaSettings.hide_store_button}
+                    onCheckedChange={(checked) => updateClientAreaSetting('hide_store_button', checked)}
+                  />
+                  <Label>Hide the Store button</Label>
+                </div>
+              </div>
+            </div>
+
+            {/* Client Logged In Area */}
+            <div className="space-y-4 pt-4 border-t">
+              <h4 className="font-medium">Client Logged In Area</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      checked={clientAreaSettings.hide_my_bookings}
+                      onCheckedChange={(checked) => updateClientAreaSetting('hide_my_bookings', checked)}
+                    />
+                    <Label>Hide My Bookings</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      checked={clientAreaSettings.hide_class_booking}
+                      onCheckedChange={(checked) => updateClientAreaSetting('hide_class_booking', checked)}
+                    />
+                    <Label>Hide Class Booking</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      checked={clientAreaSettings.hide_session_booking}
+                      onCheckedChange={(checked) => updateClientAreaSetting('hide_session_booking', checked)}
+                    />
+                    <Label>Hide Session Booking</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      checked={clientAreaSettings.hide_workout}
+                      onCheckedChange={(checked) => updateClientAreaSetting('hide_workout', checked)}
+                    />
+                    <Label>Hide Workout</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      checked={clientAreaSettings.hide_nutrition}
+                      onCheckedChange={(checked) => updateClientAreaSetting('hide_nutrition', checked)}
+                    />
+                    <Label>Hide Nutrition</Label>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      checked={clientAreaSettings.hide_assessments}
+                      onCheckedChange={(checked) => updateClientAreaSetting('hide_assessments', checked)}
+                    />
+                    <Label>Hide Assessments</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      checked={clientAreaSettings.hide_finances}
+                      onCheckedChange={(checked) => updateClientAreaSetting('hide_finances', checked)}
+                    />
+                    <Label>Hide Finances</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      checked={clientAreaSettings.hide_charges_payments}
+                      onCheckedChange={(checked) => updateClientAreaSetting('hide_charges_payments', checked)}
+                    />
+                    <Label>Hide total of charges & payments</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      checked={clientAreaSettings.hide_packages_memberships}
+                      onCheckedChange={(checked) => updateClientAreaSetting('hide_packages_memberships', checked)}
+                    />
+                    <Label>Hide assigned Packages & Memberships from the dashboard</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      checked={clientAreaSettings.hide_shared_items}
+                      onCheckedChange={(checked) => updateClientAreaSetting('hide_shared_items', checked)}
+                    />
+                    <Label>Hide Shared Items</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      checked={clientAreaSettings.hide_store}
+                      onCheckedChange={(checked) => updateClientAreaSetting('hide_store', checked)}
+                    />
+                    <Label>Hide Store</Label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Sign Up and Login Settings */}
+            <div className="space-y-4 pt-4 border-t">
+              <h4 className="font-medium">Sign Up and Login Settings</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>After a client signs up, take them to this page first:</Label>
+                  <Select 
+                    value={clientAreaSettings.signup_redirect_page}
+                    onValueChange={(value) => updateClientAreaSetting('signup_redirect_page', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="bookings">Bookings</SelectItem>
+                      <SelectItem value="dashboard">Dashboard</SelectItem>
+                      <SelectItem value="profile">Profile</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>When a client logs in, take them to this page first:</Label>
+                  <Select 
+                    value={clientAreaSettings.login_redirect_page}
+                    onValueChange={(value) => updateClientAreaSetting('login_redirect_page', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="finances">Finances</SelectItem>
+                      <SelectItem value="bookings">Bookings</SelectItem>
+                      <SelectItem value="dashboard">Dashboard</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
               <div className="space-y-3">
                 <div className="flex items-center space-x-2">
-                  <Checkbox />
-                  <Label>Hide Assessments</Label>
+                  <Checkbox 
+                    checked={clientAreaSettings.disallow_new_signups}
+                    onCheckedChange={(checked) => updateClientAreaSetting('disallow_new_signups', checked)}
+                  />
+                  <Label>Disallow new clients to Sign Up through the Client Area</Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Checkbox />
-                  <Label>Hide Finances</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox />
-                  <Label>Hide total of charges & payments</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox />
-                  <Label>Hide assigned Packages & Memberships from the dashboard</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox />
-                  <Label>Hide Shared Items</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox defaultChecked />
-                  <Label>Hide Store</Label>
+                  <Checkbox 
+                    checked={clientAreaSettings.allow_inactive_reactivation}
+                    onCheckedChange={(checked) => updateClientAreaSetting('allow_inactive_reactivation', checked)}
+                  />
+                  <Label>Allow clients with an Inactive status to reactivate their account when they attempt to log back in</Label>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Sign Up and Login Settings */}
-          <div className="space-y-4 pt-4 border-t">
-            <h4 className="font-medium">Sign Up and Login Settings</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>After a client signs up, take them to this page first:</Label>
-                <Select defaultValue="bookings">
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="bookings">Bookings</SelectItem>
-                    <SelectItem value="dashboard">Dashboard</SelectItem>
-                    <SelectItem value="profile">Profile</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>When a client logs in, take them to this page first:</Label>
-                <Select defaultValue="finances">
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="finances">Finances</SelectItem>
-                    <SelectItem value="bookings">Bookings</SelectItem>
-                    <SelectItem value="dashboard">Dashboard</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="space-y-3">
-              <div className="flex items-center space-x-2">
-                <Checkbox />
-                <Label>Disallow new clients to Sign Up through the Client Area</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox />
-                <Label>Allow clients with an Inactive status to reactivate their account when they attempt to log back in</Label>
-              </div>
-            </div>
-          </div>
-
-          <Button>
-            <Save className="h-4 w-4 mr-2" />
-            Save Client Area Settings
-          </Button>
-        </CardContent>
-      </Card>
+            <Button onClick={handleSaveClientAreaSettings} disabled={loading}>
+              <Save className="h-4 w-4 mr-2" />
+              {loading ? 'Saving...' : 'Save Client Area Settings'}
+            </Button>
+          </CardContent>
+        </Card>
 
       {/* Sessions Configuration */}
       <Card>
@@ -767,6 +919,7 @@ const Settings = () => {
       </Card>
     </div>
   );
+};
 
   return (
     <div className="min-h-screen bg-background">

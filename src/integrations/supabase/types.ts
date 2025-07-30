@@ -14,6 +14,183 @@ export type Database = {
   }
   public: {
     Tables: {
+      client_area_settings: {
+        Row: {
+          allow_class_bookings: boolean | null
+          allow_client_assessments: boolean | null
+          allow_inactive_reactivation: boolean | null
+          allow_session_bookings: boolean | null
+          allow_store_purchases: boolean | null
+          classes_allow_multiple_same_time: boolean | null
+          classes_booking_restriction_hours: number | null
+          classes_disable_waiting_list: boolean | null
+          classes_hide_price: boolean | null
+          classes_immediate_signup: boolean | null
+          classes_max_bookings_per_day: number | null
+          classes_require_credits_for_waitlist: boolean | null
+          classes_show_spaces_left: boolean | null
+          client_area_name: string | null
+          created_at: string
+          custom_text: string | null
+          custom_website_enabled: boolean | null
+          custom_website_url: string | null
+          disallow_custom_payments: boolean | null
+          disallow_family_members: boolean | null
+          disallow_new_signups: boolean | null
+          enabled: boolean
+          hide_assessments: boolean | null
+          hide_charges_payments: boolean | null
+          hide_class_booking: boolean | null
+          hide_class_bookings_button: boolean | null
+          hide_finances: boolean | null
+          hide_my_bookings: boolean | null
+          hide_nutrition: boolean | null
+          hide_packages_memberships: boolean | null
+          hide_session_booking: boolean | null
+          hide_session_bookings_button: boolean | null
+          hide_shared_items: boolean | null
+          hide_store: boolean | null
+          hide_store_button: boolean | null
+          hide_store_for_leads: boolean | null
+          hide_workout: boolean | null
+          id: string
+          login_redirect_page: string | null
+          mobile_app_prompt: boolean | null
+          restrict_payment_method_updates: boolean | null
+          restrict_personal_info_updates: boolean | null
+          restrict_profile_updates: boolean | null
+          sessions_allow_occupied_slots: boolean | null
+          sessions_approval_required: boolean | null
+          sessions_booking_restriction_hours: number | null
+          sessions_hide_price: boolean | null
+          sessions_override_default_cost: boolean | null
+          sessions_timeslot_increment: number | null
+          sessions_use_templates: boolean | null
+          signup_redirect_page: string | null
+          store_order_memberships: number | null
+          store_order_packages: number | null
+          store_order_products: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          allow_class_bookings?: boolean | null
+          allow_client_assessments?: boolean | null
+          allow_inactive_reactivation?: boolean | null
+          allow_session_bookings?: boolean | null
+          allow_store_purchases?: boolean | null
+          classes_allow_multiple_same_time?: boolean | null
+          classes_booking_restriction_hours?: number | null
+          classes_disable_waiting_list?: boolean | null
+          classes_hide_price?: boolean | null
+          classes_immediate_signup?: boolean | null
+          classes_max_bookings_per_day?: number | null
+          classes_require_credits_for_waitlist?: boolean | null
+          classes_show_spaces_left?: boolean | null
+          client_area_name?: string | null
+          created_at?: string
+          custom_text?: string | null
+          custom_website_enabled?: boolean | null
+          custom_website_url?: string | null
+          disallow_custom_payments?: boolean | null
+          disallow_family_members?: boolean | null
+          disallow_new_signups?: boolean | null
+          enabled?: boolean
+          hide_assessments?: boolean | null
+          hide_charges_payments?: boolean | null
+          hide_class_booking?: boolean | null
+          hide_class_bookings_button?: boolean | null
+          hide_finances?: boolean | null
+          hide_my_bookings?: boolean | null
+          hide_nutrition?: boolean | null
+          hide_packages_memberships?: boolean | null
+          hide_session_booking?: boolean | null
+          hide_session_bookings_button?: boolean | null
+          hide_shared_items?: boolean | null
+          hide_store?: boolean | null
+          hide_store_button?: boolean | null
+          hide_store_for_leads?: boolean | null
+          hide_workout?: boolean | null
+          id?: string
+          login_redirect_page?: string | null
+          mobile_app_prompt?: boolean | null
+          restrict_payment_method_updates?: boolean | null
+          restrict_personal_info_updates?: boolean | null
+          restrict_profile_updates?: boolean | null
+          sessions_allow_occupied_slots?: boolean | null
+          sessions_approval_required?: boolean | null
+          sessions_booking_restriction_hours?: number | null
+          sessions_hide_price?: boolean | null
+          sessions_override_default_cost?: boolean | null
+          sessions_timeslot_increment?: number | null
+          sessions_use_templates?: boolean | null
+          signup_redirect_page?: string | null
+          store_order_memberships?: number | null
+          store_order_packages?: number | null
+          store_order_products?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          allow_class_bookings?: boolean | null
+          allow_client_assessments?: boolean | null
+          allow_inactive_reactivation?: boolean | null
+          allow_session_bookings?: boolean | null
+          allow_store_purchases?: boolean | null
+          classes_allow_multiple_same_time?: boolean | null
+          classes_booking_restriction_hours?: number | null
+          classes_disable_waiting_list?: boolean | null
+          classes_hide_price?: boolean | null
+          classes_immediate_signup?: boolean | null
+          classes_max_bookings_per_day?: number | null
+          classes_require_credits_for_waitlist?: boolean | null
+          classes_show_spaces_left?: boolean | null
+          client_area_name?: string | null
+          created_at?: string
+          custom_text?: string | null
+          custom_website_enabled?: boolean | null
+          custom_website_url?: string | null
+          disallow_custom_payments?: boolean | null
+          disallow_family_members?: boolean | null
+          disallow_new_signups?: boolean | null
+          enabled?: boolean
+          hide_assessments?: boolean | null
+          hide_charges_payments?: boolean | null
+          hide_class_booking?: boolean | null
+          hide_class_bookings_button?: boolean | null
+          hide_finances?: boolean | null
+          hide_my_bookings?: boolean | null
+          hide_nutrition?: boolean | null
+          hide_packages_memberships?: boolean | null
+          hide_session_booking?: boolean | null
+          hide_session_bookings_button?: boolean | null
+          hide_shared_items?: boolean | null
+          hide_store?: boolean | null
+          hide_store_button?: boolean | null
+          hide_store_for_leads?: boolean | null
+          hide_workout?: boolean | null
+          id?: string
+          login_redirect_page?: string | null
+          mobile_app_prompt?: boolean | null
+          restrict_payment_method_updates?: boolean | null
+          restrict_personal_info_updates?: boolean | null
+          restrict_profile_updates?: boolean | null
+          sessions_allow_occupied_slots?: boolean | null
+          sessions_approval_required?: boolean | null
+          sessions_booking_restriction_hours?: number | null
+          sessions_hide_price?: boolean | null
+          sessions_override_default_cost?: boolean | null
+          sessions_timeslot_increment?: number | null
+          sessions_use_templates?: boolean | null
+          signup_redirect_page?: string | null
+          store_order_memberships?: number | null
+          store_order_packages?: number | null
+          store_order_products?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       client_assessments: {
         Row: {
           assessment_date: string | null
