@@ -183,26 +183,24 @@ const SessionManagementModal = ({ isOpen, onClose, session, onSuccess, onEdit }:
         });
       }
 
-      // Handle package session logic - SIMPLIFIED to prevent double deductions
-      console.log('Checking package deduction conditions:', {
+      // Handle package session logic - ONLY for the specific session being reconciled
+      console.log('Processing session reconciliation for session ID:', session.id);
+      console.log('Session details:', {
         isTrialSession,
         shouldCount,
         hasClientPackageId: !!session.client_package_id,
-        action
+        action,
+        sessionType: session.type
       });
 
       if (!isTrialSession) {
-        // CRITICAL PRINCIPLE: Sessions are deducted ONLY ONCE
-        // - Sessions linked to packages: Already deducted at booking time
-        // - Sessions NOT linked to packages: Can be retroactively deducted only once during reconciliation
-        
         if (session.client_package_id) {
-          console.log('Session linked to package:', session.client_package_id);
-          console.log('Session was already deducted at booking time - no further deduction needed');
+          // Session already linked to package - was deducted at booking time
+          console.log('Session already linked to package:', session.client_package_id);
           
-          // ONLY action: restore session if cancelled/rescheduled and user chooses "don't count"
+          // ONLY restore if cancelled/rescheduled and user chooses "don't count"
           if ((action === 'cancelled' || action === 'rescheduled') && !shouldCount) {
-            console.log('User chose not to count this cancelled/rescheduled session - restoring to package');
+            console.log('Restoring THIS specific session to package');
             
             const { data: currentPackage } = await supabase
               .from('client_packages')
@@ -220,44 +218,45 @@ const SessionManagementModal = ({ isOpen, onClose, session, onSuccess, onEdit }:
                 .eq('id', session.client_package_id);
 
               if (packageError) throw packageError;
-              console.log('Session restored to package successfully');
+              console.log('Successfully restored 1 session to package');
             }
+          } else {
+            console.log('No package action needed - session already properly handled');
           }
         } 
-        // Handle sessions NOT linked to packages (paid individually at booking)
+        // Session NOT linked to package - can be retroactively deducted ONCE
         else if (shouldCount && action === 'completed') {
-          console.log('Session not linked to package - checking for retroactive package deduction');
+          console.log('Session not linked to package - checking for retroactive deduction for session:', session.id);
           
-          // Only for completed sessions, try to find and deduct from matching package
+          // Find matching package for THIS specific session type
           let packageToDeduct = null;
           
           if (session.type === 'PT Session') {
             const { data: ptPackages } = await supabase
               .from('client_packages')
-              .select('id, sessions_remaining, packages!inner(name)')
+              .select('id, sessions_remaining')
               .eq('client_id', session.client_id)
               .eq('status', 'active')
               .gt('sessions_remaining', 0)
-              .ilike('packages.name', '%personal%training%')
               .limit(1);
             
             packageToDeduct = ptPackages?.[0];
           } else if (session.type === 'EMS Session') {
             const { data: emsPackages } = await supabase
               .from('client_packages')
-              .select('id, sessions_remaining, packages!inner(name)')
+              .select('id, sessions_remaining')
               .eq('client_id', session.client_id)
               .eq('status', 'active')
               .gt('sessions_remaining', 0)
-              .ilike('packages.name', '%ems%')
               .limit(1);
             
             packageToDeduct = emsPackages?.[0];
           }
 
-          if (packageToDeduct) {
-            console.log('Retroactively deducting session from package:', packageToDeduct.id);
+          if (packageToDeduct && packageToDeduct.sessions_remaining > 0) {
+            console.log('Deducting 1 session from package:', packageToDeduct.id, 'for session:', session.id);
             
+            // Atomically deduct 1 session and link THIS specific session
             const { error: packageError } = await supabase
               .from('client_packages')
               .update({ 
@@ -268,18 +267,20 @@ const SessionManagementModal = ({ isOpen, onClose, session, onSuccess, onEdit }:
 
             if (packageError) throw packageError;
 
-            // Link session to package to mark it as deducted
-            await supabase
+            // Link THIS specific session to package to prevent future deductions
+            const { error: linkError } = await supabase
               .from('sessions')
               .update({ client_package_id: packageToDeduct.id })
               .eq('id', session.id);
               
-            console.log('Session retroactively linked to package and deducted');
+            if (linkError) throw linkError;
+            
+            console.log('Successfully deducted 1 session and linked session', session.id, 'to package', packageToDeduct.id);
           } else {
-            console.log('No matching package found for retroactive deduction');
+            console.log('No suitable package found or package has no sessions remaining');
           }
         } else {
-          console.log('No package action needed for this session');
+          console.log('No package action needed for this session reconciliation');
         }
       }
 
