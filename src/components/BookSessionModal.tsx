@@ -169,22 +169,32 @@ const BookSessionModal = ({ isOpen, onClose, onSuccess, selectedDate, selectedTi
       // If using package, deduct sessions based on number created
       if (formData.use_package && formData.client_package_id) {
         const sessionsCount = sessionsToCreate.length;
-        // Get current sessions remaining and decrement
-        const { data: packageData } = await supabase
+        
+        // Get current package data and verify sufficient sessions
+        const { data: packageData, error: fetchError } = await supabase
           .from('client_packages')
           .select('sessions_remaining')
           .eq('id', formData.client_package_id)
           .single();
 
+        if (fetchError) throw fetchError;
+
+        if ((packageData?.sessions_remaining || 0) < sessionsCount) {
+          throw new Error(`Insufficient sessions remaining. Package has ${packageData?.sessions_remaining || 0} sessions, but ${sessionsCount} sessions were requested.`);
+        }
+
+        // Deduct sessions from package atomically
         const { error: packageError } = await supabase
           .from('client_packages')
           .update({ 
-            sessions_remaining: Math.max(0, (packageData?.sessions_remaining || sessionsCount) - sessionsCount),
+            sessions_remaining: packageData.sessions_remaining - sessionsCount,
             updated_at: new Date().toISOString()
           })
           .eq('id', formData.client_package_id);
 
         if (packageError) throw packageError;
+        
+        console.log(`Deducted ${sessionsCount} sessions from package ${formData.client_package_id} at booking time`);
       }
 
       // Create payment record if not using package
