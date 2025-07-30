@@ -163,25 +163,8 @@ const SessionManagementModal = ({ isOpen, onClose, session, onSuccess, onEdit }:
 
       if (sessionError) throw sessionError;
 
-      // Handle trial session billing
-      if (isTrialSession && action === 'completed') {
-        console.log('Processing trial session billing...');
-        // Import finance service at the top
-        const { financeService } = await import('@/services/financeService');
-        
-        // Create a charge transaction for trial session (250 AED)
-        await financeService.createTransaction({
-          client_id: session.client_id,
-          transaction_type: 'charge',
-          amount: 250, // Positive amount for charge
-          category: 'session',
-          description: `${session.type} - ${new Date(session.date).toLocaleDateString()}`,
-          reference_type: 'session',
-          reference_id: session.id,
-          status: 'completed',
-          transaction_date: new Date().toISOString().split('T')[0]
-        });
-      }
+      // Handle trial session billing - removed duplicate charge creation
+      // Charges are already created during booking, only payments are recorded here via the payment modal
 
       // Handle package session logic - ONLY for the specific session being reconciled
       console.log('Processing session reconciliation for session ID:', session.id);
