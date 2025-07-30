@@ -39,6 +39,7 @@ import {
 import AssignPackageModal from "@/components/AssignPackageModal";
 import AddPaymentModal from "@/components/AddPaymentModal";
 import EditPackageModal from "@/components/EditPackageModal";
+import BookSessionModal from "@/components/BookSessionModal";
 
 const ClientProfile = () => {
   const { id } = useParams<{ id: string }>();
@@ -53,6 +54,7 @@ const ClientProfile = () => {
   const [showAssignPackage, setShowAssignPackage] = useState(false);
   const [showAddPayment, setShowAddPayment] = useState(false);
   const [showEditPackage, setShowEditPackage] = useState(false);
+  const [showBookSession, setShowBookSession] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState<any>(null);
   const [paymentData, setPaymentData] = useState<any>(null);
 
@@ -73,6 +75,24 @@ const ClientProfile = () => {
       toast({
         title: "Error",
         description: "Failed to delete transaction",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleConvertToClient = async (clientId: string) => {
+    try {
+      await clientService.update(clientId, { status: 'active' });
+      toast({
+        title: "Success",
+        description: "Lead converted to client successfully",
+      });
+      fetchClientData();
+    } catch (error) {
+      console.error('Error converting client:', error);
+      toast({
+        title: "Error",
+        description: "Failed to convert lead to client",
         variant: "destructive",
       });
     }
@@ -232,6 +252,19 @@ const ClientProfile = () => {
                     Age: {calculateAge(client.date_of_birth)} years
                   </p>
                 )}
+                
+                {/* Action Buttons */}
+                <div className="flex gap-2 mt-4 pt-4 border-t border-border">
+                  <Button variant="outline" size="sm" className="flex-1" onClick={() => setShowBookSession(true)}>
+                    <Calendar className="h-4 w-4 mr-2" />
+                    Book Session
+                  </Button>
+                  {client.status === "lead" && (
+                    <Button size="sm" className="flex-1" onClick={() => handleConvertToClient(client.id)}>
+                      Convert to Client
+                    </Button>
+                  )}
+                </div>
               </CardContent>
             </Card>
 
@@ -1026,6 +1059,12 @@ const ClientProfile = () => {
           setSelectedPackage(null);
         }}
         clientPackage={selectedPackage}
+        onSuccess={fetchClientData}
+      />
+
+      <BookSessionModal
+        isOpen={showBookSession}
+        onClose={() => setShowBookSession(false)}
         onSuccess={fetchClientData}
       />
     </div>

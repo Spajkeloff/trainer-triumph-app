@@ -242,20 +242,25 @@ const BookSessionModal = ({ isOpen, onClose, onSuccess, selectedDate, selectedTi
           console.log(`Verified package ${formData.client_package_id} has sufficient sessions for ${sessionsToCreate.length} bookings`);
         }
 
-        // Create payment record if not using package
+        // Create financial transaction if not using package
         if (!formData.use_package && formData.price) {
           const totalAmount = parseFloat(formData.price) * sessionsToCreate.length;
-          const { error: paymentError } = await supabase
-            .from('payments')
+          
+          // Create charge transaction (negative amount to show as owed)
+          const { error: chargeError } = await supabase
+            .from('transactions')
             .insert([{
               client_id: formData.client_id,
+              user_id: user.id,
+              transaction_type: 'charge',
               amount: totalAmount,
-              payment_method: 'cash',
-              status: 'pending',
-              description: `${sessionsToCreate.length} session(s) on ${formData.date}${formData.recurring ? ' (recurring)' : ''}`
+              description: `${formData.session_category} - ${sessionsToCreate.length} session(s) on ${formData.date}${formData.recurring ? ' (recurring)' : ''}`,
+              category: 'Session',
+              status: 'completed',
+              transaction_date: formData.date
             }]);
 
-          if (paymentError) throw paymentError;
+          if (chargeError) throw chargeError;
         }
 
         toast({
@@ -551,7 +556,14 @@ const BookSessionModal = ({ isOpen, onClose, onSuccess, selectedDate, selectedTi
               {/* Session Category */}
               <div>
                 <Label>Session category</Label>
-                <Select value={formData.session_category} onValueChange={(value) => setFormData(prev => ({ ...prev, session_category: value }))}>
+                <Select value={formData.session_category} onValueChange={(value) => {
+                  setFormData(prev => ({ 
+                    ...prev, 
+                    session_category: value,
+                    // Auto-fill price for trial sessions
+                    price: (value === "EMS Trial Session" || value === "PT Trial Session") ? "250" : prev.price
+                  }));
+                }}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>

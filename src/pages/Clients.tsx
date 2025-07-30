@@ -111,6 +111,31 @@ const Clients = () => {
     }
   };
 
+  const handleConvertToClient = async (clientId: string) => {
+    try {
+      const { error } = await supabase
+        .from('clients')
+        .update({ status: 'active' })
+        .eq('id', clientId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Lead converted to client successfully",
+      });
+      
+      fetchClients();
+    } catch (error) {
+      console.error('Error converting client:', error);
+      toast({
+        title: "Error",
+        description: "Failed to convert lead to client",
+        variant: "destructive",
+      });
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "active":
@@ -277,7 +302,7 @@ const Clients = () => {
                     Book Session
                   </Button>
                   {client.status === "lead" && (
-                    <Button size="sm" className="flex-1">
+                    <Button size="sm" className="flex-1" onClick={() => handleConvertToClient(client.id)}>
                       Convert to Client
                     </Button>
                   )}
