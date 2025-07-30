@@ -203,7 +203,7 @@ const BookSessionModal = ({ isOpen, onClose, onSuccess, selectedDate, selectedTi
         location: formData.location,
         notes: formData.notes,
         price: formData.use_package ? null : parseFloat(formData.price),
-        client_package_id: formData.use_package ? formData.client_package_id : null,
+        client_package_id: formData.use_package && formData.client_package_id ? formData.client_package_id : null,
         status: 'scheduled',
         duration: 60 // Default 60 minutes
       };
@@ -426,13 +426,14 @@ const BookSessionModal = ({ isOpen, onClose, onSuccess, selectedDate, selectedTi
                       placeholder="Type to search..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
+                      onFocus={() => setSearchTerm(searchTerm || " ")} // Show all clients when focused
                       className="pr-10"
                     />
                     <Users className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   </div>
                   
-                  {searchTerm && (
-                    <div className="max-h-32 overflow-y-auto border rounded-md">
+                  {(searchTerm || formData.client_id) && (
+                    <div className="max-h-32 overflow-y-auto border rounded-md bg-background shadow-md z-50">
                       {filteredClients.map((client) => (
                         <div
                           key={client.id}
@@ -442,9 +443,10 @@ const BookSessionModal = ({ isOpen, onClose, onSuccess, selectedDate, selectedTi
                           onClick={() => {
                             setFormData(prev => ({ ...prev, client_id: client.id }));
                             setSearchTerm(`${client.first_name} ${client.last_name}`);
+                            fetchClientPackages(client.id);
                           }}
                         >
-                          <div className="text-sm font-medium">{client.first_name} {client.last_name}</div>
+                          {client.first_name} {client.last_name}
                           <div className="text-xs text-muted-foreground">{client.email}</div>
                         </div>
                       ))}
@@ -452,15 +454,23 @@ const BookSessionModal = ({ isOpen, onClose, onSuccess, selectedDate, selectedTi
                   )}
 
                   {formData.client_id && (
-                    <div className="flex items-center space-x-2">
-                      <Badge>{clients.find(c => c.id === formData.client_id)?.first_name} {clients.find(c => c.id === formData.client_id)?.last_name}</Badge>
+                    <div className="flex items-center justify-between p-3 bg-primary/5 rounded-lg border">
+                      <div>
+                        <p className="font-medium">
+                          {clients.find(c => c.id === formData.client_id)?.first_name} {clients.find(c => c.id === formData.client_id)?.last_name}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {clients.find(c => c.id === formData.client_id)?.email}
+                        </p>
+                      </div>
                       <Button
                         type="button"
-                        variant="ghost"
+                        variant="outline"
                         size="sm"
                         onClick={() => {
-                          setFormData(prev => ({ ...prev, client_id: "" }));
+                          setFormData(prev => ({ ...prev, client_id: "", client_package_id: "" }));
                           setSearchTerm("");
+                          setClientPackages([]);
                         }}
                       >
                         Remove
@@ -523,12 +533,12 @@ const BookSessionModal = ({ isOpen, onClose, onSuccess, selectedDate, selectedTi
                   <div>
                     <Label>Select Package</Label>
                     <Select value={formData.client_package_id} onValueChange={(value) => setFormData(prev => ({ ...prev, client_package_id: value }))}>
-                      <SelectTrigger>
+                      <SelectTrigger className="bg-background">
                         <SelectValue placeholder="Select package" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-background border border-border shadow-md z-50">
                         {clientPackages.map((pkg) => (
-                          <SelectItem key={pkg.id} value={pkg.id}>
+                          <SelectItem key={pkg.id} value={pkg.id} className="bg-background hover:bg-muted">
                             {pkg.packages.name} - {pkg.sessions_remaining} sessions left
                           </SelectItem>
                         ))}
@@ -537,9 +547,9 @@ const BookSessionModal = ({ isOpen, onClose, onSuccess, selectedDate, selectedTi
                   </div>
                 ) : (
                   <div>
-                    <Label htmlFor="price">Price</Label>
+                    <Label htmlFor="price">Price (AED)</Label>
                     <div className="flex">
-                      <span className="flex items-center px-3 border border-r-0 rounded-l-md bg-muted text-muted-foreground">DH</span>
+                      <span className="flex items-center px-3 border border-r-0 rounded-l-md bg-muted text-muted-foreground">AED</span>
                       <Input
                         id="price"
                         type="number"
@@ -558,13 +568,13 @@ const BookSessionModal = ({ isOpen, onClose, onSuccess, selectedDate, selectedTi
               <div>
                 <Label>Payment category</Label>
                 <Select value={formData.payment_category} onValueChange={(value) => setFormData(prev => ({ ...prev, payment_category: value }))}>
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-background">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Session">Session</SelectItem>
-                    <SelectItem value="Package">Package</SelectItem>
-                    <SelectItem value="Membership">Membership</SelectItem>
+                  <SelectContent className="bg-background border border-border shadow-md z-50">
+                    <SelectItem value="Session" className="bg-background hover:bg-muted">Session</SelectItem>
+                    <SelectItem value="Package" className="bg-background hover:bg-muted">Package</SelectItem>
+                    <SelectItem value="Membership" className="bg-background hover:bg-muted">Membership</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -580,14 +590,14 @@ const BookSessionModal = ({ isOpen, onClose, onSuccess, selectedDate, selectedTi
                     price: (value === "EMS Trial Session" || value === "PT Trial Session") ? "250" : prev.price
                   }));
                 }}>
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-background">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="EMS Trial Session">🔴 EMS Trial Session</SelectItem>
-                    <SelectItem value="PT Trial Session">🔴 PT Trial Session</SelectItem>
-                    <SelectItem value="PT Session">🔵 PT Session</SelectItem>
-                    <SelectItem value="EMS Session">🔵 EMS Session</SelectItem>
+                  <SelectContent className="bg-background border border-border shadow-md z-50">
+                    <SelectItem value="PT Session" className="bg-background hover:bg-muted">PT Session</SelectItem>
+                    <SelectItem value="PT Trial Session" className="bg-background hover:bg-muted">🔴 PT Trial Session</SelectItem>
+                    <SelectItem value="EMS Session" className="bg-background hover:bg-muted">EMS Session</SelectItem>
+                    <SelectItem value="EMS Trial Session" className="bg-background hover:bg-muted">🔴 EMS Trial Session</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
