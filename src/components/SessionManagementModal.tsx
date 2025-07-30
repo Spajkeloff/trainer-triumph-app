@@ -141,8 +141,16 @@ const SessionManagementModal = ({ isOpen, onClose, session, onSuccess, onEdit }:
     try {
       setLoading(true);
 
+      console.log('Reconcile Debug:', {
+        action,
+        shouldCount,
+        sessionType: session.type,
+        clientPackageId: session.client_package_id
+      });
+
       // Check if this is a trial session
       const isTrialSession = session.type?.includes('Trial') || session.type?.includes('trial');
+      console.log('Is trial session:', isTrialSession);
 
       // Update session status
       const { error: sessionError } = await supabase
@@ -157,6 +165,7 @@ const SessionManagementModal = ({ isOpen, onClose, session, onSuccess, onEdit }:
 
       // Handle trial session billing
       if (isTrialSession && action === 'completed') {
+        console.log('Processing trial session billing...');
         // Import finance service at the top
         const { financeService } = await import('@/services/financeService');
         
@@ -175,7 +184,14 @@ const SessionManagementModal = ({ isOpen, onClose, session, onSuccess, onEdit }:
       }
 
       // Handle package session logic - only if should count and not a trial session
+      console.log('Checking package deduction conditions:', {
+        isTrialSession,
+        shouldCount,
+        hasClientPackageId: !!session.client_package_id
+      });
+
       if (!isTrialSession && shouldCount) {
+        console.log('Will attempt package deduction...');
         // Only deduct sessions if user explicitly chose to count them
         // Sessions are already deducted when created via BookSessionModal
         // This is for sessions that were paid individually (not from package) but now need to count against package
@@ -183,6 +199,7 @@ const SessionManagementModal = ({ isOpen, onClose, session, onSuccess, onEdit }:
         // Only deduct if session is NOT already linked to a package
         // If it's already linked, it was already deducted when created
         if (!session.client_package_id) {
+          console.log('Session not linked to package, looking for matching package...');
           let packageToUpdate = null;
           
           // Try to find matching package for this session type
@@ -200,6 +217,7 @@ const SessionManagementModal = ({ isOpen, onClose, session, onSuccess, onEdit }:
               .ilike('packages.name', '%personal%training%');
             
             packageToUpdate = ptPackages?.[0];
+            console.log('Found PT package:', packageToUpdate);
           } else if (session.type === 'EMS Session') {
             // Find active EMS package
             const { data: emsPackages } = await supabase
@@ -214,10 +232,12 @@ const SessionManagementModal = ({ isOpen, onClose, session, onSuccess, onEdit }:
               .ilike('packages.name', '%ems%');
             
             packageToUpdate = emsPackages?.[0];
+            console.log('Found EMS package:', packageToUpdate);
           }
 
           // If we found a package to update, deduct the session and link it
           if (packageToUpdate) {
+            console.log('Deducting session from package:', packageToUpdate.id);
             const { error: packageError } = await supabase
               .from('client_packages')
               .update({ 
@@ -233,8 +253,15 @@ const SessionManagementModal = ({ isOpen, onClose, session, onSuccess, onEdit }:
               .from('sessions')
               .update({ client_package_id: packageToUpdate.id })
               .eq('id', session.id);
+            console.log('Session linked to package and session deducted');
+          } else {
+            console.log('No matching package found for deduction');
           }
+        } else {
+          console.log('Session already linked to package, no deduction needed');
         }
+      } else {
+        console.log('Skipping package deduction - conditions not met');
       }
 
       const successMessage = isTrialSession && action === 'completed' 
