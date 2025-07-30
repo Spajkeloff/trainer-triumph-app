@@ -192,16 +192,15 @@ const SessionManagementModal = ({ isOpen, onClose, session, onSuccess, onEdit }:
       });
 
       if (!isTrialSession) {
-        // If session is already linked to a package (was deducted when created)
+        // CRITICAL RULE: Sessions linked to packages were ALREADY deducted at booking time
+        // The ONLY action we should take is restoring sessions when cancelled/rescheduled and shouldCount=false
+        
         if (session.client_package_id) {
           console.log('Session already linked to package:', session.client_package_id);
+          console.log('Session was already deducted when it was booked');
           
-          // CRITICAL: For completed sessions, do NOTHING - they were already deducted when created
-          if (action === 'completed') {
-            console.log('Session completed - no additional deduction needed as it was already deducted when created');
-          }
-          // For cancelled/no-show sessions that shouldn't count, restore the session to the package
-          else if ((action === 'cancelled' || action === 'rescheduled') && !shouldCount) {
+          // ONLY restore session if cancelled/rescheduled and user says "don't count"
+          if ((action === 'cancelled' || action === 'rescheduled') && !shouldCount) {
             console.log('Restoring session to package since it should not count');
             
             // Get the current package to restore session
@@ -224,71 +223,76 @@ const SessionManagementModal = ({ isOpen, onClose, session, onSuccess, onEdit }:
               console.log('Session restored to package');
             }
           } else {
-            console.log('Session already deducted, no further action needed');
+            console.log('No package action needed - session was already properly deducted at booking');
           }
         } 
-        // If session is NOT linked to a package and should count, try to deduct from available package
-        else if (shouldCount) {
-          console.log('Session not linked to package, looking for matching package to deduct...');
-          let packageToUpdate = null;
+        // Handle sessions NOT linked to packages (paid individually)
+        else {
+          console.log('Session not linked to package - was paid individually');
           
-          // Try to find matching package for this session type
-          if (session.type === 'PT Session') {
-            // Find active personal training package
-            const { data: ptPackages } = await supabase
-              .from('client_packages')
-              .select(`
-                *,
-                packages!inner(name, sessions_included)
-              `)
-              .eq('client_id', session.client_id)
-              .eq('status', 'active')
-              .gt('sessions_remaining', 0)
-              .ilike('packages.name', '%personal%training%');
+          // Only try to deduct from package if user explicitly says "should count" and action is completed
+          if (shouldCount && action === 'completed') {
+            console.log('Looking for package to retroactively deduct from...');
+            let packageToUpdate = null;
             
-            packageToUpdate = ptPackages?.[0];
-            console.log('Found PT package:', packageToUpdate);
-          } else if (session.type === 'EMS Session') {
-            // Find active EMS package
-            const { data: emsPackages } = await supabase
-              .from('client_packages')
-              .select(`
-                *,
-                packages!inner(name, sessions_included)
-              `)
-              .eq('client_id', session.client_id)
-              .eq('status', 'active')
-              .gt('sessions_remaining', 0)
-              .ilike('packages.name', '%ems%');
-            
-            packageToUpdate = emsPackages?.[0];
-            console.log('Found EMS package:', packageToUpdate);
-          }
+            // Try to find matching package for this session type
+            if (session.type === 'PT Session') {
+              // Find active personal training package
+              const { data: ptPackages } = await supabase
+                .from('client_packages')
+                .select(`
+                  *,
+                  packages!inner(name, sessions_included)
+                `)
+                .eq('client_id', session.client_id)
+                .eq('status', 'active')
+                .gt('sessions_remaining', 0)
+                .ilike('packages.name', '%personal%training%');
+              
+              packageToUpdate = ptPackages?.[0];
+              console.log('Found PT package for retroactive deduction:', packageToUpdate);
+            } else if (session.type === 'EMS Session') {
+              // Find active EMS package
+              const { data: emsPackages } = await supabase
+                .from('client_packages')
+                .select(`
+                  *,
+                  packages!inner(name, sessions_included)
+                `)
+                .eq('client_id', session.client_id)
+                .eq('status', 'active')
+                .gt('sessions_remaining', 0)
+                .ilike('packages.name', '%ems%');
+              
+              packageToUpdate = emsPackages?.[0];
+              console.log('Found EMS package for retroactive deduction:', packageToUpdate);
+            }
 
-          // If we found a package to update, deduct the session and link it
-          if (packageToUpdate) {
-            console.log('Deducting session from package:', packageToUpdate.id);
-            const { error: packageError } = await supabase
-              .from('client_packages')
-              .update({ 
-                sessions_remaining: packageToUpdate.sessions_remaining - 1,
-                updated_at: new Date().toISOString()
-              })
-              .eq('id', packageToUpdate.id);
+            // If we found a package to update, deduct the session and link it
+            if (packageToUpdate) {
+              console.log('Retroactively deducting session from package:', packageToUpdate.id);
+              const { error: packageError } = await supabase
+                .from('client_packages')
+                .update({ 
+                  sessions_remaining: packageToUpdate.sessions_remaining - 1,
+                  updated_at: new Date().toISOString()
+                })
+                .eq('id', packageToUpdate.id);
 
-            if (packageError) throw packageError;
+              if (packageError) throw packageError;
 
-            // Link session to package
-            await supabase
-              .from('sessions')
-              .update({ client_package_id: packageToUpdate.id })
-              .eq('id', session.id);
-            console.log('Session linked to package and session deducted');
+              // Link session to package
+              await supabase
+                .from('sessions')
+                .update({ client_package_id: packageToUpdate.id })
+                .eq('id', session.id);
+              console.log('Session retroactively linked to package and deducted');
+            } else {
+              console.log('No matching package found for retroactive deduction');
+            }
           } else {
-            console.log('No matching package found for deduction');
+            console.log('No retroactive package deduction needed');
           }
-        } else {
-          console.log('Session not linked to package and should not count - no action needed');
         }
       } else {
         console.log('Skipping package logic for trial session');
