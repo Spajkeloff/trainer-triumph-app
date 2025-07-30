@@ -70,13 +70,12 @@ const BookSessionModal = ({ isOpen, onClose, onSuccess, selectedDate, selectedTi
     end_time: "10:00",
     client_id: "",
     trainer_id: "", // Will be set to current user
-    type: "personal",
     location: "Gym",
     notes: "",
     price: "",
     use_package: false,
     client_package_id: "",
-    session_category: "Personal Training",
+    session_category: "PT Session",
     payment_category: "Session",
     recurring: false,
     service_type: "private",
@@ -98,7 +97,7 @@ const BookSessionModal = ({ isOpen, onClose, onSuccess, selectedDate, selectedTi
           start_time: editSession.start_time.substring(0, 5),
           end_time: editSession.end_time.substring(0, 5),
           client_id: editSession.client_id,
-          type: editSession.type,
+          session_category: editSession.type,
           location: editSession.location,
           notes: editSession.notes || "",
           use_package: !!editSession.client_package_id,
@@ -184,7 +183,7 @@ const BookSessionModal = ({ isOpen, onClose, onSuccess, selectedDate, selectedTi
         end_time: formData.end_time,
         client_id: formData.client_id,
         trainer_id: user.id,
-        type: formData.type,
+        type: formData.session_category,
         location: formData.location,
         notes: formData.notes,
         price: formData.use_package ? null : parseFloat(formData.price),
@@ -288,13 +287,12 @@ const BookSessionModal = ({ isOpen, onClose, onSuccess, selectedDate, selectedTi
       end_time: "10:00",
       client_id: "",
       trainer_id: "",
-      type: "personal",
       location: "Gym",
       notes: "",
       price: "",
       use_package: false,
       client_package_id: "",
-      session_category: "Personal Training",
+      session_category: "PT Session",
       payment_category: "Session",
       recurring: false,
       service_type: "private",
@@ -397,21 +395,6 @@ const BookSessionModal = ({ isOpen, onClose, onSuccess, selectedDate, selectedTi
 
           <TabsContent value="book-session" className="space-y-6 mt-6">
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Service Type */}
-              <div>
-                <Label htmlFor="service">Service</Label>
-                <Select value={formData.type} onValueChange={(value) => setFormData(prev => ({ ...prev, type: value }))}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select service type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="EMS Trial Session">🔴 EMS Trial Session</SelectItem>
-                    <SelectItem value="PT Trial Session">🔴 PT Trial Session</SelectItem>
-                    <SelectItem value="PT Session">🔵 PT Session</SelectItem>
-                    <SelectItem value="EMS Session">🔵 EMS Session</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
 
               {/* Clients */}
               <div>
