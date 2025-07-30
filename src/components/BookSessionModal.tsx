@@ -260,17 +260,17 @@ const BookSessionModal = ({ isOpen, onClose, onSuccess, selectedDate, selectedTi
 
         // Create financial transaction if not using package
         if (!formData.use_package && formData.price) {
-          const totalAmount = parseFloat(formData.price) * sessionsToCreate.length;
+          const sessionPrice = parseFloat(formData.price);
           
-          // Create charge transaction (negative amount to show as owed)
+          // Create charge transaction for each session
           const { error: chargeError } = await supabase
             .from('transactions')
             .insert([{
               client_id: formData.client_id,
               user_id: user.id,
               transaction_type: 'charge',
-              amount: totalAmount,
-              description: `${formData.session_category} - ${sessionsToCreate.length} session(s) on ${formData.date}${formData.recurring ? ' (recurring)' : ''}`,
+              amount: sessionPrice, // Single session amount, not multiplied
+              description: `${formData.session_category} on ${formData.date}`,
               category: 'Session',
               status: 'completed',
               transaction_date: formData.date
@@ -432,7 +432,7 @@ const BookSessionModal = ({ isOpen, onClose, onSuccess, selectedDate, selectedTi
                     <Users className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   </div>
                   
-                  {(searchTerm || formData.client_id) && (
+                  {searchTerm && !formData.client_id && (
                     <div className="max-h-32 overflow-y-auto border rounded-md bg-background shadow-md z-50">
                       {filteredClients.map((client) => (
                         <div
@@ -443,6 +443,7 @@ const BookSessionModal = ({ isOpen, onClose, onSuccess, selectedDate, selectedTi
                           onClick={() => {
                             setFormData(prev => ({ ...prev, client_id: client.id }));
                             setSearchTerm(`${client.first_name} ${client.last_name}`);
+                            setSearchTerm(""); // Clear search to hide dropdown
                             fetchClientPackages(client.id);
                           }}
                         >
