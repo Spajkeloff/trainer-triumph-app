@@ -595,7 +595,13 @@ const Calendar = () => {
             setSelectedDate(undefined);
             setSelectedTime("");
           }}
-          onSuccess={fetchSessions}
+          onSuccess={() => {
+            fetchSessions();
+            // Navigate to the month of the selected date if it's different
+            if (selectedDate && selectedDate.getMonth() !== currentDate.getMonth()) {
+              setCurrentDate(selectedDate);
+            }
+          }}
           selectedDate={selectedDate}
           selectedTime={selectedTime}
         />
