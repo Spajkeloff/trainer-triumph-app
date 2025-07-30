@@ -5,8 +5,12 @@ import { Badge } from "../components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import RevenueChart from "../components/Dashboard/RevenueChart";
+import { financeService } from "../services/financeService";
+import { clientService } from "../services/clientService";
+import { sessionService } from "../services/sessionService";
+import { packageService } from "../services/packageService";
+import { supabase } from "@/integrations/supabase/client";
 import { 
   TrendingUp, 
   TrendingDown,
@@ -30,6 +34,7 @@ interface ReportData {
     active: number;
     leads: number;
     newThisMonth: number;
+    inactive: number;
   };
   sessions: {
     total: number;
@@ -41,6 +46,9 @@ interface ReportData {
     sold: number;
     revenue: number;
     popular: string;
+  };
+  expenses: {
+    total: number;
   };
 }
 
@@ -64,58 +72,91 @@ const Reporting = () => {
       const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
       const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
 
-      // Fetch all data in parallel
-      const [paymentsData, clientsData, sessionsData, packagesData] = await Promise.all([
-        supabase.from('payments').select('amount, payment_date, status'),
-        supabase.from('clients').select('id, status, created_at'),
-        supabase.from('sessions').select('id, status, date'),
-        supabase.from('client_packages').select('id, packages(name, price)')
+      // Fetch all data using the proper services
+      const [
+        financeStats,
+        transactions,
+        expenses,
+        clients,
+        sessions,
+        clientPackages
+      ] = await Promise.all([
+        financeService.getFinancialStats(),
+        financeService.getAllTransactions(),
+        financeService.getAllExpenses(),
+        clientService.getAll(),
+        sessionService.getAll(),
+        supabase.from('client_packages').select(`
+          *,
+          packages (
+            name,
+            price
+          )
+        `).then(({ data, error }) => {
+          if (error) throw error;
+          return data || [];
+        })
       ]);
 
-      if (paymentsData.error || clientsData.error || sessionsData.error || packagesData.error) {
-        throw new Error('Failed to fetch report data');
-      }
-
-      // Calculate revenue metrics
-      const thisMonthPayments = paymentsData.data?.filter(p => 
-        new Date(p.payment_date) >= startOfMonth && p.status === 'completed'
-      ) || [];
+      // Calculate this month and last month revenue from transactions
+      const thisMonthTransactions = transactions.filter(t => 
+        new Date(t.transaction_date) >= startOfMonth && 
+        t.transaction_type === 'payment' && 
+        t.status === 'completed'
+      );
       
-      const lastMonthPayments = paymentsData.data?.filter(p => 
-        new Date(p.payment_date) >= startOfLastMonth && 
-        new Date(p.payment_date) <= endOfLastMonth && 
-        p.status === 'completed'
-      ) || [];
+      const lastMonthTransactions = transactions.filter(t => 
+        new Date(t.transaction_date) >= startOfLastMonth && 
+        new Date(t.transaction_date) <= endOfLastMonth && 
+        t.transaction_type === 'payment' && 
+        t.status === 'completed'
+      );
 
-      const thisMonthRevenue = thisMonthPayments.reduce((sum, p) => sum + Number(p.amount), 0);
-      const lastMonthRevenue = lastMonthPayments.reduce((sum, p) => sum + Number(p.amount), 0);
-      const totalRevenue = paymentsData.data?.reduce((sum, p) => sum + Number(p.amount), 0) || 0;
+      const thisMonthRevenue = thisMonthTransactions.reduce((sum, t) => sum + Number(t.amount), 0);
+      const lastMonthRevenue = lastMonthTransactions.reduce((sum, t) => sum + Number(t.amount), 0);
       const revenueGrowth = lastMonthRevenue > 0 ? 
         ((thisMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100 : 0;
 
       // Calculate client metrics
-      const totalClients = clientsData.data?.length || 0;
-      const activeClients = clientsData.data?.filter(c => c.status === 'active').length || 0;
-      const leadClients = clientsData.data?.filter(c => c.status === 'lead').length || 0;
-      const newThisMonth = clientsData.data?.filter(c => 
+      const totalClients = clients.length;
+      const activeClients = clients.filter(c => c.status === 'active').length;
+      const leadClients = clients.filter(c => c.status === 'lead').length;
+      const inactiveClients = clients.filter(c => c.status === 'inactive').length;
+      const newThisMonth = clients.filter(c => 
         new Date(c.created_at) >= startOfMonth
-      ).length || 0;
+      ).length;
 
       // Calculate session metrics
-      const totalSessions = sessionsData.data?.length || 0;
-      const completedSessions = sessionsData.data?.filter(s => s.status === 'completed').length || 0;
-      const scheduledSessions = sessionsData.data?.filter(s => s.status === 'scheduled').length || 0;
-      const cancelledSessions = sessionsData.data?.filter(s => s.status === 'cancelled').length || 0;
+      const totalSessions = sessions.length;
+      const completedSessions = sessions.filter(s => s.status === 'completed').length;
+      const scheduledSessions = sessions.filter(s => s.status === 'scheduled').length;
+      const cancelledSessions = sessions.filter(s => s.status === 'cancelled').length;
 
       // Calculate package metrics
-      const soldPackages = packagesData.data?.length || 0;
-      const packageRevenue = packagesData.data?.reduce((sum, cp) => 
+      const soldPackages = clientPackages.length;
+      const packageRevenue = clientPackages.reduce((sum, cp) => 
         sum + Number(cp.packages?.price || 0), 0
-      ) || 0;
+      );
+
+      // Find most popular package
+      const packageCounts: { [key: string]: number } = {};
+      clientPackages.forEach(cp => {
+        if (cp.packages?.name) {
+          packageCounts[cp.packages.name] = (packageCounts[cp.packages.name] || 0) + 1;
+        }
+      });
+      const popularPackage = Object.keys(packageCounts).reduce((a, b) => 
+        packageCounts[a] > packageCounts[b] ? a : b, "No packages sold"
+      );
+
+      // Calculate total expenses
+      const totalExpenses = expenses
+        .filter(e => e.status === 'completed')
+        .reduce((sum, e) => sum + Number(e.amount), 0);
 
       setReportData({
         revenue: {
-          total: totalRevenue,
+          total: financeStats.totalRevenue,
           thisMonth: thisMonthRevenue,
           lastMonth: lastMonthRevenue,
           growth: revenueGrowth
@@ -124,7 +165,8 @@ const Reporting = () => {
           total: totalClients,
           active: activeClients,
           leads: leadClients,
-          newThisMonth: newThisMonth
+          newThisMonth: newThisMonth,
+          inactive: inactiveClients
         },
         sessions: {
           total: totalSessions,
@@ -135,7 +177,10 @@ const Reporting = () => {
         packages: {
           sold: soldPackages,
           revenue: packageRevenue,
-          popular: "Personal Training 12 Sessions"
+          popular: popularPackage
+        },
+        expenses: {
+          total: totalExpenses
         }
       });
 
@@ -299,7 +344,7 @@ const Reporting = () => {
                       <p className="text-sm text-muted-foreground">Lead clients</p>
                     </div>
                     <div>
-                      <p className="text-2xl font-bold">0</p>
+                      <p className="text-2xl font-bold">{reportData?.clients.inactive}</p>
                       <p className="text-sm text-muted-foreground">Inactive clients</p>
                     </div>
                   </div>
@@ -364,7 +409,7 @@ const Reporting = () => {
                       <p className="text-sm text-muted-foreground">Payments recorded</p>
                     </div>
                     <div>
-                      <p className="text-2xl font-bold">AED 0</p>
+                      <p className="text-2xl font-bold">AED {reportData?.expenses.total.toLocaleString()}</p>
                       <p className="text-sm text-muted-foreground">Expenses recorded</p>
                     </div>
                   </div>
