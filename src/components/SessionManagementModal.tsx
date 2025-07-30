@@ -195,11 +195,33 @@ const SessionManagementModal = ({ isOpen, onClose, session, onSuccess, onEdit }:
 
       if (!isTrialSession) {
         if (session.client_package_id) {
-          // Session already linked to package - was deducted at booking time
-          console.log('Session already linked to package:', session.client_package_id);
+          // Session linked to package - handle deduction/restoration
+          console.log('Session linked to package:', session.client_package_id);
           
-          // ONLY restore if cancelled/rescheduled and user chooses "don't count"
-          if ((action === 'cancelled' || action === 'rescheduled') && !shouldCount) {
+          if (action === 'completed' && shouldCount) {
+            // Deduct session from package when completing
+            console.log('Deducting 1 session from package for completion');
+            
+            const { data: currentPackage } = await supabase
+              .from('client_packages')
+              .select('sessions_remaining')
+              .eq('id', session.client_package_id)
+              .maybeSingle();
+
+            if (currentPackage && currentPackage.sessions_remaining > 0) {
+              const { error: packageError } = await supabase
+                .from('client_packages')
+                .update({ 
+                  sessions_remaining: currentPackage.sessions_remaining - 1,
+                  updated_at: new Date().toISOString()
+                })
+                .eq('id', session.client_package_id);
+
+              if (packageError) throw packageError;
+              console.log('Successfully deducted 1 session from package');
+            }
+          } else if ((action === 'cancelled' || action === 'rescheduled') && !shouldCount) {
+            // Restore session to package if cancelled/rescheduled and shouldn't count
             console.log('Restoring THIS specific session to package');
             
             const { data: currentPackage } = await supabase
@@ -221,7 +243,7 @@ const SessionManagementModal = ({ isOpen, onClose, session, onSuccess, onEdit }:
               console.log('Successfully restored 1 session to package');
             }
           } else {
-            console.log('No package action needed - session already properly handled');
+            console.log('No package action needed for this reconciliation');
           }
         } 
         // Session NOT linked to package - can be retroactively deducted ONCE

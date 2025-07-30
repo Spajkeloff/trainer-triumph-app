@@ -225,11 +225,9 @@ const BookSessionModal = ({ isOpen, onClose, onSuccess, selectedDate, selectedTi
 
         if (sessionError) throw sessionError;
 
-        // ONLY deduct from package for NEW sessions (not edits)
-        // When using a package, don't deduct here - sessions are deducted during reconciliation
-        // This prevents double deduction when booking multiple sessions
-        if (formData.use_package && formData.client_package_id) {
-          // Just verify that the package has enough sessions available
+        // For NEW sessions with packages, link them but don't deduct (deduction happens at reconciliation)
+        if (!editSession && formData.use_package && formData.client_package_id) {
+          // Verify that the package has enough sessions available
           const { data: packageData, error: fetchError } = await supabase
             .from('client_packages')
             .select('sessions_remaining')
