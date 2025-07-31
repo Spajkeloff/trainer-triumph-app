@@ -538,11 +538,17 @@ const BookSessionModal = ({ isOpen, onClose, onSuccess, selectedDate, selectedTi
                         <SelectValue placeholder="Select package" />
                       </SelectTrigger>
                       <SelectContent className="bg-background border border-border shadow-md z-50">
-                        {clientPackages.map((pkg) => (
-                          <SelectItem key={pkg.id} value={pkg.id} className="bg-background hover:bg-muted">
-                            {pkg.packages.name} - {pkg.sessions_remaining} sessions left
+                        {clientPackages.length > 0 ? (
+                          clientPackages.map((pkg) => (
+                            <SelectItem key={pkg.id} value={pkg.id} className="bg-background hover:bg-muted">
+                              {pkg.packages.name} - {pkg.sessions_remaining} sessions left
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="" disabled className="bg-background text-muted-foreground">
+                            {formData.client_id ? 'No packages available for this client' : 'Please select a client first'}
                           </SelectItem>
-                        ))}
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
