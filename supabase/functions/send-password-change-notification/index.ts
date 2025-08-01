@@ -34,7 +34,7 @@ const handler = async (req: Request): Promise<Response> => {
     });
 
     const emailResponse = await resend.emails.send({
-      from: "TrainWithUs <onboarding@resend.dev>",
+      from: "TrainWithUs <noreply@trainwithus.ae>",
       to: [email],
       subject: "Password Updated - TrainWithUs",
       html: `
@@ -128,7 +128,7 @@ const handler = async (req: Request): Promise<Response> => {
               </div>
               
               <div class="security-notice">
-                <strong>Security Notice:</strong> If you did not make this change, please contact our support team immediately at <a href="mailto:support@trainwithus.app" class="link">support@trainwithus.app</a> or change your password again from your account settings.
+                <a href="mailto:support@trainwithus.ae" class="link">support@trainwithus.ae</a> or change your password again from your account settings.
               </div>
               
               <p>For your security:</p>
@@ -149,7 +149,7 @@ const handler = async (req: Request): Promise<Response> => {
               </p>
               <p>
                 <a href="https://preview--trainer-triumph-app.lovable.app/" class="link">Visit TrainWithUs</a> | 
-                <a href="mailto:support@trainwithus.app" class="link">Contact Support</a>
+                <a href="mailto:support@trainwithus.ae" class="link">Contact Support</a>
               </p>
             </div>
           </div>
