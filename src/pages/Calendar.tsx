@@ -68,7 +68,9 @@ const Calendar = () => {
         endDate = weekRange.end;
       } else if (view === "day") {
         startDate = new Date(currentDate);
+        startDate.setHours(0, 0, 0, 0);
         endDate = new Date(currentDate);
+        endDate.setHours(23, 59, 59, 999);
       } else {
         // Agenda view - show data for 3 months around current date
         startDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1);

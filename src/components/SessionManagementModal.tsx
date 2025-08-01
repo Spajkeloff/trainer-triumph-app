@@ -150,8 +150,8 @@ const SessionManagementModal = ({ isOpen, onClose, session, onSuccess, onEdit, o
       });
 
       // Check if this is a trial session
-      const isTrialSession = session.type?.includes('Trial') || session.type?.includes('trial');
-      console.log('Is trial session:', isTrialSession);
+      const isTrialSession = session.type?.toLowerCase().includes('trial');
+      console.log('Is trial session:', isTrialSession, 'Session type:', session.type);
 
       // Update session status
       const { error: sessionError } = await supabase
