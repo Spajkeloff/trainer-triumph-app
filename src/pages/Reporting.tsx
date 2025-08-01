@@ -3,6 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "../components/ui/popover";
+import { Calendar } from "../components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
 import RevenueChart from "../components/Dashboard/RevenueChart";
 import { financeService } from "../services/financeService";
@@ -10,12 +12,14 @@ import { clientService } from "../services/clientService";
 import { sessionService } from "../services/sessionService";
 import { packageService } from "../services/packageService";
 import { supabase } from "@/integrations/supabase/client";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 import { 
   TrendingUp, 
   TrendingDown,
   DollarSign,
   Users,
-  Calendar,
+  Calendar as CalendarIcon,
   Target,
   Download,
   BarChart3,
@@ -58,6 +62,9 @@ const Reporting = () => {
   const [reportData, setReportData] = useState<ReportData | null>(null);
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState("thisMonth");
+  const [customStartDate, setCustomStartDate] = useState<Date>();
+  const [customEndDate, setCustomEndDate] = useState<Date>();
+  const [showExportOptions, setShowExportOptions] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -371,7 +378,13 @@ const Reporting = () => {
     });
   };
 
-  const [showExportOptions, setShowExportOptions] = useState(false);
+  const handleDateRangeChange = (value: string) => {
+    setDateRange(value);
+    if (value !== "specific") {
+      setCustomStartDate(undefined);
+      setCustomEndDate(undefined);
+    }
+  };
 
   if (loading) {
     return (
@@ -400,22 +413,81 @@ const Reporting = () => {
             <p className="text-muted-foreground">Comprehensive business analytics and performance insights</p>
           </div>
           <div className="flex gap-2">
-            <Select value={dateRange} onValueChange={setDateRange}>
-              <SelectTrigger className="w-40">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="last30days">Last 30 days</SelectItem>
-                <SelectItem value="last14days">Last 14 days</SelectItem>
-                <SelectItem value="last7days">Last 7 days</SelectItem>
-                <SelectItem value="lastmonth">Last month</SelectItem>
-                <SelectItem value="lastyear">Last year</SelectItem>
-                <SelectItem value="monthtodate">Month to date</SelectItem>
-                <SelectItem value="yeartodate">Year to date</SelectItem>
-                <SelectItem value="alltime">All time</SelectItem>
-                <SelectItem value="specific">Specific date range</SelectItem>
-              </SelectContent>
-            </Select>
+            {dateRange === "specific" ? (
+              <div className="flex gap-2">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-[180px] justify-start text-left font-normal",
+                        !customStartDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {customStartDate ? format(customStartDate, "PPP") : <span>Pick start date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 bg-popover border-border shadow-lg z-50" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={customStartDate}
+                      onSelect={setCustomStartDate}
+                      initialFocus
+                      className="p-3 pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+                
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-[180px] justify-start text-left font-normal",
+                        !customEndDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {customEndDate ? format(customEndDate, "PPP") : <span>Pick end date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 bg-popover border-border shadow-lg z-50" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={customEndDate}
+                      onSelect={setCustomEndDate}
+                      initialFocus
+                      className="p-3 pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+                
+                <Button
+                  variant="outline"
+                  onClick={() => handleDateRangeChange("thisMonth")}
+                >
+                  Back to presets
+                </Button>
+              </div>
+            ) : (
+              <Select value={dateRange} onValueChange={handleDateRangeChange}>
+                <SelectTrigger className="w-40">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-popover border-border shadow-lg z-50">
+                  <SelectItem value="last30days">Last 30 days</SelectItem>
+                  <SelectItem value="last14days">Last 14 days</SelectItem>
+                  <SelectItem value="last7days">Last 7 days</SelectItem>
+                  <SelectItem value="lastmonth">Last month</SelectItem>
+                  <SelectItem value="lastyear">Last year</SelectItem>
+                  <SelectItem value="monthtodate">Month to date</SelectItem>
+                  <SelectItem value="yeartodate">Year to date</SelectItem>
+                  <SelectItem value="alltime">All time</SelectItem>
+                  <SelectItem value="specific">Specific date range</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
             <div className="relative">
               <Button 
                 className="bg-cyan-500 hover:bg-cyan-600"
