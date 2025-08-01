@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { Eye, EyeOff, ArrowLeft, Mail, Shield } from 'lucide-react';
 import { validatePassword, getPasswordStrengthColor, getPasswordStrengthText } from '@/utils/passwordValidation';
 
@@ -30,7 +31,7 @@ const Auth = () => {
     password: '',
     firstName: '',
     lastName: '',
-    // Role is always 'client' for public registration - security fix
+    // Role will be 'lead' for all new public registrations
   });
 
   // Password Reset Form
@@ -121,13 +122,13 @@ const Auth = () => {
       const { error } = await signUp(signUpData.email, signUpData.password, {
         firstName: signUpData.firstName,
         lastName: signUpData.lastName,
-        role: 'client', // SECURITY FIX: Force all public registrations to be clients
+        role: 'lead', // Set new users as leads
       });
 
       if (error) {
         if (error.message.includes('User already registered')) {
           toast({
-            title: 'Account already exists',
+            title: 'Email already registered',
             description: 'An account with this email already exists. Please sign in instead.',
             variant: 'destructive',
           });
