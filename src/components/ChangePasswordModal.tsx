@@ -24,19 +24,16 @@ const ChangePasswordModal = ({ isOpen, onClose, userEmail }: ChangePasswordModal
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [showPasswords, setShowPasswords] = useState({
-    current: false,
     new: false,
     confirm: false,
   });
   
   const [formData, setFormData] = useState({
-    currentPassword: '',
     newPassword: '',
     confirmPassword: '',
   });
 
   const [errors, setErrors] = useState({
-    currentPassword: '',
     newPassword: '',
     confirmPassword: '',
   });
@@ -94,7 +91,6 @@ const ChangePasswordModal = ({ isOpen, onClose, userEmail }: ChangePasswordModal
     
     // Reset errors
     setErrors({
-      currentPassword: '',
       newPassword: '',
       confirmPassword: '',
     });
@@ -102,11 +98,6 @@ const ChangePasswordModal = ({ isOpen, onClose, userEmail }: ChangePasswordModal
     // Validate inputs
     let hasErrors = false;
     const newErrors = { ...errors };
-
-    if (!formData.currentPassword) {
-      newErrors.currentPassword = 'Current password is required';
-      hasErrors = true;
-    }
 
     if (!formData.newPassword) {
       newErrors.newPassword = 'New password is required';
@@ -134,21 +125,7 @@ const ChangePasswordModal = ({ isOpen, onClose, userEmail }: ChangePasswordModal
 
     setLoading(true);
     try {
-      // First verify current password
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: userEmail,
-        password: formData.currentPassword
-      });
-
-      if (signInError) {
-        setErrors(prev => ({ 
-          ...prev, 
-          currentPassword: 'Current password is incorrect' 
-        }));
-        return;
-      }
-
-      // Update password
+      // Update password directly since user is already authenticated
       const { error } = await supabase.auth.updateUser({
         password: formData.newPassword
       });
@@ -165,7 +142,6 @@ const ChangePasswordModal = ({ isOpen, onClose, userEmail }: ChangePasswordModal
 
       // Reset form and close modal
       setFormData({
-        currentPassword: '',
         newPassword: '',
         confirmPassword: '',
       });
@@ -185,12 +161,10 @@ const ChangePasswordModal = ({ isOpen, onClose, userEmail }: ChangePasswordModal
   const handleClose = () => {
     if (!loading) {
       setFormData({
-        currentPassword: '',
         newPassword: '',
         confirmPassword: '',
       });
       setErrors({
-        currentPassword: '',
         newPassword: '',
         confirmPassword: '',
       });
@@ -207,43 +181,11 @@ const ChangePasswordModal = ({ isOpen, onClose, userEmail }: ChangePasswordModal
             Change Password
           </DialogTitle>
           <DialogDescription>
-            Enter your current password and choose a new secure password.
+            Enter your new secure password below.
           </DialogDescription>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Current Password */}
-          <div className="space-y-2">
-            <Label htmlFor="currentPassword">Current Password</Label>
-            <div className="relative">
-              <Input
-                id="currentPassword"
-                type={showPasswords.current ? "text" : "password"}
-                value={formData.currentPassword}
-                onChange={(e) => handleInputChange('currentPassword', e.target.value)}
-                className={errors.currentPassword ? "border-destructive" : ""}
-                disabled={loading}
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                onClick={() => togglePasswordVisibility('current')}
-                disabled={loading}
-              >
-                {showPasswords.current ? (
-                  <EyeOff className="h-4 w-4" />
-                ) : (
-                  <Eye className="h-4 w-4" />
-                )}
-              </Button>
-            </div>
-            {errors.currentPassword && (
-              <p className="text-sm text-destructive">{errors.currentPassword}</p>
-            )}
-          </div>
-
           {/* New Password */}
           <div className="space-y-2">
             <Label htmlFor="newPassword">New Password</Label>
