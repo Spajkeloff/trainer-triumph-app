@@ -22,6 +22,7 @@ import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
 import Landing from "./pages/Landing";
 import NotFound from "./pages/NotFound";
+import VerifyEmail from "./pages/VerifyEmail";
 import { useAuth } from "@/contexts/AuthContext";
 
 // Role-based redirect component
@@ -96,6 +97,7 @@ const App = () => {
             {/* Public routes */}
             <Route path="/landing" element={<Landing />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/verify-email" element={<VerifyEmail />} />
             
             {/* Role-based redirect for root */}
             <Route path="/" element={<RoleBasedRedirect />} />
