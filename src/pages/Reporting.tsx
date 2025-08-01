@@ -412,135 +412,92 @@ const Reporting = () => {
             <h1 className="text-3xl font-bold text-foreground mb-2">Business Report</h1>
             <p className="text-muted-foreground">Comprehensive business analytics and performance insights</p>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 items-center">
             {dateRange === "specific" ? (
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2 items-center">
+                {/* Start Date Picker */}
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
                       className={cn(
-                        "w-[180px] justify-start text-left font-normal bg-background border-border",
+                        "w-[200px] justify-start text-left font-normal",
                         !customStartDate && "text-muted-foreground"
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {customStartDate ? format(customStartDate, "PPP") : <span>Pick start date</span>}
+                      {customStartDate ? format(customStartDate, "PPP") : "Pick start date"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent 
-                    className="w-auto p-0 bg-background border border-border shadow-lg z-[100]" 
+                    className="w-auto p-0 z-[200]" 
                     align="start"
                     side="bottom"
-                    sideOffset={5}
+                    sideOffset={8}
                   >
-                    <Calendar
-                      mode="single"
-                      selected={customStartDate}
-                      onSelect={setCustomStartDate}
-                      initialFocus
-                      className="p-3 bg-background pointer-events-auto rounded-md"
-                      classNames={{
-                        months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
-                        month: "space-y-4",
-                        caption: "flex justify-center pt-1 relative items-center",
-                        caption_label: "text-sm font-medium",
-                        nav: "space-x-1 flex items-center",
-                        nav_button: cn(
-                          "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100"
-                        ),
-                        nav_button_previous: "absolute left-1",
-                        nav_button_next: "absolute right-1",
-                        table: "w-full border-collapse space-y-1",
-                        head_row: "flex",
-                        head_cell: "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem]",
-                        row: "flex w-full mt-2",
-                        cell: "h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
-                        day: cn(
-                          "h-9 w-9 p-0 font-normal aria-selected:opacity-100 hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
-                        ),
-                        day_range_end: "day-range-end",
-                        day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
-                        day_today: "bg-accent text-accent-foreground",
-                        day_outside: "day-outside text-muted-foreground opacity-50 aria-selected:bg-accent/50 aria-selected:text-muted-foreground aria-selected:opacity-30",
-                        day_disabled: "text-muted-foreground opacity-50",
-                        day_range_middle: "aria-selected:bg-accent aria-selected:text-accent-foreground",
-                        day_hidden: "invisible",
-                      }}
-                    />
+                    <div className="bg-background border border-border rounded-lg shadow-xl">
+                      <Calendar
+                        mode="single"
+                        selected={customStartDate}
+                        onSelect={setCustomStartDate}
+                        initialFocus
+                        className="p-3 pointer-events-auto"
+                      />
+                    </div>
                   </PopoverContent>
                 </Popover>
                 
+                {/* End Date Picker */}
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
                       className={cn(
-                        "w-[180px] justify-start text-left font-normal bg-background border-border",
+                        "w-[200px] justify-start text-left font-normal",
                         !customEndDate && "text-muted-foreground"
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {customEndDate ? format(customEndDate, "PPP") : <span>Pick end date</span>}
+                      {customEndDate ? format(customEndDate, "PPP") : "Pick end date"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent 
-                    className="w-auto p-0 bg-background border border-border shadow-lg z-[100]" 
+                    className="w-auto p-0 z-[200]" 
                     align="start"
                     side="bottom"
-                    sideOffset={5}
+                    sideOffset={8}
                   >
-                    <Calendar
-                      mode="single"
-                      selected={customEndDate}
-                      onSelect={setCustomEndDate}
-                      initialFocus
-                      className="p-3 bg-background pointer-events-auto rounded-md"
-                      classNames={{
-                        months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
-                        month: "space-y-4",
-                        caption: "flex justify-center pt-1 relative items-center",
-                        caption_label: "text-sm font-medium",
-                        nav: "space-x-1 flex items-center",
-                        nav_button: cn(
-                          "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100"
-                        ),
-                        nav_button_previous: "absolute left-1",
-                        nav_button_next: "absolute right-1",
-                        table: "w-full border-collapse space-y-1",
-                        head_row: "flex",
-                        head_cell: "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem]",
-                        row: "flex w-full mt-2",
-                        cell: "h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
-                        day: cn(
-                          "h-9 w-9 p-0 font-normal aria-selected:opacity-100 hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
-                        ),
-                        day_range_end: "day-range-end",
-                        day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
-                        day_today: "bg-accent text-accent-foreground",
-                        day_outside: "day-outside text-muted-foreground opacity-50 aria-selected:bg-accent/50 aria-selected:text-muted-foreground aria-selected:opacity-30",
-                        day_disabled: "text-muted-foreground opacity-50",
-                        day_range_middle: "aria-selected:bg-accent aria-selected:text-accent-foreground",
-                        day_hidden: "invisible",
-                      }}
-                    />
+                    <div className="bg-background border border-border rounded-lg shadow-xl">
+                      <Calendar
+                        mode="single"
+                        selected={customEndDate}
+                        onSelect={setCustomEndDate}
+                        initialFocus
+                        className="p-3 pointer-events-auto"
+                        disabled={(date) => {
+                          return customStartDate ? date < customStartDate : false;
+                        }}
+                      />
+                    </div>
                   </PopoverContent>
                 </Popover>
                 
+                {/* Back to Presets Button */}
                 <Button
                   variant="outline"
                   onClick={() => handleDateRangeChange("thisMonth")}
-                  className="bg-background border-border"
+                  className="whitespace-nowrap"
                 >
                   Back to presets
                 </Button>
               </div>
             ) : (
+              /* Regular Select Dropdown */
               <Select value={dateRange} onValueChange={handleDateRangeChange}>
-                <SelectTrigger className="w-40 bg-background border-border">
+                <SelectTrigger className="w-48">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-background border-border shadow-lg z-50">
+                <SelectContent className="z-[150]">
                   <SelectItem value="last30days">Last 30 days</SelectItem>
                   <SelectItem value="last14days">Last 14 days</SelectItem>
                   <SelectItem value="last7days">Last 7 days</SelectItem>
