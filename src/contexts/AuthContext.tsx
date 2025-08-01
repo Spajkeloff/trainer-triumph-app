@@ -54,12 +54,56 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .from('profiles')
         .select('*')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle(); // Use maybeSingle() instead of single() to handle missing profiles
 
-      if (error) throw error;
-      setProfile(data);
+      if (error) {
+        console.error('Error fetching profile:', error);
+        return;
+      }
+
+      if (data) {
+        setProfile(data);
+      } else {
+        // Profile doesn't exist - this should have been created by trigger
+        // Try to create it manually as fallback
+        console.warn('Profile not found for user, attempting to create...');
+        await createProfileForUser(userId);
+      }
     } catch (error) {
       console.error('Error fetching profile:', error);
+    }
+  };
+
+  const createProfileForUser = async (userId: string) => {
+    try {
+      // Get user data from auth
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const profileData = {
+        user_id: userId,
+        first_name: user.user_metadata?.first_name || '',
+        last_name: user.user_metadata?.last_name || '',
+        role: user.user_metadata?.role || 'client'
+      };
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .insert(profileData)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating profile:', error);
+        return;
+      }
+
+      if (data) {
+        setProfile(data);
+        console.log('Profile created successfully');
+      }
+    } catch (error) {
+      console.error('Error creating profile:', error);
     }
   };
 
