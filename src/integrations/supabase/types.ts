@@ -941,6 +941,14 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      validate_user_profile_sync: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          issue_type: string
+          user_id: string
+          details: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
