@@ -122,17 +122,11 @@ const MySessions = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-start">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">My Sessions</h1>
-          <p className="text-muted-foreground">
-            View and manage your training sessions.
-          </p>
-        </div>
-        <Button>
-          <CalendarIcon className="h-4 w-4 mr-2" />
-          Book New Session
-        </Button>
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">My Sessions</h1>
+        <p className="text-muted-foreground">
+          View and manage your training sessions.
+        </p>
       </div>
 
       {/* Upcoming Sessions */}
@@ -206,20 +200,18 @@ const MySessions = () => {
             <CardContent className="text-center py-8">
               <CalendarIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">No upcoming sessions</h3>
-              <p className="text-muted-foreground mb-4">Book your next training session to get started.</p>
-              <Button>
-                <CalendarIcon className="h-4 w-4 mr-2" />
-                Book Session
-              </Button>
+              <p className="text-muted-foreground">
+                Contact your trainer to schedule your next training session.
+              </p>
             </CardContent>
           </Card>
         )}
       </div>
 
-      {/* Past Sessions */}
+      {/* Session History */}
       {pastSessions.length > 0 && (
         <div className="space-y-4">
-          <h2 className="text-xl font-semibold">Session History</h2>
+          <h2 className="text-xl font-semibold">Previous Sessions</h2>
           <div className="space-y-4">
             {pastSessions.map((session) => (
               <Card key={session.id} className="opacity-75">

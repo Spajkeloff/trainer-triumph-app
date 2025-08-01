@@ -249,13 +249,9 @@ const MyPackages = () => {
           <CardContent className="text-center py-16">
             <Package className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
             <h2 className="text-xl font-semibold mb-2">No packages purchased yet</h2>
-            <p className="text-muted-foreground mb-6">
-              Browse our available training packages to get started with your fitness journey.
+            <p className="text-muted-foreground">
+              Contact your trainer to purchase training packages and get started with your fitness journey.
             </p>
-            <Button>
-              <Package className="h-4 w-4 mr-2" />
-              Browse Packages
-            </Button>
           </CardContent>
         </Card>
       )}
