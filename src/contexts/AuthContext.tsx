@@ -208,7 +208,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/verify-email`,
+          // REMOVED emailRedirectTo - causes Supabase email issues
           data: {
             first_name: userData.firstName,
             last_name: userData.lastName,

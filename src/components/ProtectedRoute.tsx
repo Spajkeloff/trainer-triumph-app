@@ -29,19 +29,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole 
 
   // SECURITY FIX: Check email verification status
   if (user && !user.email_confirmed_at) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background p-4">
-        <div className="text-center max-w-md">
-          <h2 className="text-2xl font-bold text-destructive mb-4">Email Verification Required</h2>
-          <p className="text-muted-foreground mb-4">
-            Please check your email and click the verification link before accessing your account.
-          </p>
-          <p className="text-sm text-muted-foreground">
-            Didn't receive the email? Check your spam folder.
-          </p>
-        </div>
-      </div>
-    );
+    return <Navigate to="/check-email" replace />;
   }
 
   // SECURITY FIX: Role-based access control

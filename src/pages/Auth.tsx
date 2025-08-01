@@ -150,7 +150,7 @@ const Auth = () => {
           title: 'Account created successfully!',
           description: 'Please check your email for a confirmation link.',
         });
-        // Redirect to check email page instead of staying on auth page
+        // Redirect to check email page
         navigate('/check-email');
       }
     } catch (error) {

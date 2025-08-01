@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { clientAreaService } from '@/services/clientAreaService';
 import { 
   User, 
   Mail, 
@@ -41,14 +42,18 @@ const ClientProfile = () => {
   };
 
   const handleSaveProfile = async () => {
+    if (!user) return;
+    
     setLoading(true);
     try {
-      // Save profile logic would go here
+      await clientAreaService.updateClientProfile(user.id, formData);
+      
       toast({
         title: "Success",
         description: "Profile updated successfully",
       });
     } catch (error) {
+      console.error('Error updating profile:', error);
       toast({
         title: "Error", 
         description: "Failed to update profile",
@@ -235,7 +240,13 @@ const ClientProfile = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <Button variant="outline">
+              <Button 
+                variant="outline"
+                onClick={() => toast({
+                  title: "Feature Coming Soon",
+                  description: "Password change functionality will be available soon.",
+                })}
+              >
                 Change Password
               </Button>
               <p className="text-sm text-muted-foreground">

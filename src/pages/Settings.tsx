@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import { Checkbox } from "../components/ui/checkbox";
-import { clientAreaService, type ClientAreaSettings } from "../services/clientAreaService";
+import { settingsService, type ClientAreaSettings } from "../services/settingsService";
 import { useToast } from "../hooks/use-toast";
 
 const Settings = () => {
@@ -33,12 +33,12 @@ const Settings = () => {
     const loadSettings = async () => {
       try {
         setLoading(true);
-        const settings = await clientAreaService.getSettings();
+        const settings = await settingsService.getSettings();
         if (settings) {
           setClientAreaSettings(settings);
         } else {
           // Use default settings if none exist
-          const defaultSettings = await clientAreaService.getDefaultSettings();
+          const defaultSettings = await settingsService.getDefaultSettings();
           setClientAreaSettings(defaultSettings);
         }
       } catch (error) {
@@ -63,7 +63,7 @@ const Settings = () => {
 
     try {
       setLoading(true);
-      await clientAreaService.createOrUpdateSettings(clientAreaSettings);
+      await settingsService.createOrUpdateSettings(clientAreaSettings);
       toast({
         title: "Success",
         description: "Client area settings saved successfully",

@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { clientAreaService } from '@/services/clientAreaService';
 import { 
   Calendar as CalendarIcon, 
   Clock, 
@@ -21,7 +22,7 @@ interface Session {
   end_time: string;
   type: string;
   location?: string;
-  status: 'scheduled' | 'completed' | 'cancelled' | 'no-show';
+  status: string;
   notes?: string;
   trainer_id: string;
 }
@@ -41,33 +42,17 @@ const MySessions = () => {
     
     try {
       setLoading(true);
-      // This would fetch sessions for the current client only
-      // For now, using mock data
-      const mockSessions: Session[] = [
-        {
-          id: '1',
-          date: '2024-01-15',
-          start_time: '15:00',
-          end_time: '16:00',
-          type: 'Personal Training',
-          location: 'Studio A',
-          status: 'scheduled',
-          notes: 'Focus on upper body strength',
-          trainer_id: 'trainer1'
-        },
-        {
-          id: '2',
-          date: '2024-01-12',
-          start_time: '10:00',
-          end_time: '11:00',
-          type: 'Cardio Session',
-          location: 'Main Gym',
-          status: 'completed',
-          trainer_id: 'trainer1'
-        }
-      ];
       
-      setSessions(mockSessions);
+      // Get client ID from user ID
+      const clientId = await clientAreaService.getClientIdFromUserId(user.id);
+      if (!clientId) {
+        setSessions([]);
+        return;
+      }
+
+      // Fetch real client sessions
+      const clientSessions = await clientAreaService.getClientSessions(clientId);
+      setSessions(clientSessions as Session[]);
     } catch (error) {
       console.error('Error fetching sessions:', error);
       toast({
