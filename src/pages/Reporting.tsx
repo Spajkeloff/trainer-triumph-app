@@ -219,8 +219,8 @@ const Reporting = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-foreground mb-2">Reporting</h1>
-            <p className="text-muted-foreground">Business analytics and performance insights</p>
+            <h1 className="text-3xl font-bold text-foreground mb-2">Business Report</h1>
+            <p className="text-muted-foreground">Comprehensive business analytics and performance insights</p>
           </div>
           <div className="flex gap-2">
             <Select value={dateRange} onValueChange={setDateRange}>
@@ -240,7 +240,8 @@ const Reporting = () => {
               </SelectContent>
             </Select>
             <Button className="bg-cyan-500 hover:bg-cyan-600">
-              Generate report
+              <Download className="h-4 w-4 mr-2" />
+              Export Report
             </Button>
           </div>
         </div>
@@ -315,233 +316,282 @@ const Reporting = () => {
           </Card>
         </div>
 
-        {/* Detailed Reports */}
-        <Tabs defaultValue="summary" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
-            <TabsTrigger value="summary">Summary</TabsTrigger>
-            <TabsTrigger value="schedule">Daily Schedule</TabsTrigger>
-            <TabsTrigger value="sessions">Session/Class Summary</TabsTrigger>
-            <TabsTrigger value="clients">Client List</TabsTrigger>
-            <TabsTrigger value="packages">Packages & Memberships</TabsTrigger>
-            <TabsTrigger value="attendance">Attendance</TabsTrigger>
-          </TabsList>
+        {/* Comprehensive Business Report */}
+        <div className="space-y-8">
+          {/* Revenue Chart */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="h-5 w-5" />
+                Revenue Overview
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <RevenueChart />
+            </CardContent>
+          </Card>
 
-          <TabsContent value="summary" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Clients Section */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Clients</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-3 gap-4 text-center">
-                    <div>
-                      <p className="text-2xl font-bold">{reportData?.clients.active}</p>
-                      <p className="text-sm text-muted-foreground">Active clients</p>
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold">{reportData?.clients.leads}</p>
-                      <p className="text-sm text-muted-foreground">Lead clients</p>
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold">{reportData?.clients.inactive}</p>
-                      <p className="text-sm text-muted-foreground">Inactive clients</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Services Section */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Services</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-3 gap-4 text-center">
-                    <div>
-                      <p className="text-2xl font-bold">0</p>
-                      <p className="text-sm text-muted-foreground">Memberships assigned</p>
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold">{reportData?.packages.sold}</p>
-                      <p className="text-sm text-muted-foreground">Packages assigned</p>
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold">0</p>
-                      <p className="text-sm text-muted-foreground">Products sold</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Bookings Section */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Bookings</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-3 gap-4 text-center">
-                    <div>
-                      <p className="text-2xl font-bold">{reportData?.sessions.total}</p>
-                      <p className="text-sm text-muted-foreground">Session bookings</p>
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold">0</p>
-                      <p className="text-sm text-muted-foreground">Class bookings</p>
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold">{reportData?.sessions.total}</p>
-                      <p className="text-sm text-muted-foreground">Total bookings</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Finances Section */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Finances</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 gap-4 text-center">
-                    <div>
-                      <p className="text-2xl font-bold">AED {reportData?.revenue.total.toLocaleString()}</p>
-                      <p className="text-sm text-muted-foreground">Payments recorded</p>
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold">AED {reportData?.expenses.total.toLocaleString()}</p>
-                      <p className="text-sm text-muted-foreground">Expenses recorded</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="schedule" className="space-y-6">
+          {/* Business Metrics Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+            {/* Financial Summary */}
             <Card>
               <CardHeader>
-                <CardTitle>Daily Schedule</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <DollarSign className="h-5 w-5" />
+                  Financial Summary
+                </CardTitle>
               </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">Daily schedule report will be implemented here.</p>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="sessions" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Session/Class Summary</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Total Sessions</p>
-                    <p className="text-xl font-bold">{reportData?.sessions.total}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Completed</p>
-                    <p className="text-xl font-bold text-success">{reportData?.sessions.completed}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Scheduled</p>
-                    <p className="text-xl font-bold text-warning">{reportData?.sessions.scheduled}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Cancelled</p>
-                    <p className="text-xl font-bold text-destructive">{reportData?.sessions.cancelled}</p>
+              <CardContent className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Total Revenue</span>
+                  <span className="font-bold">AED {reportData?.revenue.total.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">This Month</span>
+                  <span className="font-bold">AED {reportData?.revenue.thisMonth.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Last Month</span>
+                  <span className="font-bold">AED {reportData?.revenue.lastMonth.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Total Expenses</span>
+                  <span className="font-bold">AED {reportData?.expenses.total.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between items-center pt-2 border-t">
+                  <span className="text-muted-foreground">Net Profit</span>
+                  <span className="font-bold text-success">
+                    AED {(reportData?.revenue.total - reportData?.expenses.total).toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Growth Rate</span>
+                  <div className="flex items-center gap-1">
+                    {reportData?.revenue.growth > 0 ? (
+                      <TrendingUp className="h-4 w-4 text-success" />
+                    ) : (
+                      <TrendingDown className="h-4 w-4 text-destructive" />
+                    )}
+                    <span className={`font-bold ${reportData?.revenue.growth > 0 ? 'text-success' : 'text-destructive'}`}>
+                      {Math.abs(reportData?.revenue.growth || 0).toFixed(1)}%
+                    </span>
                   </div>
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
 
-          <TabsContent value="clients" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Client Status</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <span>Active Clients</span>
-                      <Badge className="bg-success">{reportData?.clients.active}</Badge>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span>Lead Clients</span>
-                      <Badge variant="outline">{reportData?.clients.leads}</Badge>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="sessions" className="space-y-6">
+            {/* Client Analytics */}
             <Card>
               <CardHeader>
-                <CardTitle>Session Statistics</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  Client Analytics
+                </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Total</p>
-                    <p className="text-xl font-bold">{reportData?.sessions.total}</p>
+              <CardContent className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Total Clients</span>
+                  <span className="font-bold">{reportData?.clients.total}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Active Clients</span>
+                  <Badge className="bg-success">{reportData?.clients.active}</Badge>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Lead Clients</span>
+                  <Badge variant="outline">{reportData?.clients.leads}</Badge>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Inactive Clients</span>
+                  <Badge variant="secondary">{reportData?.clients.inactive}</Badge>
+                </div>
+                <div className="flex justify-between items-center pt-2 border-t">
+                  <span className="text-muted-foreground">New This Month</span>
+                  <span className="font-bold text-success">{reportData?.clients.newThisMonth}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Client Retention</span>
+                  <span className="font-bold">
+                    {reportData?.clients.total > 0 
+                      ? ((reportData.clients.active / reportData.clients.total) * 100).toFixed(1)
+                      : 0}%
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Session Analytics */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Calendar className="h-5 w-5" />
+                  Session Analytics
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Total Sessions</span>
+                  <span className="font-bold">{reportData?.sessions.total}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Completed</span>
+                  <Badge className="bg-success">{reportData?.sessions.completed}</Badge>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Scheduled</span>
+                  <Badge className="bg-warning">{reportData?.sessions.scheduled}</Badge>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Cancelled</span>
+                  <Badge variant="destructive">{reportData?.sessions.cancelled}</Badge>
+                </div>
+                <div className="flex justify-between items-center pt-2 border-t">
+                  <span className="text-muted-foreground">Completion Rate</span>
+                  <span className="font-bold text-success">
+                    {reportData?.sessions.total > 0 
+                      ? ((reportData.sessions.completed / reportData.sessions.total) * 100).toFixed(1)
+                      : 0}%
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Avg Sessions/Client</span>
+                  <span className="font-bold">
+                    {reportData?.clients.active > 0 
+                      ? (reportData.sessions.total / reportData.clients.active).toFixed(1)
+                      : 0}
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Package Performance */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Target className="h-5 w-5" />
+                  Package Performance
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Packages Sold</span>
+                  <span className="font-bold">{reportData?.packages.sold}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Package Revenue</span>
+                  <span className="font-bold">AED {reportData?.packages.revenue.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Most Popular</span>
+                  <span className="font-bold text-primary">{reportData?.packages.popular}</span>
+                </div>
+                <div className="flex justify-between items-center pt-2 border-t">
+                  <span className="text-muted-foreground">Avg Package Value</span>
+                  <span className="font-bold">
+                    AED {reportData?.packages.sold > 0 
+                      ? (reportData.packages.revenue / reportData.packages.sold).toLocaleString()
+                      : 0}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Package Adoption</span>
+                  <span className="font-bold">
+                    {reportData?.clients.total > 0 
+                      ? ((reportData.packages.sold / reportData.clients.total) * 100).toFixed(1)
+                      : 0}%
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Key Performance Indicators */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Key Performance Indicators</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Revenue per Client</span>
+                  <span className="font-bold">
+                    AED {reportData?.clients.total > 0 
+                      ? (reportData.revenue.total / reportData.clients.total).toLocaleString()
+                      : 0}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Revenue per Session</span>
+                  <span className="font-bold">
+                    AED {reportData?.sessions.completed > 0 
+                      ? (reportData.revenue.total / reportData.sessions.completed).toLocaleString()
+                      : 0}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Monthly Growth</span>
+                  <div className="flex items-center gap-1">
+                    {reportData?.revenue.growth > 0 ? (
+                      <TrendingUp className="h-4 w-4 text-success" />
+                    ) : (
+                      <TrendingDown className="h-4 w-4 text-destructive" />
+                    )}
+                    <span className={`font-bold ${reportData?.revenue.growth > 0 ? 'text-success' : 'text-destructive'}`}>
+                      {Math.abs(reportData?.revenue.growth || 0).toFixed(1)}%
+                    </span>
                   </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Completed</p>
-                    <p className="text-xl font-bold text-success">{reportData?.sessions.completed}</p>
+                </div>
+                <div className="flex justify-between items-center pt-2 border-t">
+                  <span className="text-muted-foreground">Business Health</span>
+                  <Badge className={`${
+                    (reportData?.revenue.growth || 0) > 0 && 
+                    (reportData?.sessions.completed || 0) > (reportData?.sessions.cancelled || 0) &&
+                    (reportData?.clients.active || 0) > (reportData?.clients.inactive || 0)
+                      ? 'bg-success' : 'bg-warning'
+                  }`}>
+                    {(reportData?.revenue.growth || 0) > 0 && 
+                     (reportData?.sessions.completed || 0) > (reportData?.sessions.cancelled || 0) &&
+                     (reportData?.clients.active || 0) > (reportData?.clients.inactive || 0)
+                      ? 'Excellent' : 'Good'}
+                  </Badge>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Business Insights */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Business Insights</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="text-sm space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-success rounded-full"></div>
+                    <span>Strong client retention at {reportData?.clients.total > 0 
+                      ? ((reportData.clients.active / reportData.clients.total) * 100).toFixed(0)
+                      : 0}%</span>
                   </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Scheduled</p>
-                    <p className="text-xl font-bold text-warning">{reportData?.sessions.scheduled}</p>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-primary rounded-full"></div>
+                    <span>Average {reportData?.clients.active > 0 
+                      ? (reportData.sessions.total / reportData.clients.active).toFixed(1)
+                      : 0} sessions per active client</span>
                   </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Cancelled</p>
-                    <p className="text-xl font-bold text-destructive">{reportData?.sessions.cancelled}</p>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-warning rounded-full"></div>
+                    <span>Session completion rate at {reportData?.sessions.total > 0 
+                      ? ((reportData.sessions.completed / reportData.sessions.total) * 100).toFixed(0)
+                      : 0}%</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-secondary rounded-full"></div>
+                    <span>Package adoption rate at {reportData?.clients.total > 0 
+                      ? ((reportData.packages.sold / reportData.clients.total) * 100).toFixed(0)
+                      : 0}%</span>
                   </div>
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
-
-          <TabsContent value="packages" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Packages & Memberships</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Packages Sold</p>
-                    <p className="text-xl font-bold">{reportData?.packages.sold}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Revenue Generated</p>
-                    <p className="text-xl font-bold">AED {reportData?.packages.revenue.toLocaleString()}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Most Popular</p>
-                    <p className="text-xl font-bold">{reportData?.packages.popular}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="attendance" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Attendance Report</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">Attendance tracking report will be implemented here.</p>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+          </div>
+        </div>
       </div>
     </div>
   );
