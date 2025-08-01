@@ -48,6 +48,9 @@ const ClientProfile = () => {
     try {
       await clientAreaService.updateClientProfile(user.id, formData);
       
+      // Refresh the auth context to get updated profile
+      window.location.reload();
+      
       toast({
         title: "Success",
         description: "Profile updated successfully",
@@ -56,7 +59,7 @@ const ClientProfile = () => {
       console.error('Error updating profile:', error);
       toast({
         title: "Error", 
-        description: "Failed to update profile",
+        description: "Failed to update profile. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -242,10 +245,22 @@ const ClientProfile = () => {
             <div className="space-y-4">
               <Button 
                 variant="outline"
-                onClick={() => toast({
-                  title: "Feature Coming Soon",
-                  description: "Password change functionality will be available soon.",
-                })}
+                onClick={() => {
+                  const newPassword = prompt('Enter your new password (min 6 characters):');
+                  if (newPassword && newPassword.length >= 6) {
+                    // TODO: Implement password change
+                    toast({
+                      title: "Feature Coming Soon",
+                      description: "Password change functionality will be available soon.",
+                    });
+                  } else if (newPassword) {
+                    toast({
+                      title: "Invalid Password",
+                      description: "Password must be at least 6 characters long.",
+                      variant: "destructive",
+                    });
+                  }
+                }}
               >
                 Change Password
               </Button>

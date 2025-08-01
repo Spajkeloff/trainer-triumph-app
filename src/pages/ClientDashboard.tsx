@@ -169,23 +169,7 @@ const ClientDashboard = () => {
         </Card>
       </div>
 
-      {/* Quick Actions */}
-      <div className="grid gap-4 md:grid-cols-1">        
-        <Card>
-          <CardHeader>
-            <CardTitle>Purchase Package</CardTitle>
-            <CardDescription>
-              Buy additional training sessions or membership packages.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button className="w-full" variant="outline">
-              <Package className="mr-2 h-4 w-4" />
-              View Packages
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Quick Actions - REMOVED per user request */}
 
       {/* Upcoming Sessions */}
       <Card>
