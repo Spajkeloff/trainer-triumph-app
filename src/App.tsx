@@ -28,7 +28,16 @@ import { useAuth } from "@/contexts/AuthContext";
 const RoleBasedRedirect = () => {
   const { user, profile, loading } = useAuth();
   
+  // Add debugging
+  console.log('RoleBasedRedirect rendered:', { 
+    loading, 
+    hasUser: !!user, 
+    userRole: profile?.role,
+    profileLoading: !profile && !!user 
+  });
+  
   if (loading) {
+    console.log('RoleBasedRedirect: Still loading auth state');
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
@@ -40,10 +49,25 @@ const RoleBasedRedirect = () => {
   }
 
   if (!user) {
+    console.log('RoleBasedRedirect: No user, redirecting to /auth');
     return <Navigate to="/auth" replace />;
   }
 
+  // CRITICAL: Wait for profile to load before redirecting
+  if (!profile) {
+    console.log('RoleBasedRedirect: User exists but profile still loading, waiting...');
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading profile...</p>
+        </div>
+      </div>
+    );
+  }
+
   // Redirect based on user role
+  console.log('RoleBasedRedirect: Redirecting based on role:', profile.role);
   switch (profile?.role) {
     case 'admin':
     case 'trainer':
@@ -51,13 +75,17 @@ const RoleBasedRedirect = () => {
     case 'client':
       return <Navigate to="/client/dashboard" replace />;
     default:
+      console.log('RoleBasedRedirect: Unknown role, redirecting to /auth');
       return <Navigate to="/auth" replace />;
   }
 };
 
 const queryClient = new QueryClient();
 
-const App = () => (
+const App = () => {
+  console.log('App component mounted');
+  
+  return (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <AuthProvider>
@@ -132,6 +160,7 @@ const App = () => (
       </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
-);
+  );
+};
 
 export default App;
