@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { clientAreaService } from '@/services/clientAreaService';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   User, 
   Mail, 
@@ -46,7 +47,13 @@ const ClientProfile = () => {
     
     setLoading(true);
     try {
-      await clientAreaService.updateClientProfile(user.id, formData);
+      // Clean up date field - convert empty string to null for database
+      const cleanedData = {
+        ...formData,
+        date_of_birth: formData.date_of_birth || null
+      };
+      
+      await clientAreaService.updateClientProfile(user.id, cleanedData);
       
       // Refresh the auth context to get updated profile
       window.location.reload();
@@ -64,6 +71,59 @@ const ClientProfile = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handlePasswordChange = async () => {
+    const currentPassword = prompt('Enter your current password:');
+    if (!currentPassword) return;
+
+    const newPassword = prompt('Enter your new password (min 6 characters):');
+    if (!newPassword) return;
+
+    if (newPassword.length < 6) {
+      toast({
+        title: "Invalid Password",
+        description: "Password must be at least 6 characters long.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // First verify current password by attempting to sign in
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user?.email || '',
+        password: currentPassword
+      });
+
+      if (signInError) {
+        toast({
+          title: "Invalid Current Password",
+          description: "Please check your current password and try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Update password
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Password updated successfully",
+      });
+    } catch (error) {
+      console.error('Error updating password:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update password. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -245,22 +305,7 @@ const ClientProfile = () => {
             <div className="space-y-4">
               <Button 
                 variant="outline"
-                onClick={() => {
-                  const newPassword = prompt('Enter your new password (min 6 characters):');
-                  if (newPassword && newPassword.length >= 6) {
-                    // TODO: Implement password change
-                    toast({
-                      title: "Feature Coming Soon",
-                      description: "Password change functionality will be available soon.",
-                    });
-                  } else if (newPassword) {
-                    toast({
-                      title: "Invalid Password",
-                      description: "Password must be at least 6 characters long.",
-                      variant: "destructive",
-                    });
-                  }
-                }}
+                onClick={handlePasswordChange}
               >
                 Change Password
               </Button>
