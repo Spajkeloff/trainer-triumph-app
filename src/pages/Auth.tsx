@@ -30,7 +30,7 @@ const Auth = () => {
     password: '',
     firstName: '',
     lastName: '',
-    role: 'client',
+    // Role is always 'client' for public registration - security fix
   });
 
   // Password Reset Form
@@ -121,7 +121,7 @@ const Auth = () => {
       const { error } = await signUp(signUpData.email, signUpData.password, {
         firstName: signUpData.firstName,
         lastName: signUpData.lastName,
-        role: signUpData.role,
+        role: 'client', // SECURITY FIX: Force all public registrations to be clients
       });
 
       if (error) {
@@ -578,24 +578,7 @@ const Auth = () => {
                       </div>
                     )}
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-role">Role</Label>
-                    <Select
-                      value={signUpData.role}
-                      onValueChange={(value) =>
-                        setSignUpData({ ...signUpData, role: value })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select your role" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="client">Client</SelectItem>
-                        <SelectItem value="trainer">Trainer</SelectItem>
-                        <SelectItem value="admin">Admin</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  {/* SECURITY FIX: Role selector removed - all public registrations are clients */}
                   <Button type="submit" className="w-full" disabled={isLoading}>
                     {isLoading ? 'Creating account...' : 'Create Account'}
                   </Button>

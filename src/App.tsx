@@ -2,11 +2,13 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Layout from "./components/Layout";
+import ClientLayout from "./components/ClientLayout";
 import Dashboard from "./pages/Dashboard";
+import ClientDashboard from "./pages/ClientDashboard";
 import Calendar from "./pages/Calendar";
 import Clients from "./pages/Clients";
 import ClientProfile from "./pages/ClientProfile";
@@ -18,6 +20,38 @@ import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
 import Landing from "./pages/Landing";
 import NotFound from "./pages/NotFound";
+import { useAuth } from "@/contexts/AuthContext";
+
+// Role-based redirect component
+const RoleBasedRedirect = () => {
+  const { user, profile, loading } = useAuth();
+  
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
+
+  // Redirect based on user role
+  switch (profile?.role) {
+    case 'admin':
+    case 'trainer':
+      return <Navigate to="/admin/dashboard" replace />;
+    case 'client':
+      return <Navigate to="/client/dashboard" replace />;
+    default:
+      return <Navigate to="/auth" replace />;
+  }
+};
 
 const queryClient = new QueryClient();
 
@@ -33,13 +67,28 @@ const App = () => (
             <Route path="/landing" element={<Landing />} />
             <Route path="/auth" element={<Auth />} />
             
-            {/* Protected routes */}
-            <Route path="/" element={
-              <ProtectedRoute>
+            {/* Role-based redirect for root */}
+            <Route path="/" element={<RoleBasedRedirect />} />
+            
+            {/* Client routes - SECURITY FIX: Separate client area */}
+            <Route path="/client" element={
+              <ProtectedRoute requiredRole="client">
+                <ClientLayout />
+              </ProtectedRoute>
+            }>
+              <Route path="dashboard" element={<ClientDashboard />} />
+              <Route path="profile" element={<Settings />} />
+              <Route path="sessions" element={<Calendar />} />
+              <Route path="packages" element={<PackageManagement />} />
+            </Route>
+            
+            {/* Admin/Trainer routes - SECURITY FIX: Admin only access */}
+            <Route path="/admin" element={
+              <ProtectedRoute requiredRole="admin">
                 <Layout />
               </ProtectedRoute>
             }>
-              <Route index element={<Dashboard />} />
+              <Route path="dashboard" element={<Dashboard />} />
               <Route path="calendar" element={<Calendar />} />
               <Route path="clients" element={<Clients />} />
               <Route path="clients/:id" element={<ClientProfile />} />
@@ -57,6 +106,20 @@ const App = () => (
               <Route path="reporting/clients" element={<Reporting />} />
               <Route path="reporting/sessions" element={<Reporting />} />
               <Route path="reporting/financial" element={<Reporting />} />
+              <Route path="settings" element={<Settings />} />
+            </Route>
+            
+            {/* Trainer routes */}
+            <Route path="/trainer" element={
+              <ProtectedRoute requiredRole="trainer">
+                <Layout />
+              </ProtectedRoute>
+            }>
+              <Route path="dashboard" element={<Dashboard />} />
+              <Route path="calendar" element={<Calendar />} />
+              <Route path="clients" element={<Clients />} />
+              <Route path="clients/:id" element={<ClientProfile />} />
+              <Route path="sessions" element={<Calendar />} />
               <Route path="settings" element={<Settings />} />
             </Route>
             
