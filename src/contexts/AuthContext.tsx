@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { emailService } from '@/services/emailService';
 
 interface Profile {
   id: string;
@@ -217,6 +218,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         }
       });
+
+      // Send welcome email after successful registration
+      if (!error && data.user) {
+        try {
+          await emailService.sendWelcomeEmail(
+            email, 
+            userData.firstName, 
+            userData.lastName
+          );
+          console.log('Welcome email sent successfully');
+        } catch (emailError) {
+          console.error('Failed to send welcome email:', emailError);
+          // Don't block registration for email failures
+        }
+      }
 
       return { error };
     } catch (error) {

@@ -186,7 +186,7 @@ const handler = async (req: Request): Promise<Response> => {
     const emailContent = generateEmailContent(type, data);
 
     const emailResponse = await resend.emails.send({
-      from: "TrainWithUs <noreply@resend.dev>", // Replace with your verified domain
+      from: "TrainWithUs <noreply@trainwithus.ae>",
       to: [email],
       subject: emailContent.subject,
       html: emailContent.html,
