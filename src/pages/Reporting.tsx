@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import RevenueChart from "../components/Dashboard/RevenueChart";
@@ -19,8 +18,11 @@ import {
   Calendar,
   Target,
   Download,
-  BarChart3
+  BarChart3,
+  FileText
 } from "lucide-react";
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 interface ReportData {
   revenue: {
@@ -196,6 +198,181 @@ const Reporting = () => {
     }
   };
 
+  const generateCSVReport = () => {
+    if (!reportData) return;
+
+    const csvData = [
+      ['Business Report', `Period: ${dateRange}`, new Date().toLocaleDateString()],
+      [],
+      ['FINANCIAL SUMMARY'],
+      ['Metric', 'Value'],
+      ['Total Revenue', `AED ${reportData.revenue.total.toLocaleString()}`],
+      ['This Month Revenue', `AED ${reportData.revenue.thisMonth.toLocaleString()}`],
+      ['Last Month Revenue', `AED ${reportData.revenue.lastMonth.toLocaleString()}`],
+      ['Total Expenses', `AED ${reportData.expenses.total.toLocaleString()}`],
+      ['Net Profit', `AED ${(reportData.revenue.total - reportData.expenses.total).toLocaleString()}`],
+      ['Growth Rate', `${reportData.revenue.growth.toFixed(1)}%`],
+      [],
+      ['CLIENT ANALYTICS'],
+      ['Metric', 'Value'],
+      ['Total Clients', reportData.clients.total.toString()],
+      ['Active Clients', reportData.clients.active.toString()],
+      ['Lead Clients', reportData.clients.leads.toString()],
+      ['Inactive Clients', reportData.clients.inactive.toString()],
+      ['New This Month', reportData.clients.newThisMonth.toString()],
+      ['Client Retention', `${reportData.clients.total > 0 ? ((reportData.clients.active / reportData.clients.total) * 100).toFixed(1) : 0}%`],
+      [],
+      ['SESSION ANALYTICS'],
+      ['Metric', 'Value'],
+      ['Total Sessions', reportData.sessions.total.toString()],
+      ['Completed Sessions', reportData.sessions.completed.toString()],
+      ['Scheduled Sessions', reportData.sessions.scheduled.toString()],
+      ['Cancelled Sessions', reportData.sessions.cancelled.toString()],
+      ['Completion Rate', `${reportData.sessions.total > 0 ? ((reportData.sessions.completed / reportData.sessions.total) * 100).toFixed(1) : 0}%`],
+      [],
+      ['PACKAGE PERFORMANCE'],
+      ['Metric', 'Value'],
+      ['Packages Sold', reportData.packages.sold.toString()],
+      ['Package Revenue', `AED ${reportData.packages.revenue.toLocaleString()}`],
+      ['Most Popular Package', reportData.packages.popular],
+      ['Average Package Value', `AED ${reportData.packages.sold > 0 ? (reportData.packages.revenue / reportData.packages.sold).toLocaleString() : 0}`],
+      ['Package Adoption Rate', `${reportData.clients.total > 0 ? ((reportData.packages.sold / reportData.clients.total) * 100).toFixed(1) : 0}%`]
+    ];
+
+    const csvContent = csvData.map(row => row.join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    
+    if (link.download !== undefined) {
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `business-report-${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    toast({
+      title: "Success",
+      description: "CSV report exported successfully",
+    });
+  };
+
+  const generatePDFReport = () => {
+    if (!reportData) return;
+
+    const doc = new jsPDF();
+    
+    // Header
+    doc.setFontSize(20);
+    doc.text('Business Report', 20, 20);
+    doc.setFontSize(12);
+    doc.text(`Period: ${dateRange}`, 20, 30);
+    doc.text(`Generated: ${new Date().toLocaleDateString()}`, 20, 40);
+
+    let yPosition = 60;
+
+    // Financial Summary
+    doc.setFontSize(16);
+    doc.text('Financial Summary', 20, yPosition);
+    yPosition += 10;
+
+    autoTable(doc, {
+      startY: yPosition,
+      head: [['Metric', 'Value']],
+      body: [
+        ['Total Revenue', `AED ${reportData.revenue.total.toLocaleString()}`],
+        ['This Month Revenue', `AED ${reportData.revenue.thisMonth.toLocaleString()}`],
+        ['Last Month Revenue', `AED ${reportData.revenue.lastMonth.toLocaleString()}`],
+        ['Total Expenses', `AED ${reportData.expenses.total.toLocaleString()}`],
+        ['Net Profit', `AED ${(reportData.revenue.total - reportData.expenses.total).toLocaleString()}`],
+        ['Growth Rate', `${reportData.revenue.growth.toFixed(1)}%`]
+      ],
+      styles: { fontSize: 10 },
+      headStyles: { fillColor: [59, 130, 246] }
+    });
+
+    yPosition = (doc as any).lastAutoTable.finalY + 20;
+
+    // Client Analytics
+    doc.setFontSize(16);
+    doc.text('Client Analytics', 20, yPosition);
+    yPosition += 10;
+
+    autoTable(doc, {
+      startY: yPosition,
+      head: [['Metric', 'Value']],
+      body: [
+        ['Total Clients', reportData.clients.total.toString()],
+        ['Active Clients', reportData.clients.active.toString()],
+        ['Lead Clients', reportData.clients.leads.toString()],
+        ['Inactive Clients', reportData.clients.inactive.toString()],
+        ['New This Month', reportData.clients.newThisMonth.toString()],
+        ['Client Retention', `${reportData.clients.total > 0 ? ((reportData.clients.active / reportData.clients.total) * 100).toFixed(1) : 0}%`]
+      ],
+      styles: { fontSize: 10 },
+      headStyles: { fillColor: [34, 197, 94] }
+    });
+
+    yPosition = (doc as any).lastAutoTable.finalY + 20;
+
+    // Session Analytics
+    doc.setFontSize(16);
+    doc.text('Session Analytics', 20, yPosition);
+    yPosition += 10;
+
+    autoTable(doc, {
+      startY: yPosition,
+      head: [['Metric', 'Value']],
+      body: [
+        ['Total Sessions', reportData.sessions.total.toString()],
+        ['Completed Sessions', reportData.sessions.completed.toString()],
+        ['Scheduled Sessions', reportData.sessions.scheduled.toString()],
+        ['Cancelled Sessions', reportData.sessions.cancelled.toString()],
+        ['Completion Rate', `${reportData.sessions.total > 0 ? ((reportData.sessions.completed / reportData.sessions.total) * 100).toFixed(1) : 0}%`]
+      ],
+      styles: { fontSize: 10 },
+      headStyles: { fillColor: [251, 146, 60] }
+    });
+
+    // Add new page if needed
+    if ((doc as any).lastAutoTable.finalY > 250) {
+      doc.addPage();
+      yPosition = 20;
+    } else {
+      yPosition = (doc as any).lastAutoTable.finalY + 20;
+    }
+
+    // Package Performance
+    doc.setFontSize(16);
+    doc.text('Package Performance', 20, yPosition);
+    yPosition += 10;
+
+    autoTable(doc, {
+      startY: yPosition,
+      head: [['Metric', 'Value']],
+      body: [
+        ['Packages Sold', reportData.packages.sold.toString()],
+        ['Package Revenue', `AED ${reportData.packages.revenue.toLocaleString()}`],
+        ['Most Popular Package', reportData.packages.popular],
+        ['Average Package Value', `AED ${reportData.packages.sold > 0 ? (reportData.packages.revenue / reportData.packages.sold).toLocaleString() : 0}`],
+        ['Package Adoption Rate', `${reportData.clients.total > 0 ? ((reportData.packages.sold / reportData.clients.total) * 100).toFixed(1) : 0}%`]
+      ],
+      styles: { fontSize: 10 },
+      headStyles: { fillColor: [168, 85, 247] }
+    });
+
+    doc.save(`business-report-${new Date().toISOString().split('T')[0]}.pdf`);
+
+    toast({
+      title: "Success",
+      description: "PDF report exported successfully",
+    });
+  };
+
+  const [showExportOptions, setShowExportOptions] = useState(false);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
@@ -239,10 +416,44 @@ const Reporting = () => {
                 <SelectItem value="specific">Specific date range</SelectItem>
               </SelectContent>
             </Select>
-            <Button className="bg-cyan-500 hover:bg-cyan-600">
-              <Download className="h-4 w-4 mr-2" />
-              Export Report
-            </Button>
+            <div className="relative">
+              <Button 
+                className="bg-cyan-500 hover:bg-cyan-600"
+                onClick={() => setShowExportOptions(!showExportOptions)}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export Report
+              </Button>
+              
+              {showExportOptions && (
+                <div className="absolute right-0 top-full mt-2 w-48 bg-background border border-border rounded-md shadow-lg z-10">
+                  <div className="p-1">
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start"
+                      onClick={() => {
+                        generateCSVReport();
+                        setShowExportOptions(false);
+                      }}
+                    >
+                      <FileText className="h-4 w-4 mr-2" />
+                      Export as CSV
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start"
+                      onClick={() => {
+                        generatePDFReport();
+                        setShowExportOptions(false);
+                      }}
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Export as PDF
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
