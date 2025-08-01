@@ -148,10 +148,10 @@ const Auth = () => {
       } else {
         toast({
           title: 'Account created successfully!',
-          description: 'Please check your email for a confirmation link before signing in.',
+          description: 'Please check your email for a confirmation link.',
         });
-        setActiveTab('signin');
-        setSignInData({ email: signUpData.email, password: '' });
+        // Redirect to check email page instead of staying on auth page
+        navigate('/check-email');
       }
     } catch (error) {
       toast({

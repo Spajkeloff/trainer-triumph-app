@@ -219,6 +219,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       });
 
+      // SECURITY FIX: Immediately sign out after registration to prevent auto-login
+      if (!error && data.user && data.session) {
+        await supabase.auth.signOut();
+        // Clear state to ensure user is not logged in
+        setUser(null);
+        setSession(null);
+        setProfile(null);
+      }
+
       // Send welcome email after successful registration
       if (!error && data.user) {
         try {
