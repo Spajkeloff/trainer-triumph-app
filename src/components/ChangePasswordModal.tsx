@@ -43,24 +43,16 @@ const ChangePasswordModal = ({ isOpen, onClose, userEmail }: ChangePasswordModal
 
   const validatePassword = (password: string) => {
     const minLength = 8;
-    const hasUpperCase = /[A-Z]/.test(password);
-    const hasLowerCase = /[a-z]/.test(password);
     const hasNumbers = /\d/.test(password);
-    const hasNonalphas = /\W/.test(password);
+    const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
 
     if (password.length < minLength) {
       return 'Password must be at least 8 characters long';
     }
-    if (!hasUpperCase) {
-      return 'Password must contain at least one uppercase letter';
-    }
-    if (!hasLowerCase) {
-      return 'Password must contain at least one lowercase letter';
-    }
     if (!hasNumbers) {
       return 'Password must contain at least one number';
     }
-    if (!hasNonalphas) {
+    if (!hasSpecialChar) {
       return 'Password must contain at least one special character';
     }
     return '';
@@ -321,8 +313,6 @@ const ChangePasswordModal = ({ isOpen, onClose, userEmail }: ChangePasswordModal
             <p>Password must contain:</p>
             <ul className="ml-4 space-y-0.5">
               <li>• At least 8 characters</li>
-              <li>• One uppercase letter</li>
-              <li>• One lowercase letter</li>
               <li>• One number</li>
               <li>• One special character</li>
             </ul>
