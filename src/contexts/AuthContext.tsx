@@ -204,13 +204,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Clean up existing state first
       cleanupAuthState();
       
-      // AGGRESSIVE FIX: Remove all email verification triggers
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          // NO emailRedirectTo - prevents verification emails
-          // NO email confirmation required
+          emailRedirectTo: `${window.location.origin}/verify-email`,
           data: {
             first_name: userData.firstName,
             last_name: userData.lastName,
@@ -219,28 +217,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       });
 
-      if (error) {
-        return { error };
-      }
-
-      // CRITICAL: With "Confirm email" OFF, user should be immediately logged in
-      // If they're not, force them to be logged in
-      if (data.user && !data.session) {
-        console.log('User created but no session - forcing login');
-        // Force immediate login since email confirmation is disabled
-        const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
+      // SECURITY FIX: NEVER auto-login after signup
+      // Users must verify email before accessing the app
+      if (!error && data.user) {
+        // Force sign out to ensure user is not logged in
+        await supabase.auth.signOut();
         
-        if (loginError) {
-          console.error('Failed to auto-login after signup:', loginError);
-          return { error: loginError };
-        }
-      }
+        // Clear all auth state
+        setUser(null);
+        setSession(null);
+        setProfile(null);
 
-      // Send our custom welcome email (this works properly)
-      if (data.user) {
+        // Send our custom welcome email
         try {
           await emailService.sendWelcomeEmail(
             email, 
@@ -254,7 +242,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       }
 
-      return { error: null };
+      return { error };
     } catch (error) {
       return { error };
     }
