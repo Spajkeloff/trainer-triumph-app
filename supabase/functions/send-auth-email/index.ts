@@ -53,7 +53,7 @@ const generateEmailContent = (type: string, data: any) => {
             </ul>
             
             <div style="text-align: center; margin: 30px 0;">
-              <a href="${Deno.env.get('SUPABASE_URL')?.replace('/rest/v1', '')}" 
+              <a href="https://preview--trainer-triumph-app.lovable.app/" 
                  style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 500;">
                 Access Your Account
               </a>
