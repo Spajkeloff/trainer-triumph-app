@@ -204,13 +204,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Clean up existing state first
       cleanupAuthState();
       
-      const redirectUrl = `${window.location.origin}/verify-email`;
-      
+      // WORKAROUND: Supabase bug - "Confirm email" is OFF but still sends verification emails
+      // Solution: Don't provide emailRedirectTo to prevent Supabase from sending broken emails
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: redirectUrl,
+          // NO emailRedirectTo - this prevents Supabase from sending verification emails
           data: {
             first_name: userData.firstName,
             last_name: userData.lastName,
@@ -219,17 +219,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       });
 
-      // SECURITY FIX: Immediately sign out after registration to prevent auto-login
-      if (!error && data.user && data.session) {
-        await supabase.auth.signOut();
-        // Clear state to ensure user is not logged in
-        setUser(null);
-        setSession(null);
-        setProfile(null);
-      }
-
-      // Send welcome email after successful registration
+      // Since "Confirm email" should be OFF, users should be auto-verified
+      // But we'll handle both cases for safety
       if (!error && data.user) {
+        // If user is already confirmed (expected with "Confirm email" OFF)
+        if (data.user.email_confirmed_at) {
+          console.log('User auto-verified by Supabase');
+          // User is ready to login - don't sign out
+        } else {
+          // If somehow still unverified, sign out for security
+          console.log('User requires verification - signing out for security');
+          await supabase.auth.signOut();
+          setUser(null);
+          setSession(null);
+          setProfile(null);
+        }
+
+        // Send our custom welcome email (this works properly)
         try {
           await emailService.sendWelcomeEmail(
             email, 
