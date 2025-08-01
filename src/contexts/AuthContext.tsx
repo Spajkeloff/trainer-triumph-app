@@ -48,6 +48,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [profileRetryCount, setProfileRetryCount] = useState(0);
+  const MAX_PROFILE_RETRIES = 3;
 
   const fetchProfile = async (userId: string) => {
     console.log('AuthContext: Fetching profile for user:', userId);
@@ -57,7 +59,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .from('profiles')
         .select('*')
         .eq('user_id', userId)
-        .maybeSingle(); // Use maybeSingle() instead of single() to handle missing profiles
+        .maybeSingle();
 
       if (error) {
         console.error('AuthContext: Error fetching profile:', error);
@@ -67,11 +69,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (data) {
         console.log('AuthContext: Profile found and set:', data.role);
         setProfile(data);
+        setProfileRetryCount(0); // Reset retry count on success
       } else {
-        // Profile doesn't exist - this should have been created by trigger
-        // Try to create it manually as fallback
-        console.warn('AuthContext: Profile not found for user, attempting to create...');
-        await createProfileForUser(userId);
+        // Profile doesn't exist - try to create it with retry limit
+        if (profileRetryCount < MAX_PROFILE_RETRIES) {
+          console.warn(`AuthContext: Profile not found for user, attempting to create... (attempt ${profileRetryCount + 1}/${MAX_PROFILE_RETRIES})`);
+          setProfileRetryCount(prev => prev + 1);
+          await createProfileForUser(userId);
+        } else {
+          console.error('AuthContext: Failed to create profile after maximum retries. User may need to be recreated.');
+          // Sign out the user as their account is in an invalid state
+          await signOut();
+        }
       }
     } catch (error) {
       console.error('AuthContext: Error in fetchProfile:', error);
@@ -131,6 +140,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         if (session?.user) {
           console.log('AuthContext: User found, fetching profile for:', session.user.id);
+          // Reset retry count for new sessions
+          setProfileRetryCount(0);
           // Defer profile fetching to prevent deadlocks
           setTimeout(() => {
             fetchProfile(session.user.id);
@@ -138,6 +149,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } else {
           console.log('AuthContext: No user, clearing profile');
           setProfile(null);
+          setProfileRetryCount(0);
         }
         
         setLoading(false);
@@ -154,6 +166,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (session?.user) {
         console.log('AuthContext: Initial session has user, fetching profile');
+        setProfileRetryCount(0);
         setTimeout(() => {
           fetchProfile(session.user.id);
         }, 0);
