@@ -204,13 +204,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Clean up existing state first
       cleanupAuthState();
       
-      // WORKAROUND: Supabase bug - "Confirm email" is OFF but still sends verification emails
-      // Solution: Don't provide emailRedirectTo to prevent Supabase from sending broken emails
+      // AGGRESSIVE FIX: Remove all email verification triggers
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          // NO emailRedirectTo - this prevents Supabase from sending verification emails
+          // NO emailRedirectTo - prevents verification emails
+          // NO email confirmation required
           data: {
             first_name: userData.firstName,
             last_name: userData.lastName,
@@ -219,23 +219,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       });
 
-      // Since "Confirm email" should be OFF, users should be auto-verified
-      // But we'll handle both cases for safety
-      if (!error && data.user) {
-        // If user is already confirmed (expected with "Confirm email" OFF)
-        if (data.user.email_confirmed_at) {
-          console.log('User auto-verified by Supabase');
-          // User is ready to login - don't sign out
-        } else {
-          // If somehow still unverified, sign out for security
-          console.log('User requires verification - signing out for security');
-          await supabase.auth.signOut();
-          setUser(null);
-          setSession(null);
-          setProfile(null);
-        }
+      if (error) {
+        return { error };
+      }
 
-        // Send our custom welcome email (this works properly)
+      // CRITICAL: With "Confirm email" OFF, user should be immediately logged in
+      // If they're not, force them to be logged in
+      if (data.user && !data.session) {
+        console.log('User created but no session - forcing login');
+        // Force immediate login since email confirmation is disabled
+        const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        
+        if (loginError) {
+          console.error('Failed to auto-login after signup:', loginError);
+          return { error: loginError };
+        }
+      }
+
+      // Send our custom welcome email (this works properly)
+      if (data.user) {
         try {
           await emailService.sendWelcomeEmail(
             email, 
@@ -249,7 +254,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       }
 
-      return { error };
+      return { error: null };
     } catch (error) {
       return { error };
     }
