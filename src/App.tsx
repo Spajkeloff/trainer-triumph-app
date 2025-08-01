@@ -75,6 +75,7 @@ const RoleBasedRedirect = () => {
     case 'trainer':
       return <Navigate to="/admin/dashboard" replace />;
     case 'client':
+    case 'lead':
       return <Navigate to="/client/dashboard" replace />;
     default:
       console.log('RoleBasedRedirect: Unknown role, redirecting to /auth');
