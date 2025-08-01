@@ -4,7 +4,7 @@ import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import RevenueChart from "../components/Dashboard/RevenueChart";
+
 import { financeService } from "../services/financeService";
 import { clientService } from "../services/clientService";
 import { sessionService } from "../services/sessionService";
@@ -530,18 +530,6 @@ const Reporting = () => {
 
         {/* Comprehensive Business Report */}
         <div className="space-y-8">
-          {/* Revenue Chart */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="h-5 w-5" />
-                Revenue Overview
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <RevenueChart />
-            </CardContent>
-          </Card>
 
           {/* Business Metrics Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
