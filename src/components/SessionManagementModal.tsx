@@ -164,8 +164,29 @@ const SessionManagementModal = ({ isOpen, onClose, session, onSuccess, onEdit, o
 
       if (sessionError) throw sessionError;
 
-      // Handle trial session billing - removed duplicate charge creation
-      // Charges are already created during booking, only payments are recorded here via the payment modal
+      // Handle trial session billing 
+      if (isTrialSession && action === 'completed') {
+        // Create charge for trial session
+        const { data: user } = await supabase.auth.getUser();
+        if (user.user) {
+          const { error: chargeError } = await supabase
+            .from('transactions')
+            .insert({
+              user_id: user.user.id,
+              client_id: session.client_id,
+              transaction_type: 'charge',
+              category: 'Session',
+              amount: 250,
+              description: `${session.type} on ${session.date}`,
+              transaction_date: session.date,
+              status: 'completed'
+            });
+
+          if (chargeError) {
+            console.error('Error creating charge:', chargeError);
+          }
+        }
+      }
 
       // Handle package session logic - ONLY for the specific session being reconciled
       console.log('Processing session reconciliation for session ID:', session.id);
