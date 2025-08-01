@@ -83,10 +83,7 @@ const Header = () => {
       icon: BarChart3, 
       path: "/reporting",
       dropdown: [
-        { label: "Revenue Reports", path: "/reporting/revenue" },
-        { label: "Client Reports", path: "/reporting/clients" },
-        { label: "Session Reports", path: "/reporting/sessions" },
-        { label: "Financial Reports", path: "/reporting/financial" },
+        { label: "Business Report", path: "/reporting" },
       ]
     },
   ];
