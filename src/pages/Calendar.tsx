@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import BookSessionModal from "@/components/BookSessionModal";
 import SessionManagementModal from "@/components/SessionManagementModal";
+import AddPaymentModal from "@/components/AddPaymentModal";
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -39,21 +40,40 @@ const Calendar = () => {
   const [loading, setLoading] = useState(true);
   const [showBookModal, setShowBookModal] = useState(false);
   const [showSessionModal, setShowSessionModal] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [selectedTime, setSelectedTime] = useState<string>("");
   const [selectedSession, setSelectedSession] = useState<Session | null>(null);
   const [editSession, setEditSession] = useState<Session | null>(null);
+  const [paymentClientId, setPaymentClientId] = useState<string | undefined>();
   const { toast } = useToast();
 
   useEffect(() => {
     fetchSessions();
-  }, [currentDate]);
+  }, [currentDate, view]);
 
   const fetchSessions = async () => {
     try {
       setLoading(true);
-      const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-      const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+      
+      // Calculate date range based on current view
+      let startDate: Date, endDate: Date;
+      
+      if (view === "month") {
+        startDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+        endDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+      } else if (view === "week") {
+        const weekRange = getWeekDateRange(currentDate);
+        startDate = weekRange.start;
+        endDate = weekRange.end;
+      } else if (view === "day") {
+        startDate = new Date(currentDate);
+        endDate = new Date(currentDate);
+      } else {
+        // Agenda view - show data for 3 months around current date
+        startDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1);
+        endDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 2, 0);
+      }
 
       const { data, error } = await supabase
         .from('sessions')
@@ -70,8 +90,8 @@ const Calendar = () => {
           client_package_id,
           clients (first_name, last_name)
         `)
-        .gte('date', startOfMonth.toISOString().split('T')[0])
-        .lte('date', endOfMonth.toISOString().split('T')[0])
+        .gte('date', startDate.toISOString().split('T')[0])
+        .lte('date', endDate.toISOString().split('T')[0])
         .order('date', { ascending: true });
 
       if (error) throw error;
@@ -640,6 +660,27 @@ const Calendar = () => {
           session={selectedSession}
           onSuccess={fetchSessions}
           onEdit={handleEditSession}
+          onPaymentRequired={(clientId) => {
+            setPaymentClientId(clientId);
+            setShowPaymentModal(true);
+          }}
+        />
+
+        {/* Payment Modal */}
+        <AddPaymentModal
+          isOpen={showPaymentModal}
+          onClose={() => {
+            setShowPaymentModal(false);
+            setPaymentClientId(undefined);
+          }}
+          clientId={paymentClientId}
+          onSuccess={() => {
+            fetchSessions();
+            setShowPaymentModal(false);
+            setPaymentClientId(undefined);
+          }}
+          prefilledAmount={250}
+          prefilledDescription="Payment for trial session"
         />
       </div>
     </div>

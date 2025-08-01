@@ -40,9 +40,10 @@ interface SessionManagementModalProps {
   session: Session | null;
   onSuccess: () => void;
   onEdit?: (session: Session) => void;
+  onPaymentRequired?: (clientId: string) => void;
 }
 
-const SessionManagementModal = ({ isOpen, onClose, session, onSuccess, onEdit }: SessionManagementModalProps) => {
+const SessionManagementModal = ({ isOpen, onClose, session, onSuccess, onEdit, onPaymentRequired }: SessionManagementModalProps) => {
   const [loading, setLoading] = useState(false);
   const [showReconcileOptions, setShowReconcileOptions] = useState<boolean | 'cancelled' | 'rescheduled'>(false);
   const { toast } = useToast();
@@ -301,34 +302,13 @@ const SessionManagementModal = ({ isOpen, onClose, session, onSuccess, onEdit }:
       // If trial session was completed, offer payment option
       if (isTrialSession && action === 'completed') {
         if (confirm("Trial session charge added to client account. Would you like to record the payment now?")) {
-          const { financeService } = await import('@/services/financeService');
-          
-          try {
-            await financeService.createTransaction({
-              client_id: session.client_id,
-              transaction_type: 'payment',
-              amount: 250,
-              category: 'session',
-              description: `Payment for ${session.type} - ${new Date(session.date).toLocaleDateString()}`,
-              reference_type: 'session',
-              reference_id: session.id,
-              status: 'completed',
-              transaction_date: new Date().toISOString().split('T')[0],
-              payment_method: 'cash'
-            });
-            
-            toast({
-              title: "Payment Recorded",
-              description: "Trial session payment has been recorded successfully",
-            });
-          } catch (paymentError) {
-            console.error('Error recording payment:', paymentError);
-            toast({
-              title: "Warning",
-              description: "Charge added but payment recording failed. Please add payment manually in Finance tab.",
-              variant: "default",
-            });
+          // Trigger payment modal through parent component
+          if (onPaymentRequired) {
+            onPaymentRequired(session.client_id);
           }
+          onSuccess();
+          onClose();
+          return;
         }
       }
 
