@@ -1,11 +1,11 @@
 import React from 'react';
 import { Outlet } from 'react-router-dom';
-import Header from './Header';
+import ClientHeader from './ClientHeader';
 
 const ClientLayout = () => {
   return (
     <div className="min-h-screen bg-background">
-      <Header />
+      <ClientHeader />
       <main className="container mx-auto px-4 py-8">
         <Outlet />
       </main>

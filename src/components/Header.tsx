@@ -29,64 +29,100 @@ const Header = () => {
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const { user, profile, signOut } = useAuth();
 
-  const navItems = [
-    { 
-      id: "dashboard", 
-      label: "Dashboard", 
-      icon: Home, 
-      path: "/",
-      dropdown: null
-    },
-    { 
-      id: "calendar", 
-      label: "Calendar", 
-      icon: Calendar, 
-      path: "/calendar",
-      dropdown: null
-    },
-    { 
-      id: "clients", 
-      label: "Clients", 
-      icon: Users, 
-      path: "/clients",
-      dropdown: [
-        { label: "All Clients", path: "/clients" },
-        { label: "Active Clients", path: "/clients/active" },
-        { label: "Leads", path: "/clients/leads" },
-        { label: "Add Client", path: "/clients/new" },
-      ]
-    },
-    { 
-      id: "services", 
-      label: "Services", 
-      icon: Grid3X3, 
-      path: "/services",
-      dropdown: [
-        { label: "Training Packages", path: "/services" },
-      ]
-    },
-    { 
-      id: "finances", 
-      label: "Finances", 
-      icon: DollarSign, 
-      path: "/finances",
-      dropdown: [
-        { label: "Payments", path: "/finances/payments" },
-        { label: "Invoices", path: "/finances/invoices" },
-        { label: "Outstanding", path: "/finances/outstanding" },
-        { label: "Expenses", path: "/finances/expenses" },
-      ]
-    },
-    { 
-      id: "reporting", 
-      label: "Reporting", 
-      icon: BarChart3, 
-      path: "/reporting",
-      dropdown: [
-        { label: "Business Report", path: "/reporting" },
-      ]
-    },
-  ];
+  // ADMIN/TRAINER ONLY navigation - Security fix
+  const getNavItems = () => {
+    const userRole = profile?.role;
+    
+    if (userRole === 'admin') {
+      return [
+        { 
+          id: "dashboard", 
+          label: "Dashboard", 
+          icon: Home, 
+          path: "/admin/dashboard",
+          dropdown: null
+        },
+        { 
+          id: "calendar", 
+          label: "Calendar", 
+          icon: Calendar, 
+          path: "/admin/calendar",
+          dropdown: null
+        },
+        { 
+          id: "clients", 
+          label: "Clients", 
+          icon: Users, 
+          path: "/admin/clients",
+          dropdown: [
+            { label: "All Clients", path: "/admin/clients" },
+            { label: "Active Clients", path: "/admin/clients/active" },
+            { label: "Leads", path: "/admin/clients/leads" },
+            { label: "Add Client", path: "/admin/clients/new" },
+          ]
+        },
+        { 
+          id: "services", 
+          label: "Services", 
+          icon: Grid3X3, 
+          path: "/admin/services",
+          dropdown: [
+            { label: "Training Packages", path: "/admin/services" },
+          ]
+        },
+        { 
+          id: "finances", 
+          label: "Finances", 
+          icon: DollarSign, 
+          path: "/admin/finances",
+          dropdown: [
+            { label: "Payments", path: "/admin/finances/payments" },
+            { label: "Invoices", path: "/admin/finances/invoices" },
+            { label: "Outstanding", path: "/admin/finances/outstanding" },
+            { label: "Expenses", path: "/admin/finances/expenses" },
+          ]
+        },
+        { 
+          id: "reporting", 
+          label: "Reporting", 
+          icon: BarChart3, 
+          path: "/admin/reporting",
+          dropdown: [
+            { label: "Business Report", path: "/admin/reporting" },
+          ]
+        },
+      ];
+    } else if (userRole === 'trainer') {
+      return [
+        { 
+          id: "dashboard", 
+          label: "Dashboard", 
+          icon: Home, 
+          path: "/trainer/dashboard",
+          dropdown: null
+        },
+        { 
+          id: "calendar", 
+          label: "Calendar", 
+          icon: Calendar, 
+          path: "/trainer/calendar",
+          dropdown: null
+        },
+        { 
+          id: "clients", 
+          label: "My Clients", 
+          icon: Users, 
+          path: "/trainer/clients",
+          dropdown: null
+        },
+      ];
+    }
+    
+    // Security fallback - if somehow non-admin/trainer gets here, show nothing
+    return [];
+  };
+
+  const navItems = getNavItems();
 
   const isActive = (path: string) => {
     if (path === "/") return location.pathname === "/";

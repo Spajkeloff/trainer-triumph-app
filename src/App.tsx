@@ -26,15 +26,7 @@ import { useAuth } from "@/contexts/AuthContext";
 const RoleBasedRedirect = () => {
   const { user, profile, loading } = useAuth();
   
-  // Add debugging
-  console.log('RoleBasedRedirect - Debug:', { 
-    loading, 
-    user: user ? 'exists' : 'null', 
-    profile: profile ? { role: profile.role } : 'null' 
-  });
-  
   if (loading) {
-    console.log('RoleBasedRedirect - Loading state');
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
@@ -46,22 +38,17 @@ const RoleBasedRedirect = () => {
   }
 
   if (!user) {
-    console.log('RoleBasedRedirect - No user, redirecting to auth');
     return <Navigate to="/auth" replace />;
   }
 
   // Redirect based on user role
-  console.log('RoleBasedRedirect - User role:', profile?.role);
   switch (profile?.role) {
     case 'admin':
     case 'trainer':
-      console.log('RoleBasedRedirect - Redirecting to admin dashboard');
       return <Navigate to="/admin/dashboard" replace />;
     case 'client':
-      console.log('RoleBasedRedirect - Redirecting to client dashboard');
       return <Navigate to="/client/dashboard" replace />;
     default:
-      console.log('RoleBasedRedirect - Unknown role, redirecting to auth');
       return <Navigate to="/auth" replace />;
   }
 };
