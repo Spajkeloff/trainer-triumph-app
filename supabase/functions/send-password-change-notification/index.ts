@@ -34,7 +34,7 @@ const handler = async (req: Request): Promise<Response> => {
     });
 
     const emailResponse = await resend.emails.send({
-      from: "TrainWithUs <noreply@trainwithus.app>",
+      from: "TrainWithUs <onboarding@resend.dev>",
       to: [email],
       subject: "Password Updated - TrainWithUs",
       html: `
