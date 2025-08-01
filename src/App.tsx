@@ -12,8 +12,10 @@ import ClientDashboard from "./pages/ClientDashboard";
 import Calendar from "./pages/Calendar";
 import Clients from "./pages/Clients";
 import ClientProfile from "./pages/ClientProfile";
+import MySessions from "./pages/MySessions";
+import MyPackages from "./pages/MyPackages";
 import Services from "./pages/Services";
-import PackageManagement from "./pages/PackageManagement";
+
 import Finances from "./pages/Finances";
 import Reporting from "./pages/Reporting";
 import Settings from "./pages/Settings";
@@ -77,9 +79,9 @@ const App = () => (
               </ProtectedRoute>
             }>
               <Route path="dashboard" element={<ClientDashboard />} />
-              <Route path="profile" element={<Settings />} />
-              <Route path="sessions" element={<Calendar />} />
-              <Route path="packages" element={<PackageManagement />} />
+              <Route path="profile" element={<ClientProfile />} />
+              <Route path="sessions" element={<MySessions />} />
+              <Route path="packages" element={<MyPackages />} />
             </Route>
             
             {/* Admin/Trainer routes - SECURITY FIX: Admin only access */}
@@ -91,7 +93,7 @@ const App = () => (
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="calendar" element={<Calendar />} />
               <Route path="clients" element={<Clients />} />
-              <Route path="clients/:id" element={<ClientProfile />} />
+              <Route path="clients/:id" element={<Clients />} />
               <Route path="clients/leads" element={<Clients />} />
               <Route path="clients/active" element={<Clients />} />
               <Route path="clients/new" element={<Clients />} />
@@ -118,7 +120,7 @@ const App = () => (
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="calendar" element={<Calendar />} />
               <Route path="clients" element={<Clients />} />
-              <Route path="clients/:id" element={<ClientProfile />} />
+              <Route path="clients/:id" element={<Clients />} />
               <Route path="sessions" element={<Calendar />} />
               <Route path="settings" element={<Settings />} />
             </Route>
