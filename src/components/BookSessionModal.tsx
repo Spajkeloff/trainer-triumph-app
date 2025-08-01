@@ -499,7 +499,13 @@ const BookSessionModal = ({ isOpen, onClose, onSuccess, selectedDate, selectedTi
                     id="start_time"
                     type="time"
                     value={formData.start_time}
-                    onChange={(e) => setFormData(prev => ({ ...prev, start_time: e.target.value }))}
+                    onChange={(e) => setFormData(prev => ({ 
+                      ...prev, 
+                      start_time: e.target.value,
+                      end_time: calculateEndTime(e.target.value)
+                    }))}
+                    step="300"
+                    className="w-full"
                     required
                   />
                 </div>

@@ -164,26 +164,38 @@ const SessionManagementModal = ({ isOpen, onClose, session, onSuccess, onEdit, o
 
       if (sessionError) throw sessionError;
 
-      // Handle trial session billing 
+      // Handle trial session billing - only create charge once
       if (isTrialSession && action === 'completed') {
-        // Create charge for trial session
-        const { data: user } = await supabase.auth.getUser();
-        if (user.user) {
-          const { error: chargeError } = await supabase
-            .from('transactions')
-            .insert({
-              user_id: user.user.id,
-              client_id: session.client_id,
-              transaction_type: 'charge',
-              category: 'Session',
-              amount: 250,
-              description: `${session.type} on ${session.date}`,
-              transaction_date: session.date,
-              status: 'completed'
-            });
+        // Check if charge already exists for this session
+        const { data: existingCharge } = await supabase
+          .from('transactions')
+          .select('id')
+          .eq('client_id', session.client_id)
+          .eq('transaction_type', 'charge')
+          .eq('transaction_date', session.date)
+          .eq('description', `${session.type} on ${session.date}`)
+          .maybeSingle();
 
-          if (chargeError) {
-            console.error('Error creating charge:', chargeError);
+        // Only create charge if it doesn't exist
+        if (!existingCharge) {
+          const { data: user } = await supabase.auth.getUser();
+          if (user.user) {
+            const { error: chargeError } = await supabase
+              .from('transactions')
+              .insert({
+                user_id: user.user.id,
+                client_id: session.client_id,
+                transaction_type: 'charge',
+                category: 'Session',
+                amount: 250,
+                description: `${session.type} on ${session.date}`,
+                transaction_date: session.date,
+                status: 'completed'
+              });
+
+            if (chargeError) {
+              console.error('Error creating charge:', chargeError);
+            }
           }
         }
       }
