@@ -31,7 +31,7 @@ const Auth = () => {
     password: '',
     firstName: '',
     lastName: '',
-    // Role will be 'lead' for all new public registrations
+    // Manual account creation makes users 'lead'
   });
 
   // Password Reset Form
@@ -122,7 +122,7 @@ const Auth = () => {
       const { error } = await signUp(signUpData.email, signUpData.password, {
         firstName: signUpData.firstName,
         lastName: signUpData.lastName,
-        role: 'lead', // Set new users as leads
+        role: 'lead', // Manual signups become leads
       });
 
       if (error) {
