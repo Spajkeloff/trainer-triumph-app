@@ -12,6 +12,7 @@ import ClientDashboard from "./pages/ClientDashboard";
 import Calendar from "./pages/Calendar";
 import Clients from "./pages/Clients";
 import ClientProfile from "./pages/ClientProfile";
+import ClientDetails from "./pages/ClientDetails";
 import MySessions from "./pages/MySessions";
 import MyPackages from "./pages/MyPackages";
 import Services from "./pages/Services";
@@ -126,7 +127,7 @@ const App = () => {
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="calendar" element={<Calendar />} />
               <Route path="clients" element={<Clients />} />
-              <Route path="clients/:id" element={<ClientProfile />} />
+              <Route path="clients/:id" element={<ClientDetails />} />
               <Route path="clients/leads" element={<Clients />} />
               <Route path="clients/active" element={<Clients />} />
               <Route path="clients/new" element={<Clients />} />
@@ -153,7 +154,7 @@ const App = () => {
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="calendar" element={<Calendar />} />
               <Route path="clients" element={<Clients />} />
-              <Route path="clients/:id" element={<ClientProfile />} />
+              <Route path="clients/:id" element={<ClientDetails />} />
               <Route path="sessions" element={<Calendar />} />
               <Route path="settings" element={<Settings />} />
             </Route>
