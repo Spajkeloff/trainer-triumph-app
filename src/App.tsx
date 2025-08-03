@@ -126,7 +126,7 @@ const App = () => {
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="calendar" element={<Calendar />} />
               <Route path="clients" element={<Clients />} />
-              <Route path="clients/:id" element={<Clients />} />
+              <Route path="clients/:id" element={<ClientProfile />} />
               <Route path="clients/leads" element={<Clients />} />
               <Route path="clients/active" element={<Clients />} />
               <Route path="clients/new" element={<Clients />} />
