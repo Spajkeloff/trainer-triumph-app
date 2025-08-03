@@ -43,7 +43,11 @@ const ClientDetails = () => {
     upcomingSessions: 0,
     totalSpent: 0,
     balance: 0,
-    activePackages: 0
+    activePackages: 0,
+    sessionsRemaining: 0,
+    totalCharges: 0,
+    lastPayment: null as string | null,
+    nextSession: null as any
   });
   
   const [showBookSessionModal, setShowBookSessionModal] = useState(false);
@@ -61,10 +65,24 @@ const ClientDetails = () => {
     
     try {
       setLoading(true);
-      const clientData = await clientService.getById(id);
+      
+      // Load client details with all related data
+      const [clientData, clientSessions, clientPayments, clientBalance] = await Promise.all([
+        clientService.getById(id),
+        sessionService.getAll().then(sessions => sessions.filter(s => s.client_id === id)),
+        paymentService.getByClient(id),
+        paymentService.getClientBalance(id)
+      ]);
+      
       if (clientData) {
-        setClient(clientData);
-        calculateStats(clientData);
+        // Merge the additional data into the client object for easy access in components
+        const enhancedClient = {
+          ...clientData,
+          sessions: clientSessions,
+          payments: clientPayments
+        };
+        setClient(enhancedClient);
+        calculateStats(clientData, clientSessions, clientPayments, clientBalance);
       } else {
         toast({
           title: "Error",
@@ -85,20 +103,28 @@ const ClientDetails = () => {
     }
   };
 
-  const calculateStats = (clientData: ClientWithDetails) => {
-    const totalSessions = clientData.sessions?.length || 0;
-    const completedSessions = clientData.sessions?.filter(s => s.status === 'completed').length || 0;
-    const upcomingSessions = clientData.sessions?.filter(s => s.status === 'scheduled' && new Date(s.date) >= new Date()).length || 0;
-    const totalSpent = clientData.payments?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0;
+  const calculateStats = (clientData: ClientWithDetails, sessions: any[], payments: any[], balance: any) => {
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+    
+    const totalSessions = sessions?.length || 0;
+    const completedSessions = sessions?.filter(s => s.status === 'completed').length || 0;
+    const upcomingSessions = sessions?.filter(s => s.status === 'scheduled' && s.date >= todayStr).length || 0;
+    const totalSpent = payments?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0;
     const activePackages = clientData.client_packages?.filter(p => p.status === 'active').length || 0;
+    const sessionsRemaining = clientData.client_packages?.reduce((sum, pkg) => sum + (pkg.sessions_remaining || 0), 0) || 0;
 
     setStats({
       totalSessions,
       completedSessions,
       upcomingSessions,
       totalSpent,
-      balance: 0, // This would need to be calculated from charges vs payments
-      activePackages
+      balance: balance?.balance || 0,
+      activePackages,
+      sessionsRemaining,
+      totalCharges: balance?.total_charges || 0,
+      lastPayment: payments?.[0]?.payment_date,
+      nextSession: sessions?.find(s => s.status === 'scheduled' && new Date(s.date) >= today)
     });
   };
 
@@ -233,7 +259,7 @@ const ClientDetails = () => {
                     <div>
                       <p className="text-sm text-muted-foreground">Sessions Remaining</p>
                       <p className="text-lg font-semibold">
-                        {client.client_packages?.reduce((sum, pkg) => sum + (pkg.sessions_remaining || 0), 0) || 0}
+                        {stats.sessionsRemaining}
                       </p>
                     </div>
                   </div>
@@ -256,19 +282,19 @@ const ClientDetails = () => {
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Total Charged</p>
-                      <p className="text-lg font-semibold">DH{stats.totalSpent.toFixed(2)}</p>
+                      <p className="text-lg font-semibold">DH{stats.totalCharges.toFixed(2)}</p>
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Amount Due</p>
-                      <p className="text-lg font-semibold">0</p>
+                      <p className="text-lg font-semibold">{stats.balance > 0 ? `DH${stats.balance.toFixed(2)}` : '0'}</p>
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Transactions</p>
-                      <p className="text-lg font-semibold">{client.payments?.length || 0}</p>
+                      <p className="text-lg font-semibold">{client?.payments?.length || 0}</p>
                     </div>
                   </div>
                   <div className="mt-4 text-sm">
-                    <p>Last payment: {client.payments?.[0]?.payment_date ? new Date(client.payments[0].payment_date).toLocaleDateString() : 'None'}</p>
+                    <p>Last payment: {stats.lastPayment ? new Date(stats.lastPayment).toLocaleDateString() : 'None'}</p>
                     <p>Next payment: -</p>
                   </div>
                 </CardContent>
@@ -302,8 +328,8 @@ const ClientDetails = () => {
                     </div>
                   </div>
                   <div className="mt-4 text-sm">
-                    <p>Last booking: {client.sessions?.[0]?.date ? new Date(client.sessions[0].date).toLocaleDateString() : 'None'}</p>
-                    <p>Next booking: {client.sessions?.find(s => new Date(s.date) > new Date())?.date ? new Date(client.sessions.find(s => new Date(s.date) > new Date()).date).toLocaleDateString() : 'None'}</p>
+                    <p>Last booking: {client?.sessions?.length > 0 ? new Date(Math.max(...client.sessions.map(s => new Date(s.date).getTime()))).toLocaleDateString() : 'None'}</p>
+                    <p>Next booking: {stats.nextSession ? `${new Date(stats.nextSession.date).toLocaleDateString()} at ${stats.nextSession.start_time}` : 'None'}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -377,9 +403,11 @@ const ClientDetails = () => {
                   <CardTitle>Session History</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {client.sessions?.length > 0 ? (
+                  {client?.sessions?.length > 0 ? (
                     <div className="space-y-4">
-                      {client.sessions.map((session: any) => (
+                      {client.sessions
+                        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                        .map((session: any) => (
                         <div key={session.id} className="border rounded-lg p-4">
                           <div className="flex justify-between items-start">
                             <div>
@@ -388,6 +416,7 @@ const ClientDetails = () => {
                                 {session.start_time} - {session.end_time}
                               </p>
                               <p className="text-sm">{session.type} session</p>
+                              {session.location && <p className="text-sm text-muted-foreground">Location: {session.location}</p>}
                               {session.notes && <p className="text-sm text-muted-foreground mt-1">{session.notes}</p>}
                             </div>
                             <Badge variant={
@@ -413,9 +442,11 @@ const ClientDetails = () => {
                   <CardTitle>Payment History</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {client.payments?.length > 0 ? (
+                  {client?.payments?.length > 0 ? (
                     <div className="space-y-4">
-                      {client.payments.map((payment: any) => (
+                      {client.payments
+                        .sort((a, b) => new Date(b.payment_date).getTime() - new Date(a.payment_date).getTime())
+                        .map((payment: any) => (
                         <div key={payment.id} className="border rounded-lg p-4">
                           <div className="flex justify-between items-start">
                             <div>
@@ -424,6 +455,7 @@ const ClientDetails = () => {
                                 {new Date(payment.payment_date).toLocaleDateString()}
                               </p>
                               <p className="text-sm">{payment.description || 'Payment'}</p>
+                              <p className="text-sm text-muted-foreground">Method: {payment.payment_method}</p>
                             </div>
                             <Badge variant={payment.status === 'completed' ? 'default' : 'secondary'}>
                               {payment.status}
