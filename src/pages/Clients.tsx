@@ -79,7 +79,7 @@ const Clients = () => {
   });
 
   const handleEditClient = (clientId: string) => {
-    navigate(`/clients/${clientId}?tab=edit`);
+    navigate(`/admin/clients/${clientId}?tab=edit`);
   };
 
   const handleDeleteClient = async (clientId: string) => {
@@ -231,7 +231,7 @@ const Clients = () => {
                     <div>
                       <CardTitle 
                         className="text-lg hover:text-primary cursor-pointer transition-colors"
-                        onClick={() => navigate(`/clients/${client.id}`)}
+                        onClick={() => navigate(`/admin/clients/${client.id}`)}
                       >
                         {client.first_name} {client.last_name}
                       </CardTitle>
@@ -249,7 +249,7 @@ const Clients = () => {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => navigate(`/clients/${client.id}`)}>
+                        <DropdownMenuItem onClick={() => navigate(`/admin/clients/${client.id}`)}>
                           <Eye className="h-4 w-4 mr-2" />
                           View Profile
                         </DropdownMenuItem>
