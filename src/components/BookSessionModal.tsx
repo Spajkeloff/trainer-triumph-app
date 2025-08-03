@@ -543,19 +543,19 @@ const BookSessionModal = ({ isOpen, onClose, onSuccess, selectedDate, selectedTi
                       <SelectTrigger className="bg-background">
                         <SelectValue placeholder="Select package" />
                       </SelectTrigger>
-                      <SelectContent className="bg-background border border-border shadow-md z-50">
-                        {clientPackages.length > 0 ? (
-                          clientPackages.map((pkg) => (
-                            <SelectItem key={pkg.id} value={pkg.id} className="bg-background hover:bg-muted">
-                              {pkg.packages.name} - {pkg.sessions_remaining} sessions left
-                            </SelectItem>
-                          ))
-                        ) : (
-                          <SelectItem value="" disabled className="bg-background text-muted-foreground">
-                            {formData.client_id ? 'No packages available for this client' : 'Please select a client first'}
-                          </SelectItem>
-                        )}
-                      </SelectContent>
+                       <SelectContent className="bg-background border border-border shadow-md z-50">
+                         {clientPackages.length > 0 ? (
+                           clientPackages.map((pkg) => (
+                             <SelectItem key={pkg.id} value={pkg.id} className="bg-background hover:bg-muted">
+                               {pkg.packages.name} - {pkg.sessions_remaining} sessions left
+                             </SelectItem>
+                           ))
+                         ) : (
+                           <div className="p-2 text-sm text-muted-foreground">
+                             {formData.client_id ? 'No packages available for this client' : 'Please select a client first'}
+                           </div>
+                         )}
+                       </SelectContent>
                     </Select>
                   </div>
                 ) : (
