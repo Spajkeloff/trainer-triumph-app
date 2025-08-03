@@ -13,6 +13,7 @@ import { paymentService } from '@/services/paymentService';
 import BookSessionModal from '@/components/BookSessionModal';
 import AddPaymentModal from '@/components/AddPaymentModal';
 import AssignPackageModal from '@/components/AssignPackageModal';
+import EditPackageModal from '@/components/EditPackageModal';
 import { 
   ArrowLeft,
   Calendar,
@@ -27,7 +28,11 @@ import {
   User,
   Phone,
   Mail,
-  MapPin
+  MapPin,
+  Edit,
+  Plus,
+  Trash2,
+  Settings
 } from 'lucide-react';
 
 const ClientDetails = () => {
@@ -53,6 +58,9 @@ const ClientDetails = () => {
   const [showBookSessionModal, setShowBookSessionModal] = useState(false);
   const [showAddPaymentModal, setShowAddPaymentModal] = useState(false);
   const [showAssignPackageModal, setShowAssignPackageModal] = useState(false);
+  const [showEditPackageModal, setShowEditPackageModal] = useState(false);
+  const [selectedPackage, setSelectedPackage] = useState<any>(null);
+  const [selectedPayment, setSelectedPayment] = useState<any>(null);
 
   useEffect(() => {
     if (id) {
@@ -244,11 +252,17 @@ const ClientDetails = () => {
             <TabsContent value="summary" className="space-y-4">
               {/* Services Summary */}
               <Card>
-                <CardHeader className="bg-green-50">
+                <CardHeader className="bg-green-50 flex flex-row items-center justify-between">
                   <CardTitle className="flex items-center text-green-800">
                     <Package className="h-5 w-5 mr-2" />
                     Services
                   </CardTitle>
+                  <div className="flex space-x-2">
+                    <Button size="sm" variant="outline" onClick={() => setShowAssignPackageModal(true)}>
+                      <Plus className="h-4 w-4 mr-1" />
+                      Assign Package
+                    </Button>
+                  </div>
                 </CardHeader>
                 <CardContent className="p-4">
                   <div className="grid grid-cols-2 gap-4">
@@ -268,11 +282,17 @@ const ClientDetails = () => {
 
               {/* Payments Summary */}
               <Card>
-                <CardHeader className="bg-purple-50">
+                <CardHeader className="bg-purple-50 flex flex-row items-center justify-between">
                   <CardTitle className="flex items-center text-purple-800">
                     <DollarSign className="h-5 w-5 mr-2" />
                     Payments
                   </CardTitle>
+                  <div className="flex space-x-2">
+                    <Button size="sm" variant="outline" onClick={() => setShowAddPaymentModal(true)}>
+                      <Plus className="h-4 w-4 mr-1" />
+                      Add Payment
+                    </Button>
+                  </div>
                 </CardHeader>
                 <CardContent className="p-4">
                   <div className="grid grid-cols-4 gap-4">
@@ -369,29 +389,68 @@ const ClientDetails = () => {
 
             <TabsContent value="services">
               <Card>
-                <CardHeader>
+                <CardHeader className="flex flex-row items-center justify-between">
                   <CardTitle>Client Packages</CardTitle>
+                  <Button onClick={() => setShowAssignPackageModal(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Assign New Package
+                  </Button>
                 </CardHeader>
                 <CardContent>
-                  {client.client_packages?.length > 0 ? (
+                  {client?.client_packages?.length > 0 ? (
                     <div className="space-y-4">
                       {client.client_packages.map((pkg: any) => (
                         <div key={pkg.id} className="border rounded-lg p-4">
                           <div className="flex justify-between items-start">
-                            <div>
+                            <div className="flex-1">
                               <h4 className="font-semibold">{pkg.packages?.name}</h4>
                               <p className="text-sm text-muted-foreground">{pkg.packages?.description}</p>
-                              <p className="text-sm">Sessions remaining: {pkg.sessions_remaining}</p>
+                              <div className="grid grid-cols-3 gap-4 mt-2">
+                                <div>
+                                  <p className="text-xs text-muted-foreground">Sessions Remaining</p>
+                                  <p className="text-sm font-semibold">{pkg.sessions_remaining}</p>
+                                </div>
+                                <div>
+                                  <p className="text-xs text-muted-foreground">Expiry Date</p>
+                                  <p className="text-sm">{new Date(pkg.expiry_date).toLocaleDateString()}</p>
+                                </div>
+                                <div>
+                                  <p className="text-xs text-muted-foreground">Purchase Date</p>
+                                  <p className="text-sm">{new Date(pkg.purchase_date).toLocaleDateString()}</p>
+                                </div>
+                              </div>
                             </div>
-                            <Badge variant={pkg.status === 'active' ? 'default' : 'secondary'}>
-                              {pkg.status}
-                            </Badge>
+                            <div className="flex items-center space-x-2 ml-4">
+                              <Badge variant={pkg.status === 'active' ? 'default' : 'secondary'}>
+                                {pkg.status}
+                              </Badge>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setSelectedPackage(pkg);
+                                  setShowEditPackageModal(true);
+                                }}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </div>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-muted-foreground">No packages assigned</p>
+                    <div className="text-center py-8">
+                      <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-muted-foreground">No packages assigned</p>
+                      <Button 
+                        className="mt-4"
+                        onClick={() => setShowAssignPackageModal(true)}
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Assign First Package
+                      </Button>
+                    </div>
                   )}
                 </CardContent>
               </Card>
@@ -438,8 +497,14 @@ const ClientDetails = () => {
 
             <TabsContent value="finances">
               <Card>
-                <CardHeader>
+                <CardHeader className="flex flex-row items-center justify-between">
                   <CardTitle>Payment History</CardTitle>
+                  <div className="flex space-x-2">
+                    <Button onClick={() => setShowAddPaymentModal(true)}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Payment
+                    </Button>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   {client?.payments?.length > 0 ? (
@@ -449,23 +514,47 @@ const ClientDetails = () => {
                         .map((payment: any) => (
                         <div key={payment.id} className="border rounded-lg p-4">
                           <div className="flex justify-between items-start">
-                            <div>
-                              <p className="font-semibold">DH{payment.amount}</p>
+                            <div className="flex-1">
+                              <div className="flex items-center space-x-2">
+                                <p className="font-semibold">DH{payment.amount}</p>
+                                <Badge variant={payment.status === 'completed' ? 'default' : 'secondary'}>
+                                  {payment.status}
+                                </Badge>
+                              </div>
                               <p className="text-sm text-muted-foreground">
                                 {new Date(payment.payment_date).toLocaleDateString()}
                               </p>
                               <p className="text-sm">{payment.description || 'Payment'}</p>
                               <p className="text-sm text-muted-foreground">Method: {payment.payment_method}</p>
                             </div>
-                            <Badge variant={payment.status === 'completed' ? 'default' : 'secondary'}>
-                              {payment.status}
-                            </Badge>
+                            <div className="flex items-center space-x-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setSelectedPayment(payment);
+                                  setShowAddPaymentModal(true);
+                                }}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </div>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-muted-foreground">No payment history</p>
+                    <div className="text-center py-8">
+                      <DollarSign className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-muted-foreground">No payment history</p>
+                      <Button 
+                        className="mt-4"
+                        onClick={() => setShowAddPaymentModal(true)}
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add First Payment
+                      </Button>
+                    </div>
                   )}
                 </CardContent>
               </Card>
@@ -621,9 +710,15 @@ const ClientDetails = () => {
         isOpen={showAddPaymentModal}
         onClose={() => {
           setShowAddPaymentModal(false);
+          setSelectedPayment(null);
           loadClientDetails();
         }}
         clientId={client.id}
+        onSuccess={() => {
+          setShowAddPaymentModal(false);
+          setSelectedPayment(null);
+          loadClientDetails();
+        }}
       />
       
       <AssignPackageModal
@@ -634,6 +729,18 @@ const ClientDetails = () => {
         }}
         clientId={client.id}
       />
+
+      {selectedPackage && (
+        <EditPackageModal
+          isOpen={showEditPackageModal}
+          onClose={() => {
+            setShowEditPackageModal(false);
+            setSelectedPackage(null);
+            loadClientDetails();
+          }}
+          clientPackage={selectedPackage}
+        />
+      )}
     </div>
   );
 };
