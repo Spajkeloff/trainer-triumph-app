@@ -110,7 +110,7 @@ const EditPackageModal = ({ isOpen, onClose, clientPackage, onSuccess }: EditPac
       const { error: transactionsError } = await supabase
         .from('transactions')
         .delete()
-        .or(`reference_id.eq.${clientPackage.id},client_package_id.eq.${clientPackage.id}`);
+        .eq('reference_id', clientPackage.id);
 
       if (transactionsError) throw transactionsError;
 
