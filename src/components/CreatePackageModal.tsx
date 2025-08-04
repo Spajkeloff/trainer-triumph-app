@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -24,18 +24,55 @@ interface CreatePackageModalProps {
 const CreatePackageModal = ({ open, onClose, onSuccess, editingPackage }: CreatePackageModalProps) => {
   const { toast } = useToast();
   const [formData, setFormData] = useState({
-    name: editingPackage?.name || "",
-    description: editingPackage?.description || "",
-    category: editingPackage?.category || "",
-    price: editingPackage?.price || "",
-    paymentCategory: editingPackage?.paymentCategory || "",
-    numberOfSessions: editingPackage?.sessions || "",
-    numberOfClasses: editingPackage?.numberOfClasses || "",
-    duration: editingPackage?.duration || "",
+    name: "",
+    description: "",
+    category: "",
+    price: "",
+    paymentCategory: "",
+    numberOfSessions: "",
+    numberOfClasses: "",
+    duration: "",
     allowOnlinePurchasing: false,
     discountPromoCodes: false,
     triggerEmail: false,
   });
+
+  // Reset and populate form when modal opens or editingPackage changes
+  useEffect(() => {
+    if (open) {
+      if (editingPackage) {
+        // Populate form with editing package data
+        setFormData({
+          name: editingPackage.name || "",
+          description: editingPackage.description || "",
+          category: editingPackage.category || "",
+          price: editingPackage.price?.toString() || "",
+          paymentCategory: editingPackage.paymentCategory || "",
+          numberOfSessions: editingPackage.sessions_included?.toString() || "",
+          numberOfClasses: editingPackage.numberOfClasses || "",
+          duration: getDurationFromDays(editingPackage.duration_days),
+          allowOnlinePurchasing: false,
+          discountPromoCodes: false,
+          triggerEmail: false,
+        });
+      } else {
+        // Reset form for new package
+        setFormData({
+          name: "",
+          description: "",
+          category: "",
+          price: "",
+          paymentCategory: "",
+          numberOfSessions: "",
+          numberOfClasses: "",
+          duration: "",
+          allowOnlinePurchasing: false,
+          discountPromoCodes: false,
+          triggerEmail: false,
+        });
+      }
+    }
+  }, [open, editingPackage]);
 
   const handleInputChange = (field: string, value: string | boolean) => {
     setFormData(prev => ({
@@ -98,6 +135,17 @@ const CreatePackageModal = ({ open, onClose, onSuccess, editingPackage }: Create
       case "6-months": return 180;
       case "12-months": return 365;
       default: return 90; // Default to 3 months
+    }
+  };
+
+  const getDurationFromDays = (days: number): string => {
+    switch (days) {
+      case 30: return "1-month";
+      case 60: return "2-months";
+      case 90: return "3-months";
+      case 180: return "6-months";
+      case 365: return "12-months";
+      default: return "3-months"; // Default to 3 months
     }
   };
 
