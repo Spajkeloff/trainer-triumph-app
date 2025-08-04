@@ -545,7 +545,7 @@ const SessionManagementModal = ({ isOpen, onClose, session, onSuccess, onEdit, o
           <>
             <div className="grid grid-cols-2 gap-3 mb-4">
               <Button 
-                onClick={() => handleStatusUpdate('completed')}
+                onClick={() => handleReconcile('completed', true)}
                 disabled={loading || session.status === 'completed'}
                 className="bg-success hover:bg-success/90"
               >
