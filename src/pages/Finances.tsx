@@ -149,31 +149,36 @@ const Finances = () => {
   const downloadInvoiceAsPDF = (invoice: Invoice) => {
     const doc = new jsPDF();
     
-    // Company Header
-    doc.setFontSize(20);
-    doc.setTextColor(40, 40, 40);
-    doc.text('Train With Us Personal Trainers', 20, 25);
+    // Invoice Header
+    doc.setFontSize(24);
+    doc.setFont(undefined, 'bold');
+    doc.text('INVOICE', 20, 30);
     
+    // Invoice Details  
+    doc.setFontSize(12);
+    doc.setFont(undefined, 'bold');
+    doc.text(`Invoice #: ${invoice.invoice_number}`, 20, 50);
+    doc.setFont(undefined, 'normal');
+    doc.text(`Issue Date: ${new Date(invoice.issue_date).toLocaleDateString()}`, 20, 62);
+    doc.text(`Due Date: ${new Date(invoice.due_date).toLocaleDateString()}`, 20, 74);
+    doc.text(`Status: ${invoice.status?.toUpperCase()}`, 20, 86);
+
+    // Client Information
+    doc.setFontSize(12);
+    doc.setFont(undefined, 'bold');
+    doc.text('Bill To:', 140, 50);
+    doc.setFont(undefined, 'normal');
     doc.setFontSize(10);
-    doc.setTextColor(100, 100, 100);
-    doc.text('Dubai, UAE, 0000', 20, 35);
-    doc.text('+971 54 377 3116', 20, 42);
     
-    // Invoice Title
-    doc.setFontSize(28);
-    doc.setTextColor(40, 40, 40);
-    doc.text('INVOICE', 20, 65);
+    // Get client name from invoice
+    const clientName = invoice.clients 
+      ? `${invoice.clients.first_name} ${invoice.clients.last_name}`
+      : 'Client';
     
-    // Invoice Details
-    doc.setFontSize(10);
-    doc.setTextColor(40, 40, 40);
-    doc.text(`Invoice #: ${invoice.invoice_number}`, 20, 80);
-    doc.text(`Issue Date: ${new Date(invoice.issue_date).toLocaleDateString()}`, 20, 87);
-    doc.text(`Due Date: ${new Date(invoice.due_date).toLocaleDateString()}`, 20, 94);
-    
-    // Client Details
-    doc.text('Bill To:', 20, 110);
-    doc.text(`${invoice.clients?.first_name || ''} ${invoice.clients?.last_name || ''}`, 20, 120);
+    doc.text(clientName, 140, 62);
+    if (invoice.clients) {
+      doc.text('Dubai, UAE', 140, 72);
+    }
     
     // Invoice Items Table
     const tableData = [];
@@ -222,9 +227,25 @@ const Finances = () => {
         doc.text(splitNotes, 20, finalY + 40);
       }
       
-      // Payment Terms
-      doc.setFontSize(10);
-      doc.text(`Payment Terms: ${invoice.payment_terms || 30} days`, 20, finalY + 65);
+    // Company Footer
+    const pageHeight = doc.internal.pageSize.height;
+    const footerY = pageHeight - 40;
+    
+    // Add separator line
+    doc.setLineWidth(0.5);
+    doc.line(20, footerY - 10, 190, footerY - 10);
+    
+    doc.setFontSize(10);
+    doc.setFont(undefined, 'bold');
+    doc.text('Train With Us Personal Trainers', 20, footerY);
+    doc.setFont(undefined, 'normal');
+    doc.setFontSize(9);
+    doc.text('Dubai, UAE, 0000', 20, footerY + 8);
+    doc.text('+971 54 377 3116', 20, footerY + 16);
+    
+    // Payment Terms
+    doc.setFontSize(10);
+    doc.text(`Payment Terms: ${invoice.payment_terms || 30} days`, 20, finalY + 65);
     } else {
       // Fallback if autoTable is not available
       let currentY = 135;

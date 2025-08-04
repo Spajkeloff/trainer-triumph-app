@@ -147,24 +147,24 @@ const AssignPackageModal = ({ isOpen, onClose, clientId, onSuccess, onPaymentReq
 
       if (chargeError) throw chargeError;
 
-      // 3. Also create legacy payment record for compatibility (negative amount for charge)
-      const { error: legacyChargeError } = await supabase
-        .from('payments')
-        .insert({
-          client_id: clientId,
-          amount: -price, // Negative for charge
-          payment_method: 'package_assignment',
-          status: 'pending',
-          description: `${selectedPackage.name} Package Assignment${notes ? ` - ${notes}` : ''}`,
-          payment_date: new Date().toISOString().split('T')[0],
-          client_package_id: clientPackageData.id
-        });
-
-      if (legacyChargeError) throw legacyChargeError;
-
-      // 4. If payment is marked as paid, create payment transaction
+      // 3. Create legacy payment record - either pending charge or completed payment
       if (paymentStatus === 'paid') {
-        // Create payment transaction
+        // If paid, create completed payment record only
+        const { error: paymentError } = await supabase
+          .from('payments')
+          .insert({
+            client_id: clientId,
+            amount: price, // Positive for payment
+            payment_method: paymentMethod,
+            status: 'completed',
+            description: `Payment for ${selectedPackage.name} Package`,
+            payment_date: new Date().toISOString().split('T')[0],
+            client_package_id: clientPackageData.id
+          });
+
+        if (paymentError) throw paymentError;
+
+        // Also create payment transaction
         const { error: paymentTxError } = await supabase
           .from('transactions')
           .insert({
@@ -182,22 +182,24 @@ const AssignPackageModal = ({ isOpen, onClose, clientId, onSuccess, onPaymentReq
           });
 
         if (paymentTxError) throw paymentTxError;
-
-        // Create legacy payment record
-        const { error: paymentError } = await supabase
+      } else {
+        // If unpaid, create pending charge record
+        const { error: legacyChargeError } = await supabase
           .from('payments')
           .insert({
             client_id: clientId,
-            amount: price, // Positive for payment
-            payment_method: paymentMethod,
-            status: 'completed',
-            description: `Payment for ${selectedPackage.name} Package`,
+            amount: -price, // Negative for charge
+            payment_method: 'package_assignment',
+            status: 'pending',
+            description: `${selectedPackage.name} Package Assignment${notes ? ` - ${notes}` : ''}`,
             payment_date: new Date().toISOString().split('T')[0],
             client_package_id: clientPackageData.id
           });
 
-        if (paymentError) throw paymentError;
-        
+         if (legacyChargeError) throw legacyChargeError;
+      }
+
+      if (paymentStatus === 'paid') {
         toast({
           title: "Success",
           description: "Package assigned and payment recorded",
