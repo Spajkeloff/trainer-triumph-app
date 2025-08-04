@@ -23,13 +23,13 @@ const FinancialGraphs = () => {
   const getHistoricalData = () => [
     { month: "AUG 2024", payments: 6500, reconciled: 0, expenses: 0, profit: 6500 },
     { month: "SEP 2024", payments: 13950, reconciled: 0, expenses: 0, profit: 13950 },
-    { month: "OCT 2024", payments: 0, reconciled: 0, expenses: 0, profit: 0 }, // No data as per user
+    { month: "OCT 2024", payments: 20000, reconciled: 0, expenses: 0, profit: 20000 },
     { month: "NOV 2024", payments: 11230, reconciled: 0, expenses: 0, profit: 11230 },
     { month: "DEC 2024", payments: 18700, reconciled: 0, expenses: 0, profit: 18700 },
     { month: "JAN 2025", payments: 21150, reconciled: 0, expenses: 0, profit: 21150 },
     { month: "FEB 2025", payments: 27650, reconciled: 0, expenses: 0, profit: 27650 },
     { month: "MAR 2025", payments: 34750, reconciled: 0, expenses: 0, profit: 34750 },
-    { month: "APR 2025", payments: 0, reconciled: 0, expenses: 0, profit: 0 }, // No data as per user
+    { month: "APR 2025", payments: 22000, reconciled: 0, expenses: 0, profit: 22000 },
     { month: "MAY 2025", payments: 11220, reconciled: 0, expenses: 0, profit: 11220 },
     { month: "JUN 2025", payments: 12700, reconciled: 0, expenses: 0, profit: 12700 },
     { month: "JUL 2025", payments: 26640, reconciled: 0, expenses: 0, profit: 26640 }

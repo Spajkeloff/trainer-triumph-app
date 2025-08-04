@@ -6,7 +6,11 @@ import { Label } from "./ui/label";
 import { Textarea } from "./ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Switch } from "./ui/switch";
-import { X } from "lucide-react";
+import { Calendar } from "./ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
+import { CalendarIcon, X } from "lucide-react";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { packageService } from "@/services/packageService";
 
