@@ -76,7 +76,7 @@ const Header = () => {
           icon: DollarSign, 
           path: "/admin/finances",
           dropdown: [
-            { label: "Payments", path: "/admin/finances/payments" },
+            { label: "Payments & Transactions", path: "/admin/finances/payments" },
             { label: "Invoices", path: "/admin/finances/invoices" },
             { label: "Outstanding", path: "/admin/finances/outstanding" },
             { label: "Expenses", path: "/admin/finances/expenses" },

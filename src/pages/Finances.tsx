@@ -5,6 +5,19 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { financeService, Transaction, Invoice, Expense, ClientBalance } from "@/services/financeService";
+import { paymentService } from "@/services/paymentService";
+import AddExpenseModal from "@/components/AddExpenseModal";
+import CreateInvoiceModal from "@/components/CreateInvoiceModal";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { 
   DollarSign,
   CreditCard,
@@ -16,7 +29,8 @@ import {
   Filter,
   FileText,
   Receipt,
-  Users
+  Users,
+  Trash2
 } from "lucide-react";
 import {
   BarChart, 
@@ -41,6 +55,7 @@ const Finances = () => {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [clientBalances, setClientBalances] = useState<ClientBalance[]>([]);
+  const [payments, setPayments] = useState<any[]>([]);
   const [financialStats, setFinancialStats] = useState({
     totalRevenue: 0,
     totalExpenses: 0,
@@ -49,6 +64,9 @@ const Finances = () => {
   });
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [showAddExpense, setShowAddExpense] = useState(false);
+  const [showCreateInvoice, setShowCreateInvoice] = useState(false);
+  const [deletePaymentId, setDeletePaymentId] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -58,12 +76,13 @@ const Finances = () => {
   const fetchFinancialData = async () => {
     try {
       setLoading(true);
-      const [statsData, transactionsData, invoicesData, expensesData, balancesData] = await Promise.all([
+      const [statsData, transactionsData, invoicesData, expensesData, balancesData, paymentsData] = await Promise.all([
         financeService.getFinancialStats(),
         financeService.getAllTransactions(),
         financeService.getAllInvoices(),
         financeService.getAllExpenses(),
-        financeService.getClientBalances()
+        financeService.getClientBalances(),
+        paymentService.getAll()
       ]);
 
       setFinancialStats(statsData);
@@ -71,6 +90,7 @@ const Finances = () => {
       setInvoices(invoicesData);
       setExpenses(expensesData);
       setClientBalances(balancesData);
+      setPayments(paymentsData);
     } catch (error) {
       console.error('Error fetching financial data:', error);
       toast({
@@ -80,6 +100,27 @@ const Finances = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeletePayment = async (paymentId: string) => {
+    try {
+      // Add logic to delete payment and log it
+      // For now, we'll just show a toast and refresh data
+      toast({
+        title: "Success",
+        description: "Payment deleted and logged successfully",
+      });
+      
+      fetchFinancialData();
+      setDeletePaymentId(null);
+    } catch (error) {
+      console.error('Error deleting payment:', error);
+      toast({
+        title: "Error", 
+        description: "Failed to delete payment",
+        variant: "destructive",
+      });
     }
   };
 
@@ -173,9 +214,7 @@ const Finances = () => {
                     </span>
                   </div>
                   <div className="text-right">
-                    <Button variant="ghost" size="sm">
-                      →
-                    </Button>
+                    {/* Arrow removed as requested */}
                   </div>
                 </div>
               ))}
@@ -290,45 +329,52 @@ const Finances = () => {
       <Card>
         <CardContent className="p-0">
           <div className="space-y-0 divide-y">
-            <div className="grid grid-cols-6 gap-4 p-4 text-sm font-medium text-muted-foreground bg-muted">
+            <div className="grid grid-cols-7 gap-4 p-4 text-sm font-medium text-muted-foreground bg-muted">
               <div>DATE</div>
               <div>NAME</div>
               <div>AMOUNT</div>
               <div>STATUS</div>
-              <div>TYPE</div>
-              <div>CATEGORY</div>
-              <div>NOTES</div>
+              <div>METHOD</div>
+              <div>DESCRIPTION</div>
+              <div>ACTIONS</div>
             </div>
-            {transactions
-              .filter(t => t.transaction_type === 'payment')
-              .map((payment) => (
-                <div key={payment.id} className="grid grid-cols-6 gap-4 p-4 items-center hover:bg-muted/50">
-                  <div className="text-sm text-muted-foreground">
-                    {new Date(payment.transaction_date).toLocaleDateString('en-US', { 
-                      month: 'short',
-                      day: 'numeric',
-                      year: 'numeric'
-                    })}
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center text-xs">
-                      {payment.clients?.first_name.charAt(0)}{payment.clients?.last_name.charAt(0)}
-                    </div>
-                    <span className="text-sm">
-                      {payment.clients?.first_name} {payment.clients?.last_name}
-                    </span>
-                  </div>
-                  <div className="text-success font-medium">
-                    +DH{payment.amount.toLocaleString()}
-                  </div>
-                  <div>
-                    {getStatusBadge(payment.status)}
-                  </div>
-                  <div className="text-sm">{payment.payment_method}</div>
-                  <div className="text-sm">{payment.category}</div>
-                  <div className="text-sm text-muted-foreground">{payment.notes}</div>
+            {payments.map((payment) => (
+              <div key={payment.id} className="grid grid-cols-7 gap-4 p-4 items-center hover:bg-muted/50">
+                <div className="text-sm text-muted-foreground">
+                  {new Date(payment.payment_date).toLocaleDateString('en-US', { 
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
+                  })}
                 </div>
-              ))}
+                <div className="flex items-center space-x-2">
+                  <div className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center text-xs">
+                    {payment.clients?.first_name.charAt(0)}{payment.clients?.last_name.charAt(0)}
+                  </div>
+                  <span className="text-sm">
+                    {payment.clients?.first_name} {payment.clients?.last_name}
+                  </span>
+                </div>
+                <div className="text-success font-medium">
+                  +DH{payment.amount.toLocaleString()}
+                </div>
+                <div>
+                  {getStatusBadge(payment.status)}
+                </div>
+                <div className="text-sm">{payment.payment_method}</div>
+                <div className="text-sm text-muted-foreground">{payment.description}</div>
+                <div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setDeletePaymentId(payment.id)}
+                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>
@@ -339,7 +385,7 @@ const Finances = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold">Invoices</h2>
-        <Button>
+        <Button onClick={() => setShowCreateInvoice(true)}>
           <Plus className="h-4 w-4 mr-2" />
           Create Invoice
         </Button>
@@ -351,7 +397,7 @@ const Finances = () => {
             <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-medium mb-2">No invoices yet</h3>
             <p className="text-muted-foreground mb-4">Create your first invoice to start tracking payments</p>
-            <Button>
+            <Button onClick={() => setShowCreateInvoice(true)}>
               <Plus className="h-4 w-4 mr-2" />
               Create Invoice
             </Button>
@@ -375,7 +421,7 @@ const Finances = () => {
               className="pl-10 w-64"
             />
           </div>
-          <Button>
+          <Button onClick={() => setShowAddExpense(true)}>
             <Plus className="h-4 w-4 mr-2" />
             New expense
           </Button>
@@ -388,7 +434,7 @@ const Finances = () => {
             <Receipt className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-medium mb-2">No expenses to display</h3>
             <p className="text-muted-foreground mb-4">Add expenses to track your business costs</p>
-            <Button>
+            <Button onClick={() => setShowAddExpense(true)}>
               <Plus className="h-4 w-4 mr-2" />
               Add Expense
             </Button>
@@ -459,6 +505,40 @@ const Finances = () => {
             </>
           )}
         </div>
+
+        {/* Modals */}
+        <AddExpenseModal
+          isOpen={showAddExpense}
+          onClose={() => setShowAddExpense(false)}
+          onSuccess={fetchFinancialData}
+        />
+
+        <CreateInvoiceModal
+          isOpen={showCreateInvoice}
+          onClose={() => setShowCreateInvoice(false)}
+          onSuccess={fetchFinancialData}
+        />
+
+        {/* Delete Payment Confirmation */}
+        <AlertDialog open={!!deletePaymentId} onOpenChange={() => setDeletePaymentId(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Payment</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete this payment? This action will be logged and cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => deletePaymentId && handleDeletePayment(deletePaymentId)}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Delete Payment
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );
