@@ -12,6 +12,18 @@ import { clientService, ClientWithDetails } from '@/services/clientService';
 import { sessionService } from '@/services/sessionService';
 import { packageService } from '@/services/packageService';
 import { paymentService } from '@/services/paymentService';
+import { financeService } from '@/services/financeService';
+import { supabase } from '@/integrations/supabase/client';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import BookSessionModal from '@/components/BookSessionModal';
 import AddPaymentModal from '@/components/AddPaymentModal';
 import AssignPackageModal from '@/components/AssignPackageModal';
@@ -65,6 +77,7 @@ const ClientDetails = () => {
   const [selectedPayment, setSelectedPayment] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('summary');
   const [editMode, setEditMode] = useState<{[key: string]: boolean}>({});
+  const [deletePaymentId, setDeletePaymentId] = useState<string | null>(null);
 
   useEffect(() => {
     if (id) {
@@ -181,6 +194,45 @@ const ClientDetails = () => {
       toast({
         title: "Error",
         description: "Failed to update package",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeletePayment = async (paymentId: string) => {
+    try {
+      // Delete the payment from the database
+      const { error } = await supabase
+        .from('payments')
+        .delete()
+        .eq('id', paymentId);
+
+      if (error) throw error;
+
+      // Log the deletion as a transaction
+      await financeService.createTransaction({
+        client_id: client?.id || null,
+        transaction_type: 'payment',
+        category: 'admin_action',
+        amount: 0,
+        description: `Payment deleted by admin (ID: ${paymentId}) for client ${client?.first_name} ${client?.last_name}`,
+        status: 'completed',
+        transaction_date: new Date().toISOString().split('T')[0],
+        notes: 'Payment deletion logged for audit purposes'
+      });
+
+      toast({
+        title: "Success",
+        description: "Payment deleted and logged successfully",
+      });
+      
+      await loadClientDetails();
+      setDeletePaymentId(null);
+    } catch (error) {
+      console.error('Error deleting payment:', error);
+      toast({
+        title: "Error", 
+        description: "Failed to delete payment",
         variant: "destructive",
       });
     }
@@ -675,6 +727,14 @@ const ClientDetails = () => {
                               >
                                 <Edit className="h-4 w-4" />
                               </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => setDeletePaymentId(payment.id)}
+                                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
                             </div>
                           </div>
                         </div>
@@ -877,6 +937,27 @@ const ClientDetails = () => {
           clientPackage={selectedPackage}
         />
       )}
+
+      {/* Delete Payment Confirmation */}
+      <AlertDialog open={!!deletePaymentId} onOpenChange={() => setDeletePaymentId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Payment</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this payment? This action will be logged and cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deletePaymentId && handleDeletePayment(deletePaymentId)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete Payment
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

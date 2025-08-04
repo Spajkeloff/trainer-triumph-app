@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { financeService, Transaction, Invoice, Expense, ClientBalance } from "@/services/financeService";
 import { paymentService } from "@/services/paymentService";
+import { supabase } from "@/integrations/supabase/client";
 import AddExpenseModal from "@/components/AddExpenseModal";
 import CreateInvoiceModal from "@/components/CreateInvoiceModal";
 import {
@@ -105,8 +106,26 @@ const Finances = () => {
 
   const handleDeletePayment = async (paymentId: string) => {
     try {
-      // Add logic to delete payment and log it
-      // For now, we'll just show a toast and refresh data
+      // Delete the payment from the database
+      const { error } = await supabase
+        .from('payments')
+        .delete()
+        .eq('id', paymentId);
+
+      if (error) throw error;
+
+      // Log the deletion as a transaction
+      await financeService.createTransaction({
+        client_id: null,
+        transaction_type: 'payment',
+        category: 'admin_action',
+        amount: 0,
+        description: `Payment deleted by admin (ID: ${paymentId})`,
+        status: 'completed',
+        transaction_date: new Date().toISOString().split('T')[0],
+        notes: 'Payment deletion logged for audit purposes'
+      });
+
       toast({
         title: "Success",
         description: "Payment deleted and logged successfully",
@@ -392,16 +411,53 @@ const Finances = () => {
       </div>
 
       <Card>
-        <CardContent className="p-6">
-          <div className="text-center py-8">
-            <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-medium mb-2">No invoices yet</h3>
-            <p className="text-muted-foreground mb-4">Create your first invoice to start tracking payments</p>
-            <Button onClick={() => setShowCreateInvoice(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Create Invoice
-            </Button>
-          </div>
+        <CardContent className="p-0">
+          {invoices.length > 0 ? (
+            <div className="space-y-0 divide-y">
+              <div className="grid grid-cols-7 gap-4 p-4 text-sm font-medium text-muted-foreground bg-muted">
+                <div>INVOICE #</div>
+                <div>CLIENT</div>
+                <div>AMOUNT</div>
+                <div>STATUS</div>
+                <div>ISSUE DATE</div>
+                <div>DUE DATE</div>
+                <div>ACTIONS</div>
+              </div>
+              {invoices.map((invoice) => (
+                <div key={invoice.id} className="grid grid-cols-7 gap-4 p-4 items-center hover:bg-muted/50">
+                  <div className="font-medium">{invoice.invoice_number}</div>
+                  <div>
+                    {invoice.clients?.first_name} {invoice.clients?.last_name}
+                  </div>
+                  <div className="font-medium">DH{invoice.total_amount.toLocaleString()}</div>
+                  <div>
+                    {getStatusBadge(invoice.status, 'invoice')}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    {new Date(invoice.issue_date).toLocaleDateString()}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    {new Date(invoice.due_date).toLocaleDateString()}
+                  </div>
+                  <div>
+                    <Button variant="ghost" size="sm">
+                      <Download className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium mb-2">No invoices yet</h3>
+              <p className="text-muted-foreground mb-4">Create your first invoice to start tracking payments</p>
+              <Button onClick={() => setShowCreateInvoice(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Create Invoice
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
@@ -429,16 +485,47 @@ const Finances = () => {
       </div>
 
       <Card>
-        <CardContent className="p-6">
-          <div className="text-center py-8">
-            <Receipt className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-medium mb-2">No expenses to display</h3>
-            <p className="text-muted-foreground mb-4">Add expenses to track your business costs</p>
-            <Button onClick={() => setShowAddExpense(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Expense
-            </Button>
-          </div>
+        <CardContent className="p-0">
+          {expenses.length > 0 ? (
+            <div className="space-y-0 divide-y">
+              <div className="grid grid-cols-6 gap-4 p-4 text-sm font-medium text-muted-foreground bg-muted">
+                <div>DATE</div>
+                <div>DESCRIPTION</div>
+                <div>CATEGORY</div>
+                <div>AMOUNT</div>
+                <div>STATUS</div>
+                <div>VENDOR</div>
+              </div>
+              {expenses.map((expense) => (
+                <div key={expense.id} className="grid grid-cols-6 gap-4 p-4 items-center hover:bg-muted/50">
+                  <div className="text-sm text-muted-foreground">
+                    {new Date(expense.expense_date).toLocaleDateString()}
+                  </div>
+                  <div className="text-sm">{expense.description}</div>
+                  <div className="text-sm">{expense.category}</div>
+                  <div className="text-destructive font-medium">
+                    -DH{expense.amount.toLocaleString()}
+                  </div>
+                  <div>
+                    {getStatusBadge(expense.status, 'expense')}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    {expense.vendor || '-'}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <Receipt className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium mb-2">No expenses to display</h3>
+              <p className="text-muted-foreground mb-4">Add expenses to track your business costs</p>
+              <Button onClick={() => setShowAddExpense(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Expense
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 
