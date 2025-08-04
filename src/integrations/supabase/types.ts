@@ -859,6 +859,63 @@ export type Database = {
           },
         ]
       }
+      trainer_clients: {
+        Row: {
+          assigned_date: string
+          client_id: string
+          created_at: string
+          id: string
+          trainer_id: string
+        }
+        Insert: {
+          assigned_date?: string
+          client_id: string
+          created_at?: string
+          id?: string
+          trainer_id: string
+        }
+        Update: {
+          assigned_date?: string
+          client_id?: string
+          created_at?: string
+          id?: string
+          trainer_id?: string
+        }
+        Relationships: []
+      }
+      trainers: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          package_percentage: number | null
+          payroll_type: string
+          session_rate: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          package_percentage?: number | null
+          payroll_type: string
+          session_rate?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          package_percentage?: number | null
+          payroll_type?: string
+          session_rate?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       transactions: {
         Row: {
           amount: number
@@ -940,6 +997,15 @@ export type Database = {
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_trainer_earnings: {
+        Args: { trainer_user_id: string }
+        Returns: {
+          session_count: number
+          total_session_earnings: number
+          total_package_earnings: number
+          total_earnings: number
+        }[]
       }
       validate_user_profile_sync: {
         Args: Record<PropertyKey, never>

@@ -19,6 +19,7 @@ import Services from "./pages/Services";
 
 import Finances from "./pages/Finances";
 import Reporting from "./pages/Reporting";
+import TrainerManagement from "./pages/TrainerManagement";
 import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
 import Landing from "./pages/Landing";
@@ -144,6 +145,7 @@ const App = () => {
               <Route path="reporting/sessions" element={<Reporting />} />
               <Route path="reporting/financial" element={<Reporting />} />
               <Route path="profile" element={<Settings />} />
+              <Route path="trainers" element={<TrainerManagement />} />
               <Route path="settings" element={<Settings />} />
             </Route>
             

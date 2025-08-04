@@ -149,32 +149,26 @@ const Settings = () => {
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="flex justify-between items-center">
-          <h3 className="text-lg font-medium">Current Staff</h3>
-          <Button>Add New Staff</Button>
+          <h3 className="text-lg font-medium">Trainer Management</h3>
+          <Button onClick={() => window.location.href = '/admin/trainers'}>
+            Manage Trainers
+          </Button>
         </div>
         
         <div className="space-y-4">
-          <div className="flex items-center justify-between p-4 border border-border rounded-lg">
-            <div>
-              <h4 className="font-medium">Ahmed Al-Rashid</h4>
-              <p className="text-sm text-muted-foreground">Owner & Head Trainer</p>
-              <p className="text-sm text-muted-foreground">ahmed@trainwithus.ae</p>
-            </div>
-            <div className="flex items-center space-x-2">
-              <span className="text-sm text-success">Active</span>
-              <Button variant="outline" size="sm">Edit</Button>
-            </div>
-          </div>
-          
-          <div className="flex items-center justify-between p-4 border border-border rounded-lg">
-            <div>
-              <h4 className="font-medium">Sarah Al-Zahra</h4>
-              <p className="text-sm text-muted-foreground">Yoga Instructor</p>
-              <p className="text-sm text-muted-foreground">sarah@trainwithus.ae</p>
-            </div>
-            <div className="flex items-center space-x-2">
-              <span className="text-sm text-success">Active</span>
-              <Button variant="outline" size="sm">Edit</Button>
+          <div className="p-4 border border-border rounded-lg bg-muted/50">
+            <h4 className="font-medium mb-2">Trainer Features</h4>
+            <ul className="text-sm text-muted-foreground space-y-1">
+              <li>• Create trainer accounts with role-based access</li>
+              <li>• Set payroll types: per session or percentage</li>
+              <li>• Assign specific clients to trainers</li>
+              <li>• Track trainer earnings and session counts</li>
+              <li>• Restricted access - trainers see only their data</li>
+            </ul>
+            <div className="mt-4">
+              <Button size="sm" onClick={() => window.location.href = '/admin/trainers'}>
+                Go to Trainer Management
+              </Button>
             </div>
           </div>
         </div>
