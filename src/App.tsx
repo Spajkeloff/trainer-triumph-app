@@ -142,6 +142,7 @@ const App = () => {
               <Route path="reporting/clients" element={<Reporting />} />
               <Route path="reporting/sessions" element={<Reporting />} />
               <Route path="reporting/financial" element={<Reporting />} />
+              <Route path="profile" element={<Settings />} />
               <Route path="settings" element={<Settings />} />
             </Route>
             
@@ -156,6 +157,7 @@ const App = () => {
               <Route path="clients" element={<Clients />} />
               <Route path="clients/:id" element={<ClientDetails />} />
               <Route path="sessions" element={<Calendar />} />
+              <Route path="profile" element={<Settings />} />
               <Route path="settings" element={<Settings />} />
             </Route>
             

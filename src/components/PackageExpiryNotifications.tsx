@@ -122,6 +122,11 @@ const PackageExpiryNotifications = () => {
         title: "Success",
         description: `Notification emails sent successfully`,
       });
+
+      // Clear the notifications from dashboard since emails were sent
+      setExpiringPackages([]);
+      setLowSessionPackages([]);
+      
     } catch (error) {
       console.error("Error sending notifications:", error);
       toast({
