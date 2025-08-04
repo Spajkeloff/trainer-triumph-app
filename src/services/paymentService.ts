@@ -79,27 +79,24 @@ export const paymentService = {
 
     if (error) throw error;
 
+    // Calculate revenue from completed positive payments
     const totalRevenue = payments
       ?.filter(p => p.amount > 0 && p.status === 'completed')
       .reduce((sum, p) => sum + Number(p.amount), 0) || 0;
 
-    const outstanding = payments
-      ?.filter(p => p.amount > 0 && p.status === 'pending')
-      .reduce((sum, p) => sum + Number(p.amount), 0) || 0;
-
+    // Calculate total charges (absolute value of negative amounts)
     const totalCharges = payments
       ?.filter(p => p.amount < 0)
       .reduce((sum, p) => sum + Math.abs(Number(p.amount)), 0) || 0;
 
-    const totalPaid = payments
-      ?.filter(p => p.amount > 0 && p.status === 'completed')
-      .reduce((sum, p) => sum + Number(p.amount), 0) || 0;
+    // Calculate outstanding balance (charges minus payments)
+    const outstanding = Math.max(0, totalCharges - totalRevenue);
 
     return {
       totalRevenue,
       outstanding,
       totalCharges,
-      totalPaid,
+      totalPaid: totalRevenue,
       netProfit: totalRevenue * 0.7, // Assume 70% profit margin
       totalExpenses: totalRevenue * 0.3 // Assume 30% expenses
     };
@@ -113,24 +110,25 @@ export const paymentService = {
 
     if (error) throw error;
 
+    // Calculate total charges (negative amounts represent charges/packages assigned)
     const charges = payments
       ?.filter(p => p.amount < 0)
       .reduce((sum, p) => sum + Math.abs(Number(p.amount)), 0) || 0;
 
+    // Calculate completed payments (positive amounts with completed status)
     const paid = payments
       ?.filter(p => p.amount > 0 && p.status === 'completed')
       .reduce((sum, p) => sum + Number(p.amount), 0) || 0;
 
-    const pending = payments
-      ?.filter(p => p.amount > 0 && p.status === 'pending')
-      .reduce((sum, p) => sum + Number(p.amount), 0) || 0;
+    // Calculate current balance (what client owes)
+    const balance = Math.max(0, charges - paid);
 
     return {
       totalCharges: charges,
       totalPaid: paid,
-      pendingPayments: pending,
-      balance: charges - paid,
-      outstandingAmount: pending
+      pendingPayments: 0, // No longer tracking pending separately
+      balance: balance,
+      outstandingAmount: balance
     };
   }
 };

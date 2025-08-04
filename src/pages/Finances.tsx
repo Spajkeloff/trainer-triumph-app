@@ -152,7 +152,8 @@ const Finances = () => {
         description: "Payment deleted successfully across all systems",
       });
       
-      fetchFinancialData();
+      // Refresh all financial data to ensure consistency
+      await fetchFinancialData();
       setDeletePaymentId(null);
     } catch (error) {
       console.error('Error deleting payment:', error);

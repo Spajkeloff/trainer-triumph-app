@@ -75,18 +75,47 @@ export interface ClientBalance {
 }
 
 export const financeService = {
-  // Transactions
+  // Transactions - derived from payments table (source of truth)
   async getAllTransactions(): Promise<Transaction[]> {
-    const { data, error } = await supabase
-      .from('transactions')
+    const { data: payments, error } = await supabase
+      .from('payments')
       .select(`
-        *,
+        id,
+        client_id,
+        amount,
+        payment_date,
+        payment_method,
+        status,
+        description,
+        created_at,
+        updated_at,
         clients (first_name, last_name)
       `)
-      .order('transaction_date', { ascending: false });
+      .order('payment_date', { ascending: false });
 
     if (error) throw error;
-    return (data || []) as Transaction[];
+
+    // Convert payments to transaction format
+    const transactions: Transaction[] = (payments || []).map(payment => ({
+      id: payment.id,
+      user_id: '', // Will be populated by auth context
+      client_id: payment.client_id,
+      transaction_type: Number(payment.amount) < 0 ? 'charge' : 'payment',
+      category: Number(payment.amount) < 0 ? 'package_charge' : 'payment_received',
+      amount: Math.abs(Number(payment.amount)),
+      description: payment.description || '',
+      payment_method: payment.payment_method || '',
+      status: payment.status as 'pending' | 'completed' | 'failed' | 'cancelled',
+      transaction_date: payment.payment_date,
+      reference_id: payment.id,
+      reference_type: 'payment',
+      notes: '',
+      created_at: payment.created_at,
+      updated_at: payment.updated_at,
+      clients: payment.clients
+    }));
+
+    return transactions;
   },
 
   async createTransaction(transaction: Omit<Transaction, 'id' | 'created_at' | 'updated_at' | 'user_id'>): Promise<Transaction> {
@@ -224,32 +253,78 @@ export const financeService = {
     return data as Expense;
   },
 
-  // Client Balances
+  // Client Balances - Single source of truth from payments table
   async getClientBalances(): Promise<ClientBalance[]> {
-    const { data, error } = await supabase.rpc('get_client_balances');
+    const { data: clients, error: clientError } = await supabase
+      .from('clients')
+      .select('id, first_name, last_name');
 
-    if (error) throw error;
-    return (data || []) as ClientBalance[];
+    if (clientError) throw clientError;
+
+    const balances: ClientBalance[] = [];
+
+    for (const client of clients || []) {
+      // Calculate charges from payments with negative amounts (packages, sessions)
+      const { data: charges, error: chargesError } = await supabase
+        .from('payments')
+        .select('amount')
+        .eq('client_id', client.id)
+        .lt('amount', 0);
+
+      if (chargesError) throw chargesError;
+
+      // Calculate payments (positive amounts)
+      const { data: payments, error: paymentsError } = await supabase
+        .from('payments')
+        .select('amount')
+        .eq('client_id', client.id)
+        .gt('amount', 0)
+        .eq('status', 'completed');
+
+      if (paymentsError) throw paymentsError;
+
+      const totalCharges = Math.abs(charges?.reduce((sum, c) => sum + Number(c.amount), 0) || 0);
+      const totalPayments = payments?.reduce((sum, p) => sum + Number(p.amount), 0) || 0;
+      const balance = totalCharges - totalPayments;
+
+      balances.push({
+        client_id: client.id,
+        first_name: client.first_name,
+        last_name: client.last_name,
+        total_charges: totalCharges,
+        total_payments: totalPayments,
+        balance: balance
+      });
+    }
+
+    return balances;
   },
 
-  // Financial Statistics
+  // Financial Statistics based on payments table as source of truth
   async getFinancialStats() {
-    const [transactions, expenses, clientBalances] = await Promise.all([
-      this.getAllTransactions(),
+    const [expenses, clientBalances] = await Promise.all([
       this.getAllExpenses(),
       this.getClientBalances()
     ]);
 
-    const totalRevenue = transactions
-      .filter(t => t.transaction_type === 'payment' && t.status === 'completed')
-      .reduce((sum, t) => sum + Number(t.amount), 0);
+    // Calculate revenue from completed payments (positive amounts)
+    const { data: revenuePayments, error: revenueError } = await supabase
+      .from('payments')
+      .select('amount')
+      .gt('amount', 0)
+      .eq('status', 'completed');
+
+    if (revenueError) throw revenueError;
+
+    const totalRevenue = revenuePayments?.reduce((sum, p) => sum + Number(p.amount), 0) || 0;
 
     const totalExpenses = expenses
       .filter(e => e.status === 'completed')
       .reduce((sum, e) => sum + Number(e.amount), 0);
 
-    // Calculate outstanding balance from all client balances
+    // Calculate outstanding balance from client balances
     const outstanding = clientBalances
+      .filter(client => client.balance > 0)
       .reduce((sum, client) => sum + Number(client.balance), 0);
 
     const netProfit = totalRevenue - totalExpenses;
