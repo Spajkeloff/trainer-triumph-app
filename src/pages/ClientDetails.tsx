@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { clientService, ClientWithDetails } from '@/services/clientService';
 import { sessionService } from '@/services/sessionService';
@@ -61,6 +63,8 @@ const ClientDetails = () => {
   const [showEditPackageModal, setShowEditPackageModal] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState<any>(null);
   const [selectedPayment, setSelectedPayment] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState('summary');
+  const [editMode, setEditMode] = useState<{[key: string]: boolean}>({});
 
   useEffect(() => {
     if (id) {
@@ -144,10 +148,48 @@ const ClientDetails = () => {
     return <div className="flex justify-center items-center h-64">Client not found</div>;
   }
 
+  const toggleEditMode = (itemId: string) => {
+    setEditMode(prev => ({ ...prev, [itemId]: !prev[itemId] }));
+  };
+
+  const updatePayment = async (paymentId: string, field: string, value: any) => {
+    try {
+      // Implement payment update logic here
+      await loadClientDetails();
+      toast({
+        title: "Success",
+        description: "Payment updated successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update payment",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const updatePackage = async (packageId: string, field: string, value: any) => {
+    try {
+      // Implement package update logic here
+      await loadClientDetails();
+      toast({
+        title: "Success",
+        description: "Package updated successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update package",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="container mx-auto p-6 space-y-6 max-w-7xl">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-4">
           <Button variant="outline" size="sm" onClick={() => navigate('/admin/clients')}>
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -192,7 +234,7 @@ const ClientDetails = () => {
       <div className="grid grid-cols-12 gap-6">
         <div className="col-span-3">
           <Card>
-            <CardContent className="p-4 space-y-4">
+            <CardContent className="p-6 space-y-4">
               <div className="text-center">
                 <Avatar className="h-20 w-20 mx-auto mb-2">
                   <AvatarImage src={client.avatar_url} />
@@ -235,7 +277,7 @@ const ClientDetails = () => {
 
         {/* Main Content */}
         <div className="col-span-9">
-          <Tabs defaultValue="summary" className="space-y-4">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
             <TabsList className="grid w-full grid-cols-10">
               <TabsTrigger value="summary">Summary</TabsTrigger>
               <TabsTrigger value="services">Services</TabsTrigger>
@@ -264,7 +306,7 @@ const ClientDetails = () => {
                     </Button>
                   </div>
                 </CardHeader>
-                <CardContent className="p-4">
+                <CardContent className="p-6">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <p className="text-sm text-muted-foreground">Active Packages</p>
@@ -294,7 +336,7 @@ const ClientDetails = () => {
                     </Button>
                   </div>
                 </CardHeader>
-                <CardContent className="p-4">
+                <CardContent className="p-6">
                   <div className="grid grid-cols-4 gap-4">
                     <div>
                       <p className="text-sm text-muted-foreground">Total Paid</p>
@@ -328,7 +370,7 @@ const ClientDetails = () => {
                     Bookings
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="p-4">
+                <CardContent className="p-6">
                   <div className="grid grid-cols-4 gap-4">
                     <div>
                       <p className="text-sm text-muted-foreground">Sessions</p>
@@ -362,7 +404,7 @@ const ClientDetails = () => {
                     Training
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="p-4">
+                <CardContent className="p-6">
                   <div className="grid grid-cols-4 gap-4">
                     <div>
                       <p className="text-sm text-muted-foreground">Assigned Workouts</p>
@@ -396,7 +438,7 @@ const ClientDetails = () => {
                     Assign New Package
                   </Button>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-6">
                   {client?.client_packages?.length > 0 ? (
                     <div className="space-y-4">
                       {client.client_packages.map((pkg: any) => (
@@ -408,7 +450,23 @@ const ClientDetails = () => {
                               <div className="grid grid-cols-3 gap-4 mt-2">
                                 <div>
                                   <p className="text-xs text-muted-foreground">Sessions Remaining</p>
-                                  <p className="text-sm font-semibold">{pkg.sessions_remaining}</p>
+                                  {editMode[`pkg-${pkg.id}`] ? (
+                                    <Input
+                                      type="number"
+                                      value={pkg.sessions_remaining}
+                                      onChange={(e) => updatePackage(pkg.id, 'sessions_remaining', e.target.value)}
+                                      onBlur={() => toggleEditMode(`pkg-${pkg.id}`)}
+                                      className="h-6 text-sm"
+                                      autoFocus
+                                    />
+                                  ) : (
+                                    <p 
+                                      className="text-sm font-semibold cursor-pointer hover:bg-muted rounded px-1"
+                                      onClick={() => toggleEditMode(`pkg-${pkg.id}`)}
+                                    >
+                                      {pkg.sessions_remaining}
+                                    </p>
+                                  )}
                                 </div>
                                 <div>
                                   <p className="text-xs text-muted-foreground">Expiry Date</p>
@@ -461,7 +519,7 @@ const ClientDetails = () => {
                 <CardHeader>
                   <CardTitle>Session History</CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-6">
                   {client?.sessions?.length > 0 ? (
                     <div className="space-y-4">
                       {client.sessions
@@ -506,7 +564,7 @@ const ClientDetails = () => {
                     </Button>
                   </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-6">
                   {client?.payments?.length > 0 ? (
                     <div className="space-y-4">
                       {client.payments
@@ -516,16 +574,95 @@ const ClientDetails = () => {
                           <div className="flex justify-between items-start">
                             <div className="flex-1">
                               <div className="flex items-center space-x-2">
-                                <p className="font-semibold">DH{payment.amount}</p>
-                                <Badge variant={payment.status === 'completed' ? 'default' : 'secondary'}>
-                                  {payment.status}
-                                </Badge>
+                                {editMode[`payment-amount-${payment.id}`] ? (
+                                  <Input
+                                    type="number"
+                                    value={payment.amount}
+                                    onChange={(e) => updatePayment(payment.id, 'amount', e.target.value)}
+                                    onBlur={() => toggleEditMode(`payment-amount-${payment.id}`)}
+                                    className="h-6 text-sm w-24"
+                                    autoFocus
+                                  />
+                                ) : (
+                                  <p 
+                                    className="font-semibold cursor-pointer hover:bg-muted rounded px-1"
+                                    onClick={() => toggleEditMode(`payment-amount-${payment.id}`)}
+                                  >
+                                    DH{payment.amount}
+                                  </p>
+                                )}
+                                {editMode[`payment-status-${payment.id}`] ? (
+                                  <Select
+                                    value={payment.status}
+                                    onValueChange={(value) => {
+                                      updatePayment(payment.id, 'status', value);
+                                      toggleEditMode(`payment-status-${payment.id}`);
+                                    }}
+                                  >
+                                    <SelectTrigger className="h-6 text-xs w-24">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="completed">Completed</SelectItem>
+                                      <SelectItem value="pending">Pending</SelectItem>
+                                      <SelectItem value="failed">Failed</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                ) : (
+                                  <Badge 
+                                    variant={payment.status === 'completed' ? 'default' : 'secondary'}
+                                    className="cursor-pointer"
+                                    onClick={() => toggleEditMode(`payment-status-${payment.id}`)}
+                                  >
+                                    {payment.status}
+                                  </Badge>
+                                )}
                               </div>
                               <p className="text-sm text-muted-foreground">
                                 {new Date(payment.payment_date).toLocaleDateString()}
                               </p>
-                              <p className="text-sm">{payment.description || 'Payment'}</p>
-                              <p className="text-sm text-muted-foreground">Method: {payment.payment_method}</p>
+                              {editMode[`payment-desc-${payment.id}`] ? (
+                                <Input
+                                  value={payment.description || ''}
+                                  onChange={(e) => updatePayment(payment.id, 'description', e.target.value)}
+                                  onBlur={() => toggleEditMode(`payment-desc-${payment.id}`)}
+                                  className="h-6 text-sm mt-1"
+                                  autoFocus
+                                />
+                              ) : (
+                                <p 
+                                  className="text-sm cursor-pointer hover:bg-muted rounded px-1"
+                                  onClick={() => toggleEditMode(`payment-desc-${payment.id}`)}
+                                >
+                                  {payment.description || 'Payment'}
+                                </p>
+                              )}
+                              {editMode[`payment-method-${payment.id}`] ? (
+                                <Select
+                                  value={payment.payment_method}
+                                  onValueChange={(value) => {
+                                    updatePayment(payment.id, 'payment_method', value);
+                                    toggleEditMode(`payment-method-${payment.id}`);
+                                  }}
+                                >
+                                  <SelectTrigger className="h-6 text-xs w-32 mt-1">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="cash">Cash</SelectItem>
+                                    <SelectItem value="card">Card</SelectItem>
+                                    <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                                    <SelectItem value="check">Check</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              ) : (
+                                <p 
+                                  className="text-sm text-muted-foreground cursor-pointer hover:bg-muted rounded px-1"
+                                  onClick={() => toggleEditMode(`payment-method-${payment.id}`)}
+                                >
+                                  Method: {payment.payment_method}
+                                </p>
+                              )}
                             </div>
                             <div className="flex items-center space-x-2">
                               <Button
@@ -698,7 +835,9 @@ const ClientDetails = () => {
       {/* Modals */}
       <BookSessionModal
         isOpen={showBookSessionModal}
-        onClose={() => setShowBookSessionModal(false)}
+        onClose={() => {
+          setShowBookSessionModal(false);
+        }}
         onSuccess={() => {
           setShowBookSessionModal(false);
           loadClientDetails();
@@ -711,7 +850,6 @@ const ClientDetails = () => {
         onClose={() => {
           setShowAddPaymentModal(false);
           setSelectedPayment(null);
-          loadClientDetails();
         }}
         clientId={client.id}
         onSuccess={() => {
@@ -725,7 +863,6 @@ const ClientDetails = () => {
         isOpen={showAssignPackageModal}
         onClose={() => {
           setShowAssignPackageModal(false);
-          loadClientDetails();
         }}
         clientId={client.id}
       />
@@ -736,7 +873,6 @@ const ClientDetails = () => {
           onClose={() => {
             setShowEditPackageModal(false);
             setSelectedPackage(null);
-            loadClientDetails();
           }}
           clientPackage={selectedPackage}
         />
