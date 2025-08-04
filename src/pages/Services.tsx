@@ -16,13 +16,16 @@ import {
   DropdownMenuTrigger,
 } from "../components/ui/dropdown-menu";
 import CreatePackageModal from "../components/CreatePackageModal";
+import PackageDetailsModal from "../components/PackageDetailsModal";
 import { packageService, Package } from "../services/packageService";
 import { useToast } from "@/hooks/use-toast";
 
 const Services = () => {
   const { toast } = useToast();
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [editingPackage, setEditingPackage] = useState<Package | null>(null);
+  const [viewingPackage, setViewingPackage] = useState<Package | null>(null);
   const [packages, setPackages] = useState<Package[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -48,6 +51,11 @@ const Services = () => {
   };
 
 
+
+  const handleViewPackage = (pkg: Package) => {
+    setViewingPackage(pkg);
+    setShowDetailsModal(true);
+  };
 
   const handleEditPackage = (pkg: Package) => {
     setEditingPackage(pkg);
@@ -145,7 +153,7 @@ const Services = () => {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleViewPackage(pkg)}>
                       <Eye className="h-4 w-4 mr-2" />
                       View Details
                     </DropdownMenuItem>
@@ -237,6 +245,13 @@ const Services = () => {
           onClose={handleModalClose}
           onSuccess={handleModalSuccess}
           editingPackage={editingPackage}
+        />
+
+        {/* Package Details Modal */}
+        <PackageDetailsModal 
+          package={viewingPackage}
+          isOpen={showDetailsModal}
+          onClose={() => setShowDetailsModal(false)}
         />
       </div>
     </div>

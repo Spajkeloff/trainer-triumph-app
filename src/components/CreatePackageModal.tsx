@@ -32,6 +32,8 @@ const CreatePackageModal = ({ open, onClose, onSuccess, editingPackage }: Create
     numberOfSessions: "",
     numberOfClasses: "",
     duration: "",
+    customExpiryDate: "",
+    useCustomExpiry: false,
     allowOnlinePurchasing: false,
     discountPromoCodes: false,
     triggerEmail: false,
@@ -51,6 +53,8 @@ const CreatePackageModal = ({ open, onClose, onSuccess, editingPackage }: Create
           numberOfSessions: editingPackage.sessions_included?.toString() || "",
           numberOfClasses: editingPackage.numberOfClasses || "",
           duration: getDurationFromDays(editingPackage.duration_days),
+          customExpiryDate: "",
+          useCustomExpiry: false,
           allowOnlinePurchasing: false,
           discountPromoCodes: false,
           triggerEmail: false,
@@ -66,6 +70,8 @@ const CreatePackageModal = ({ open, onClose, onSuccess, editingPackage }: Create
           numberOfSessions: "",
           numberOfClasses: "",
           duration: "",
+          customExpiryDate: "",
+          useCustomExpiry: false,
           allowOnlinePurchasing: false,
           discountPromoCodes: false,
           triggerEmail: false,
@@ -88,6 +94,15 @@ const CreatePackageModal = ({ open, onClose, onSuccess, editingPackage }: Create
       toast({
         title: "Error",
         description: "Package name is required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (formData.useCustomExpiry && !formData.customExpiryDate) {
+      toast({
+        title: "Error",
+        description: "Custom expiration date is required when this option is enabled",
         variant: "destructive",
       });
       return;
@@ -279,6 +294,70 @@ const CreatePackageModal = ({ open, onClose, onSuccess, editingPackage }: Create
                 <SelectItem value="unlimited">Unlimited</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Custom Expiration Date Option */}
+          <div className="space-y-4">
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="useCustomExpiry"
+                checked={formData.useCustomExpiry}
+                onCheckedChange={(checked) => handleInputChange("useCustomExpiry", checked)}
+              />
+              <Label htmlFor="useCustomExpiry" className="text-sm font-medium">
+                Set custom expiration date (overrides default duration)
+              </Label>
+            </div>
+
+            {formData.useCustomExpiry && (
+              <div className="space-y-2">
+                <Label htmlFor="customExpiryDate" className="text-sm font-medium">
+                  Custom Expiration Date
+                </Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !formData.customExpiryDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {formData.customExpiryDate
+                        ? format(new Date(formData.customExpiryDate), "PPP")
+                        : "Pick expiration date"
+                      }
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={formData.customExpiryDate ? new Date(formData.customExpiryDate) : undefined}
+                      onSelect={(date) => {
+                        if (date) {
+                          handleInputChange("customExpiryDate", date.toISOString().split('T')[0]);
+                        }
+                      }}
+                      disabled={(date) => date < new Date()}
+                      initialFocus
+                      className="pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+                {formData.useCustomExpiry && !formData.customExpiryDate && (
+                  <p className="text-sm text-muted-foreground">
+                    Custom expiration date is required when this option is enabled
+                  </p>
+                )}
+              </div>
+            )}
+
+            {!formData.useCustomExpiry && formData.duration && (
+              <div className="text-sm text-muted-foreground bg-muted p-3 rounded-lg">
+                <p>Default expiration: {getDurationInDays(formData.duration)} days from purchase date</p>
+              </div>
+            )}
           </div>
 
           {/* Online Features - Disabled as requested */}
