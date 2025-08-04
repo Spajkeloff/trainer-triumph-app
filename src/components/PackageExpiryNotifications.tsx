@@ -107,20 +107,20 @@ const PackageExpiryNotifications = () => {
 
   const sendNotifications = async () => {
     try {
-      const response = await fetch('/functions/v1/package-expiry-notifications', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
-        }
+      const { data: session } = await supabase.auth.getSession();
+      if (!session?.session?.access_token) {
+        throw new Error('No authentication token available');
+      }
+
+      const { data, error } = await supabase.functions.invoke('package-expiry-notifications', {
+        body: { manual_trigger: true }
       });
 
-      if (!response.ok) throw new Error('Failed to send notifications');
-
-      const result = await response.json();
+      if (error) throw error;
+      
       toast({
         title: "Success",
-        description: `Sent ${result.notifications_sent} notification emails`,
+        description: `Notification emails sent successfully`,
       });
     } catch (error) {
       console.error("Error sending notifications:", error);

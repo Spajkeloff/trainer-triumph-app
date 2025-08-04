@@ -191,10 +191,6 @@ const Header = () => {
 
           {/* Right side actions */}
           <div className="flex items-center space-x-4">
-            <Button variant="ghost" size="icon" className="text-header-foreground hover:bg-white/10 hover:text-white">
-              <Bell className="h-5 w-5" />
-            </Button>
-            
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="text-header-foreground hover:bg-white/10 hover:text-white h-8 px-2">

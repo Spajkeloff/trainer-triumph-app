@@ -113,7 +113,10 @@ const CreatePackageModal = ({ open, onClose, onSuccess, editingPackage }: Create
         name: formData.name,
         description: formData.description,
         sessions_included: parseInt(formData.numberOfSessions) || 0,
-        duration_days: getDurationInDays(formData.duration),
+        // Use custom expiry date if enabled, otherwise use duration-based calculation
+        duration_days: formData.useCustomExpiry 
+          ? Math.ceil((new Date(formData.customExpiryDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+          : getDurationInDays(formData.duration),
         price: parseFloat(formData.price) || 0,
       };
 
@@ -278,11 +281,25 @@ const CreatePackageModal = ({ open, onClose, onSuccess, editingPackage }: Create
 
           {/* Package Duration */}
           <div className="space-y-2">
-            <Label htmlFor="duration" className="text-sm font-medium">
+            <Label htmlFor="duration" className={cn(
+              "text-sm font-medium",
+              formData.useCustomExpiry && "text-muted-foreground"
+            )}>
               Package duration (optional)
+              {formData.useCustomExpiry && (
+                <span className="ml-2 text-xs text-muted-foreground">
+                  (Disabled - using custom expiration date)
+                </span>
+              )}
             </Label>
-            <Select value={formData.duration} onValueChange={(value) => handleInputChange("duration", value)}>
-              <SelectTrigger>
+            <Select 
+              value={formData.useCustomExpiry ? "" : formData.duration} 
+              onValueChange={(value) => !formData.useCustomExpiry && handleInputChange("duration", value)}
+              disabled={formData.useCustomExpiry}
+            >
+              <SelectTrigger className={cn(
+                formData.useCustomExpiry && "opacity-50 cursor-not-allowed bg-muted"
+              )}>
                 <SelectValue placeholder="Select duration" />
               </SelectTrigger>
               <SelectContent>
