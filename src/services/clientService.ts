@@ -114,11 +114,14 @@ export const clientService = {
           id,
           sessions_remaining,
           expiry_date,
+          purchase_date,
           status,
           packages (
             name,
+            description,
             sessions_included,
-            price
+            price,
+            duration_days
           )
         ),
         sessions (

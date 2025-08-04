@@ -209,21 +209,12 @@ const ClientDetails = () => {
 
       if (error) throw error;
 
-      // Log the deletion as a transaction
-      await financeService.createTransaction({
-        client_id: client?.id || null,
-        transaction_type: 'payment',
-        category: 'admin_action',
-        amount: 0,
-        description: `Payment deleted by admin (ID: ${paymentId}) for client ${client?.first_name} ${client?.last_name}`,
-        status: 'completed',
-        transaction_date: new Date().toISOString().split('T')[0],
-        notes: 'Payment deletion logged for audit purposes'
-      });
+      // Don't create transaction logs for payment deletions
+      // This prevents unwanted transaction entries from appearing
 
       toast({
         title: "Success",
-        description: "Payment deleted and logged successfully",
+        description: "Payment deleted successfully",
       });
       
       await loadClientDetails();
@@ -923,6 +914,10 @@ const ClientDetails = () => {
         isOpen={showAssignPackageModal}
         onClose={() => {
           setShowAssignPackageModal(false);
+        }}
+        onSuccess={() => {
+          setShowAssignPackageModal(false);
+          loadClientDetails();
         }}
         clientId={client.id}
       />

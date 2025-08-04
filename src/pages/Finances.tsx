@@ -126,21 +126,12 @@ const Finances = () => {
 
       if (error) throw error;
 
-      // Log the deletion as a transaction
-      await financeService.createTransaction({
-        client_id: null,
-        transaction_type: 'payment',
-        category: 'admin_action',
-        amount: 0,
-        description: `Payment deleted by admin (ID: ${paymentId})`,
-        status: 'completed',
-        transaction_date: new Date().toISOString().split('T')[0],
-        notes: 'Payment deletion logged for audit purposes'
-      });
+      // Don't create transaction logs for payment deletions
+      // This removes the unwanted transaction entries
 
       toast({
         title: "Success",
-        description: "Payment deleted and logged successfully",
+        description: "Payment deleted successfully",
       });
       
       fetchFinancialData();
@@ -182,53 +173,72 @@ const Finances = () => {
     
     // Client Details
     doc.text('Bill To:', 20, 110);
-    doc.text(`${invoice.clients?.first_name} ${invoice.clients?.last_name}`, 20, 120);
+    doc.text(`${invoice.clients?.first_name || ''} ${invoice.clients?.last_name || ''}`, 20, 120);
     
     // Invoice Items Table
     const tableData = [];
     if (invoice.line_items && Array.isArray(invoice.line_items)) {
       invoice.line_items.forEach((item: any) => {
         tableData.push([
-          item.description || invoice.description,
+          item.description || invoice.description || 'Service',
           item.quantity?.toString() || '1',
-          `DH${item.rate?.toFixed(2) || invoice.amount.toFixed(2)}`,
-          `DH${item.total?.toFixed(2) || invoice.amount.toFixed(2)}`
+          `DH${(item.rate || invoice.amount || 0).toFixed(2)}`,
+          `DH${(item.total || invoice.amount || 0).toFixed(2)}`
         ]);
       });
     } else {
       tableData.push([
         invoice.description || 'Service',
         '1',
-        `DH${invoice.amount.toFixed(2)}`,
-        `DH${invoice.amount.toFixed(2)}`
+        `DH${(invoice.amount || 0).toFixed(2)}`,
+        `DH${(invoice.amount || 0).toFixed(2)}`
       ]);
     }
     
-    (doc as any).autoTable({
-      startY: 135,
-      head: [['Description', 'Qty', 'Rate', 'Total']],
-      body: tableData,
-      theme: 'grid',
-      styles: { fontSize: 10 },
-      headStyles: { fillColor: [66, 139, 202] }
-    });
-    
-    // Totals
-    const finalY = (doc as any).lastAutoTable.finalY + 20;
-    doc.text(`Subtotal: DH${invoice.amount.toFixed(2)}`, 140, finalY);
-    doc.text(`Tax: DH${invoice.tax_amount?.toFixed(2) || '0.00'}`, 140, finalY + 7);
-    doc.setFontSize(12);
-    doc.text(`Total: DH${invoice.total_amount.toFixed(2)}`, 140, finalY + 17);
-    
-    // Notes
-    if (invoice.notes) {
+    // Use autoTable safely
+    if ((doc as any).autoTable) {
+      (doc as any).autoTable({
+        startY: 135,
+        head: [['Description', 'Qty', 'Rate', 'Total']],
+        body: tableData,
+        theme: 'grid',
+        styles: { fontSize: 10 },
+        headStyles: { fillColor: [66, 139, 202] }
+      });
+      
+      // Totals
+      const finalY = (doc as any).lastAutoTable?.finalY ? (doc as any).lastAutoTable.finalY + 20 : 180;
       doc.setFontSize(10);
-      doc.text('Notes:', 20, finalY + 30);
-      doc.text(invoice.notes, 20, finalY + 40);
+      doc.text(`Subtotal: DH${(invoice.amount || 0).toFixed(2)}`, 140, finalY);
+      doc.text(`Tax: DH${(invoice.tax_amount || 0).toFixed(2)}`, 140, finalY + 7);
+      doc.setFontSize(12);
+      doc.text(`Total: DH${(invoice.total_amount || 0).toFixed(2)}`, 140, finalY + 17);
+      
+      // Notes
+      if (invoice.notes) {
+        doc.setFontSize(10);
+        doc.text('Notes:', 20, finalY + 30);
+        const splitNotes = doc.splitTextToSize(invoice.notes, 170);
+        doc.text(splitNotes, 20, finalY + 40);
+      }
+      
+      // Payment Terms
+      doc.setFontSize(10);
+      doc.text(`Payment Terms: ${invoice.payment_terms || 30} days`, 20, finalY + 65);
+    } else {
+      // Fallback if autoTable is not available
+      let currentY = 135;
+      doc.setFontSize(10);
+      doc.text('Invoice Items:', 20, currentY);
+      currentY += 15;
+      
+      tableData.forEach((row, index) => {
+        doc.text(row.join(' | '), 20, currentY + (index * 10));
+      });
+      
+      currentY += (tableData.length * 10) + 20;
+      doc.text(`Total: DH${(invoice.total_amount || 0).toFixed(2)}`, 20, currentY);
     }
-    
-    // Payment Terms
-    doc.text(`Payment Terms: ${invoice.payment_terms} days`, 20, finalY + 55);
     
     doc.save(`invoice-${invoice.invoice_number}.pdf`);
   };
@@ -401,9 +411,11 @@ const Finances = () => {
             </div>
             {transactions
               .filter(transaction => 
-                transaction.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                // Filter out admin action transactions (payment deletions)
+                transaction.category !== 'admin_action' &&
+                (transaction.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 transaction.clients?.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                transaction.clients?.last_name.toLowerCase().includes(searchTerm.toLowerCase())
+                transaction.clients?.last_name.toLowerCase().includes(searchTerm.toLowerCase()))
               )
               .map((transaction) => (
                 <div key={transaction.id} className="grid grid-cols-7 gap-4 p-4 items-center hover:bg-muted/50">
