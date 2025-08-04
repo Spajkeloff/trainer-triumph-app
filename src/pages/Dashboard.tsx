@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import SummaryCards from "../components/Dashboard/SummaryCards";
 import SessionsTable from "../components/Dashboard/SessionsTable";
 import FinancialGraphs from "../components/Dashboard/FinancialGraphs";
+import PackageExpiryNotifications from "../components/PackageExpiryNotifications";
 import { dashboardService } from "@/services/dashboardService";
 
 const Dashboard = () => {
@@ -91,6 +92,11 @@ const Dashboard = () => {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground mb-2">Dashboard</h1>
           <p className="text-muted-foreground">Welcome back! Here's what's happening with your training business.</p>
+        </div>
+
+        {/* Package Expiry Notifications */}
+        <div className="mb-8">
+          <PackageExpiryNotifications />
         </div>
 
         {/* Summary Cards */}
