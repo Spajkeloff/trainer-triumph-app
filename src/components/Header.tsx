@@ -213,13 +213,13 @@ const Header = () => {
                   <p className="text-xs text-muted-foreground capitalize">{profile?.role}</p>
                 </div>
                 <DropdownMenuItem asChild>
-                  <Link to="/profile">
+                  <Link to={profile?.role === 'client' ? '/client/profile' : '/admin/profile'}>
                     <User className="h-4 w-4 mr-2" />
                     View Profile
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link to="/settings">
+                  <Link to={profile?.role === 'client' ? '/client/settings' : '/admin/settings'}>
                     <Settings className="h-4 w-4 mr-2" />
                     Settings
                   </Link>

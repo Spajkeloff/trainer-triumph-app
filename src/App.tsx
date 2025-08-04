@@ -116,6 +116,7 @@ const App = () => {
               <Route path="profile" element={<ClientProfile />} />
               <Route path="sessions" element={<MySessions />} />
               <Route path="packages" element={<MyPackages />} />
+              <Route path="settings" element={<Settings />} />
             </Route>
             
             {/* Admin/Trainer routes - SECURITY FIX: Admin only access */}
