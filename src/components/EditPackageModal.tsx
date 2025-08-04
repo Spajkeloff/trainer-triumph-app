@@ -98,6 +98,23 @@ const EditPackageModal = ({ isOpen, onClose, clientPackage, onSuccess }: EditPac
     try {
       setLoading(true);
 
+      // 1. Delete associated payments
+      const { error: paymentsError } = await supabase
+        .from('payments')
+        .delete()
+        .eq('client_package_id', clientPackage.id);
+
+      if (paymentsError) throw paymentsError;
+
+      // 2. Delete associated transactions
+      const { error: transactionsError } = await supabase
+        .from('transactions')
+        .delete()
+        .or(`reference_id.eq.${clientPackage.id},client_package_id.eq.${clientPackage.id}`);
+
+      if (transactionsError) throw transactionsError;
+
+      // 3. Delete the client package
       const { error } = await supabase
         .from('client_packages')
         .delete()
@@ -107,7 +124,7 @@ const EditPackageModal = ({ isOpen, onClose, clientPackage, onSuccess }: EditPac
 
       toast({
         title: "Success",
-        description: "Package deleted successfully",
+        description: "Package and all related data deleted successfully",
       });
 
       onClose();

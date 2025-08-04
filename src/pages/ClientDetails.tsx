@@ -201,7 +201,28 @@ const ClientDetails = () => {
 
   const handleDeletePayment = async (paymentId: string) => {
     try {
-      // Delete the payment from the database
+      // Get current user for logging
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      // Get payment details before deletion for transaction cleanup
+      const { data: paymentToDelete, error: fetchError } = await supabase
+        .from('payments')
+        .select('*')
+        .eq('id', paymentId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // 1. Delete associated transactions
+      const { error: transactionsError } = await supabase
+        .from('transactions')
+        .delete()
+        .or(`reference_id.eq.${paymentToDelete.client_package_id || paymentId},payment_id.eq.${paymentId}`);
+
+      if (transactionsError) console.warn('Error deleting associated transactions:', transactionsError);
+
+      // 2. Delete the payment
       const { error } = await supabase
         .from('payments')
         .delete()
@@ -209,12 +230,9 @@ const ClientDetails = () => {
 
       if (error) throw error;
 
-      // Don't create transaction logs for payment deletions
-      // This prevents unwanted transaction entries from appearing
-
       toast({
         title: "Success",
-        description: "Payment deleted successfully",
+        description: "Payment deleted successfully across all systems",
       });
       
       await loadClientDetails();
@@ -930,6 +948,11 @@ const ClientDetails = () => {
             setSelectedPackage(null);
           }}
           clientPackage={selectedPackage}
+          onSuccess={() => {
+            setShowEditPackageModal(false);
+            setSelectedPackage(null);
+            loadClientDetails(); // Refresh data after successful deletion
+          }}
         />
       )}
 
