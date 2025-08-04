@@ -9,6 +9,8 @@ import { paymentService } from "@/services/paymentService";
 import { supabase } from "@/integrations/supabase/client";
 import AddExpenseModal from "@/components/AddExpenseModal";
 import CreateInvoiceModal from "@/components/CreateInvoiceModal";
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,8 +33,16 @@ import {
   FileText,
   Receipt,
   Users,
-  Trash2
+  Trash2,
+  Edit,
+  MoreHorizontal
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   BarChart, 
   Bar, 
@@ -68,6 +78,8 @@ const Finances = () => {
   const [showAddExpense, setShowAddExpense] = useState(false);
   const [showCreateInvoice, setShowCreateInvoice] = useState(false);
   const [deletePaymentId, setDeletePaymentId] = useState<string | null>(null);
+  const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
+  const [deleteExpenseId, setDeleteExpenseId] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -138,6 +150,110 @@ const Finances = () => {
       toast({
         title: "Error", 
         description: "Failed to delete payment",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const downloadInvoiceAsPDF = (invoice: Invoice) => {
+    const doc = new jsPDF();
+    
+    // Company Header
+    doc.setFontSize(20);
+    doc.setTextColor(40, 40, 40);
+    doc.text('Train With Us Personal Trainers', 20, 25);
+    
+    doc.setFontSize(10);
+    doc.setTextColor(100, 100, 100);
+    doc.text('Dubai, UAE, 0000', 20, 35);
+    doc.text('+971 54 377 3116', 20, 42);
+    
+    // Invoice Title
+    doc.setFontSize(28);
+    doc.setTextColor(40, 40, 40);
+    doc.text('INVOICE', 20, 65);
+    
+    // Invoice Details
+    doc.setFontSize(10);
+    doc.setTextColor(40, 40, 40);
+    doc.text(`Invoice #: ${invoice.invoice_number}`, 20, 80);
+    doc.text(`Issue Date: ${new Date(invoice.issue_date).toLocaleDateString()}`, 20, 87);
+    doc.text(`Due Date: ${new Date(invoice.due_date).toLocaleDateString()}`, 20, 94);
+    
+    // Client Details
+    doc.text('Bill To:', 20, 110);
+    doc.text(`${invoice.clients?.first_name} ${invoice.clients?.last_name}`, 20, 120);
+    
+    // Invoice Items Table
+    const tableData = [];
+    if (invoice.line_items && Array.isArray(invoice.line_items)) {
+      invoice.line_items.forEach((item: any) => {
+        tableData.push([
+          item.description || invoice.description,
+          item.quantity?.toString() || '1',
+          `DH${item.rate?.toFixed(2) || invoice.amount.toFixed(2)}`,
+          `DH${item.total?.toFixed(2) || invoice.amount.toFixed(2)}`
+        ]);
+      });
+    } else {
+      tableData.push([
+        invoice.description || 'Service',
+        '1',
+        `DH${invoice.amount.toFixed(2)}`,
+        `DH${invoice.amount.toFixed(2)}`
+      ]);
+    }
+    
+    (doc as any).autoTable({
+      startY: 135,
+      head: [['Description', 'Qty', 'Rate', 'Total']],
+      body: tableData,
+      theme: 'grid',
+      styles: { fontSize: 10 },
+      headStyles: { fillColor: [66, 139, 202] }
+    });
+    
+    // Totals
+    const finalY = (doc as any).lastAutoTable.finalY + 20;
+    doc.text(`Subtotal: DH${invoice.amount.toFixed(2)}`, 140, finalY);
+    doc.text(`Tax: DH${invoice.tax_amount?.toFixed(2) || '0.00'}`, 140, finalY + 7);
+    doc.setFontSize(12);
+    doc.text(`Total: DH${invoice.total_amount.toFixed(2)}`, 140, finalY + 17);
+    
+    // Notes
+    if (invoice.notes) {
+      doc.setFontSize(10);
+      doc.text('Notes:', 20, finalY + 30);
+      doc.text(invoice.notes, 20, finalY + 40);
+    }
+    
+    // Payment Terms
+    doc.text(`Payment Terms: ${invoice.payment_terms} days`, 20, finalY + 55);
+    
+    doc.save(`invoice-${invoice.invoice_number}.pdf`);
+  };
+
+  const handleDeleteExpense = async (expenseId: string) => {
+    try {
+      const { error } = await supabase
+        .from('expenses')
+        .delete()
+        .eq('id', expenseId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Expense deleted successfully",
+      });
+      
+      fetchFinancialData();
+      setDeleteExpenseId(null);
+    } catch (error) {
+      console.error('Error deleting expense:', error);
+      toast({
+        title: "Error", 
+        description: "Failed to delete expense",
         variant: "destructive",
       });
     }
@@ -440,7 +556,11 @@ const Finances = () => {
                     {new Date(invoice.due_date).toLocaleDateString()}
                   </div>
                   <div>
-                    <Button variant="ghost" size="sm">
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => downloadInvoiceAsPDF(invoice)}
+                    >
                       <Download className="h-4 w-4" />
                     </Button>
                   </div>
@@ -488,16 +608,17 @@ const Finances = () => {
         <CardContent className="p-0">
           {expenses.length > 0 ? (
             <div className="space-y-0 divide-y">
-              <div className="grid grid-cols-6 gap-4 p-4 text-sm font-medium text-muted-foreground bg-muted">
+              <div className="grid grid-cols-7 gap-4 p-4 text-sm font-medium text-muted-foreground bg-muted">
                 <div>DATE</div>
                 <div>DESCRIPTION</div>
                 <div>CATEGORY</div>
                 <div>AMOUNT</div>
                 <div>STATUS</div>
                 <div>VENDOR</div>
+                <div>ACTIONS</div>
               </div>
               {expenses.map((expense) => (
-                <div key={expense.id} className="grid grid-cols-6 gap-4 p-4 items-center hover:bg-muted/50">
+                <div key={expense.id} className="grid grid-cols-7 gap-4 p-4 items-center hover:bg-muted/50">
                   <div className="text-sm text-muted-foreground">
                     {new Date(expense.expense_date).toLocaleDateString()}
                   </div>
@@ -511,6 +632,33 @@ const Finances = () => {
                   </div>
                   <div className="text-sm text-muted-foreground">
                     {expense.vendor || '-'}
+                  </div>
+                  <div>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setEditingExpense(expense);
+                            setShowAddExpense(true);
+                          }}
+                        >
+                          <Edit className="h-4 w-4 mr-2" />
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => setDeleteExpenseId(expense.id)}
+                          className="text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </div>
               ))}
@@ -596,8 +744,15 @@ const Finances = () => {
         {/* Modals */}
         <AddExpenseModal
           isOpen={showAddExpense}
-          onClose={() => setShowAddExpense(false)}
-          onSuccess={fetchFinancialData}
+          onClose={() => {
+            setShowAddExpense(false);
+            setEditingExpense(null);
+          }}
+          onSuccess={() => {
+            fetchFinancialData();
+            setEditingExpense(null);
+          }}
+          expense={editingExpense}
         />
 
         <CreateInvoiceModal
@@ -622,6 +777,27 @@ const Finances = () => {
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               >
                 Delete Payment
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Delete Expense Confirmation */}
+        <AlertDialog open={!!deleteExpenseId} onOpenChange={() => setDeleteExpenseId(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Expense</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete this expense? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => deleteExpenseId && handleDeleteExpense(deleteExpenseId)}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Delete Expense
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
