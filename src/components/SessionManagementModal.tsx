@@ -46,6 +46,10 @@ interface SessionManagementModalProps {
 const SessionManagementModal = ({ isOpen, onClose, session, onSuccess, onEdit, onPaymentRequired }: SessionManagementModalProps) => {
   const [loading, setLoading] = useState(false);
   const [showReconcileOptions, setShowReconcileOptions] = useState<boolean | 'cancelled' | 'rescheduled'>(false);
+  const [showConfirmationModal, setShowConfirmationModal] = useState<{
+    action: 'cancelled' | 'rescheduled';
+    show: boolean;
+  }>({ action: 'cancelled', show: false });
   const { toast } = useToast();
 
   const handleStatusUpdate = async (newStatus: string) => {
@@ -86,7 +90,7 @@ const SessionManagementModal = ({ isOpen, onClose, session, onSuccess, onEdit, o
   };
 
   const handleDelete = async () => {
-    if (!session || !confirm("Are you sure you want to delete this session?")) return;
+    if (!session) return;
 
     try {
       setLoading(true);
@@ -237,9 +241,9 @@ const SessionManagementModal = ({ isOpen, onClose, session, onSuccess, onEdit, o
               if (packageError) throw packageError;
               console.log('Successfully deducted 1 session from package');
             }
-          } else if ((action === 'cancelled' || action === 'rescheduled') && !shouldCount) {
-            // Restore session to package if cancelled/rescheduled and shouldn't count
-            console.log('Restoring THIS specific session to package');
+          } else if ((action === 'cancelled' || action === 'rescheduled') && shouldCount) {
+            // Deduct session from package when cancelled/rescheduled and should count
+            console.log('Deducting 1 session from package for cancelled/rescheduled session');
             
             const { data: currentPackage } = await supabase
               .from('client_packages')
@@ -247,20 +251,20 @@ const SessionManagementModal = ({ isOpen, onClose, session, onSuccess, onEdit, o
               .eq('id', session.client_package_id)
               .maybeSingle();
 
-            if (currentPackage) {
+            if (currentPackage && currentPackage.sessions_remaining > 0) {
               const { error: packageError } = await supabase
                 .from('client_packages')
                 .update({ 
-                  sessions_remaining: currentPackage.sessions_remaining + 1,
+                  sessions_remaining: currentPackage.sessions_remaining - 1,
                   updated_at: new Date().toISOString()
                 })
                 .eq('id', session.client_package_id);
 
               if (packageError) throw packageError;
-              console.log('Successfully restored 1 session to package');
+              console.log('Successfully deducted 1 session from package');
             }
           } else {
-            console.log('No package action needed for this reconciliation');
+            console.log('No package action needed - leaving count unchanged');
           }
         } 
         // Session NOT linked to package - can be retroactively deducted ONCE
@@ -334,15 +338,13 @@ const SessionManagementModal = ({ isOpen, onClose, session, onSuccess, onEdit, o
 
       // If trial session was completed, offer payment option
       if (isTrialSession && action === 'completed') {
-        if (confirm("Trial session charge added to client account. Would you like to record the payment now?")) {
-          // Trigger payment modal through parent component
-          if (onPaymentRequired) {
-            onPaymentRequired(session.client_id);
-          }
-          onSuccess();
-          onClose();
-          return;
+        // Auto-trigger payment modal for trial sessions
+        if (onPaymentRequired) {
+          onPaymentRequired(session.client_id);
         }
+        onSuccess();
+        onClose();
+        return;
       }
 
       onSuccess();
@@ -394,12 +396,13 @@ const SessionManagementModal = ({ isOpen, onClose, session, onSuccess, onEdit, o
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md bg-background border-border">
-        <DialogHeader className="flex flex-row items-center justify-between">
-          <DialogTitle>Session Management</DialogTitle>
-          {getStatusBadge(session.status)}
-        </DialogHeader>
+    <>
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="sm:max-w-md bg-background border-border">
+          <DialogHeader className="flex flex-row items-center justify-between">
+            <DialogTitle>Session Management</DialogTitle>
+            {getStatusBadge(session.status)}
+          </DialogHeader>
         
         <div className="space-y-4 py-4">
           {/* Client */}
@@ -552,10 +555,7 @@ const SessionManagementModal = ({ isOpen, onClose, session, onSuccess, onEdit, o
               
               <Button 
                 variant="outline"
-                onClick={() => {
-                  const shouldCount = confirm("Should this rescheduled session count towards the package? Click OK to count it, Cancel to not count it.");
-                  handleReconcile('rescheduled', shouldCount);
-                }}
+                onClick={() => setShowConfirmationModal({ action: 'rescheduled', show: true })}
                 disabled={loading}
               >
                 <RotateCcw className="h-4 w-4 mr-2" />
@@ -566,10 +566,7 @@ const SessionManagementModal = ({ isOpen, onClose, session, onSuccess, onEdit, o
             <div className="grid grid-cols-2 gap-3">
               <Button 
                 variant="outline"
-                onClick={() => {
-                  const shouldCount = confirm("Should this cancelled session count towards the package? Click OK to count it, Cancel to not count it.");
-                  handleReconcile('cancelled', shouldCount);
-                }}
+                onClick={() => setShowConfirmationModal({ action: 'cancelled', show: true })}
                 disabled={loading}
               >
                 <XCircle className="h-4 w-4 mr-2" />
@@ -597,8 +594,73 @@ const SessionManagementModal = ({ isOpen, onClose, session, onSuccess, onEdit, o
           <Trash2 className="h-4 w-4 mr-2" />
           Delete Session
         </Button>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirmation Modal */}
+      <Dialog open={showConfirmationModal.show} onOpenChange={(open) => 
+        setShowConfirmationModal({ ...showConfirmationModal, show: open })
+      }>
+        <DialogContent className="sm:max-w-md bg-background border-border">
+          <DialogHeader>
+            <DialogTitle className="text-center">
+              {showConfirmationModal.action === 'cancelled' ? 'Cancel Session' : 'Reschedule Session'}
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-6 py-4">
+            <div className="text-center text-muted-foreground">
+              {showConfirmationModal.action === 'cancelled' 
+                ? 'Cancelled events will still be displayed in the Calendar but crossed out. You can still \'uncancel\' if needed.'
+                : 'This session will be marked as rescheduled and you can book a new session for the client.'
+              }
+            </div>
+            
+            <div className="border-t pt-4">
+              <div className="text-sm font-medium text-center mb-4">
+                Do you want to count this session towards the client's package?
+              </div>
+              
+              <div className="grid grid-cols-1 gap-3">
+                <Button 
+                  onClick={() => {
+                    handleReconcile(showConfirmationModal.action, true);
+                    setShowConfirmationModal({ action: 'cancelled', show: false });
+                  }}
+                  disabled={loading}
+                  className="bg-destructive hover:bg-destructive/90"
+                >
+                  <XCircle className="h-4 w-4 mr-2" />
+                  Yes - Count Session
+                </Button>
+                
+                <Button 
+                  variant="outline"
+                  onClick={() => {
+                    handleReconcile(showConfirmationModal.action, false);
+                    setShowConfirmationModal({ action: 'cancelled', show: false });
+                  }}
+                  disabled={loading}
+                >
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  No - Don't Count Session
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-center">
+            <Button 
+              variant="ghost"
+              onClick={() => setShowConfirmationModal({ action: 'cancelled', show: false })}
+              className="w-full"
+            >
+              Close
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 
