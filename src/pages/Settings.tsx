@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
@@ -23,6 +24,7 @@ import { settingsService, type ClientAreaSettings } from "../services/settingsSe
 import { useToast } from "../hooks/use-toast";
 
 const Settings = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<"business" | "staff" | "hours" | "notifications" | "payments" | "tax" | "clientarea">("business");
   const [clientAreaSettings, setClientAreaSettings] = useState<ClientAreaSettings | null>(null);
   const [loading, setLoading] = useState(false);
@@ -150,7 +152,7 @@ const Settings = () => {
       <CardContent className="space-y-6">
         <div className="flex justify-between items-center">
           <h3 className="text-lg font-medium">Trainer Management</h3>
-          <Button onClick={() => window.location.href = '/admin/trainers'}>
+          <Button onClick={() => navigate('/admin/trainers')}>
             Manage Trainers
           </Button>
         </div>
@@ -165,11 +167,6 @@ const Settings = () => {
               <li>• Track trainer earnings and session counts</li>
               <li>• Restricted access - trainers see only their data</li>
             </ul>
-            <div className="mt-4">
-              <Button size="sm" onClick={() => window.location.href = '/admin/trainers'}>
-                Go to Trainer Management
-              </Button>
-            </div>
           </div>
         </div>
       </CardContent>
