@@ -66,26 +66,60 @@ export const trainerService = {
   },
 
   async create(trainerData: {
-    user_id: string;
-    payroll_type: 'per_session' | 'percentage';
-    session_rate?: number;
-    package_percentage?: number;
-    created_by: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    password: string;
+    payrollType: 'per_session' | 'percentage';
+    sessionRate?: number;
+    packagePercentage?: number;
   }): Promise<Trainer> {
-    const { data, error } = await supabase
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      throw new Error('Not authenticated');
+    }
+
+    const response = await fetch(`https://qyytmkvyjbpserxfmsxa.supabase.co/functions/v1/create-trainer`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email: trainerData.email,
+        password: trainerData.password,
+        firstName: trainerData.firstName,
+        lastName: trainerData.lastName,
+        payrollType: trainerData.payrollType,
+        sessionRate: trainerData.sessionRate || 0,
+        packagePercentage: trainerData.packagePercentage || 0,
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to create trainer');
+    }
+
+    const result = await response.json();
+    
+    // Fetch the complete trainer data with profile
+    const { data: trainer, error: fetchError } = await supabase
       .from('trainers')
-      .insert([{
-        ...trainerData,
-        session_rate: trainerData.session_rate || 0,
-        package_percentage: trainerData.package_percentage || 0,
-      }])
-      .select()
+      .select(`
+        *,
+        profiles!inner (first_name, last_name)
+      `)
+      .eq('id', result.trainer.id)
       .single();
 
-    if (error) throw error;
+    if (fetchError) {
+      throw new Error(`Failed to fetch trainer data: ${fetchError.message}`);
+    }
+
     return {
-      ...data,
-      payroll_type: data.payroll_type as 'per_session' | 'percentage'
+      ...trainer,
+      payroll_type: trainer.payroll_type as 'per_session' | 'percentage'
     };
   },
 

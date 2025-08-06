@@ -35,39 +35,15 @@ const AddTrainerModal: React.FC<AddTrainerModalProps> = ({ isOpen, onClose, onTr
 
     setLoading(true);
     try {
-      // 1. Create auth user for trainer
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      // Create trainer using the edge function
+      await trainerService.create({
+        firstName: formData.firstName,
+        lastName: formData.lastName,
         email: formData.email,
         password: formData.password,
-        email_confirm: true,
-        user_metadata: {
-          first_name: formData.firstName,
-          last_name: formData.lastName,
-          role: 'trainer'
-        }
-      });
-
-      if (authError) throw authError;
-
-      // 2. Update the profile role to trainer
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({ 
-          role: 'trainer',
-          first_name: formData.firstName,
-          last_name: formData.lastName 
-        })
-        .eq('user_id', authData.user.id);
-
-      if (profileError) throw profileError;
-
-      // 3. Create trainer record
-      await trainerService.create({
-        user_id: authData.user.id,
-        payroll_type: formData.payrollType,
-        session_rate: formData.payrollType === 'per_session' ? parseFloat(formData.sessionRate) || 0 : 0,
-        package_percentage: formData.payrollType === 'percentage' ? parseFloat(formData.packagePercentage) || 0 : 0,
-        created_by: user.id,
+        payrollType: formData.payrollType,
+        sessionRate: formData.payrollType === 'per_session' ? parseFloat(formData.sessionRate) || 0 : 0,
+        packagePercentage: formData.payrollType === 'percentage' ? parseFloat(formData.packagePercentage) || 0 : 0,
       });
 
       toast({
