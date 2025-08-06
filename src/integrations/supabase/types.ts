@@ -983,6 +983,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_trainer_with_user: {
+        Args: {
+          email: string
+          password: string
+          first_name: string
+          last_name: string
+          payroll_type: string
+          session_rate?: number
+          package_percentage?: number
+        }
+        Returns: Json
+      }
       get_client_balances: {
         Args: Record<PropertyKey, never>
         Returns: {
