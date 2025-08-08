@@ -859,6 +859,117 @@ export type Database = {
           },
         ]
       }
+      staff_members: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          is_trainer: boolean
+          login_access: boolean
+          notes: string | null
+          start_date: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_trainer?: boolean
+          login_access?: boolean
+          notes?: string | null
+          start_date?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_trainer?: boolean
+          login_access?: boolean
+          notes?: string | null
+          start_date?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      staff_permissions: {
+        Row: {
+          bookings_create_edit_all: boolean | null
+          bookings_create_edit_own: boolean | null
+          bookings_reconcile_all: boolean | null
+          bookings_reconcile_own: boolean | null
+          bookings_view_all: boolean | null
+          bookings_view_own: boolean | null
+          clients_assign_services: boolean | null
+          clients_hide_payment_integration: boolean | null
+          clients_hide_services: boolean | null
+          clients_only_show_assigned: boolean | null
+          clients_show_financial_info: boolean | null
+          clients_view: boolean | null
+          created_at: string
+          hide_booking_prices: boolean | null
+          id: string
+          make_payment_access: boolean | null
+          only_data_for_assigned_clients: boolean | null
+          prevent_changing_client_status: boolean | null
+          prevent_edit_past_reconciled: boolean | null
+          show_messages_sent_to_others: boolean | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          bookings_create_edit_all?: boolean | null
+          bookings_create_edit_own?: boolean | null
+          bookings_reconcile_all?: boolean | null
+          bookings_reconcile_own?: boolean | null
+          bookings_view_all?: boolean | null
+          bookings_view_own?: boolean | null
+          clients_assign_services?: boolean | null
+          clients_hide_payment_integration?: boolean | null
+          clients_hide_services?: boolean | null
+          clients_only_show_assigned?: boolean | null
+          clients_show_financial_info?: boolean | null
+          clients_view?: boolean | null
+          created_at?: string
+          hide_booking_prices?: boolean | null
+          id?: string
+          make_payment_access?: boolean | null
+          only_data_for_assigned_clients?: boolean | null
+          prevent_changing_client_status?: boolean | null
+          prevent_edit_past_reconciled?: boolean | null
+          show_messages_sent_to_others?: boolean | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          bookings_create_edit_all?: boolean | null
+          bookings_create_edit_own?: boolean | null
+          bookings_reconcile_all?: boolean | null
+          bookings_reconcile_own?: boolean | null
+          bookings_view_all?: boolean | null
+          bookings_view_own?: boolean | null
+          clients_assign_services?: boolean | null
+          clients_hide_payment_integration?: boolean | null
+          clients_hide_services?: boolean | null
+          clients_only_show_assigned?: boolean | null
+          clients_show_financial_info?: boolean | null
+          clients_view?: boolean | null
+          created_at?: string
+          hide_booking_prices?: boolean | null
+          id?: string
+          make_payment_access?: boolean | null
+          only_data_for_assigned_clients?: boolean | null
+          prevent_changing_client_status?: boolean | null
+          prevent_edit_past_reconciled?: boolean | null
+          show_messages_sent_to_others?: boolean | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       trainer_clients: {
         Row: {
           assigned_date: string
@@ -1014,6 +1125,10 @@ export type Database = {
           total_package_earnings: number
           total_earnings: number
         }[]
+      }
+      has_permission: {
+        Args: { _user_id: string; _perm: string }
+        Returns: boolean
       }
       validate_user_profile_sync: {
         Args: Record<PropertyKey, never>
