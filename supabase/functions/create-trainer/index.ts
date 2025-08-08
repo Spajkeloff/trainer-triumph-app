@@ -73,12 +73,14 @@ serve(async (req) => {
     // Create profile
     const { error: profileError } = await supabaseAdmin
       .from('profiles')
-      .insert({
-        user_id: newUser.user!.id,
-        first_name: firstName,
-        last_name: lastName,
-        role: 'trainer'
-      })
+      .upsert([
+        {
+          user_id: newUser.user!.id,
+          first_name: firstName,
+          last_name: lastName,
+          role: 'trainer'
+        }
+      ], { onConflict: 'user_id' })
 
     if (profileError) {
       // Clean up the created user if profile creation fails
@@ -103,7 +105,8 @@ serve(async (req) => {
       .single()
 
     if (trainerError) {
-      // Clean up if trainer creation fails
+      // Clean up if trainer creation fails - delete profile and auth user
+      await supabaseAdmin.from('profiles').delete().eq('user_id', newUser.user!.id)
       await supabaseAdmin.auth.admin.deleteUser(newUser.user!.id)
       return new Response(JSON.stringify({ error: trainerError.message }), {
         status: 400,
