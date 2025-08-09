@@ -54,12 +54,7 @@ const Header = () => {
           label: "Clients", 
           icon: Users, 
           path: "/admin/clients",
-          dropdown: [
-            { label: "All Clients", path: "/admin/clients" },
-            { label: "Active Clients", path: "/admin/clients/active" },
-            { label: "Leads", path: "/admin/clients/leads" },
-            { label: "Add Client", path: "/admin/clients/new" },
-          ]
+          dropdown: null
         },
         { 
           id: "services", 

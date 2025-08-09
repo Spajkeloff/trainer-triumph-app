@@ -131,9 +131,6 @@ const App = () => {
               <Route path="calendar" element={<Calendar />} />
               <Route path="clients" element={<Clients />} />
               <Route path="clients/:id" element={<ClientDetails />} />
-              <Route path="clients/leads" element={<Clients />} />
-              <Route path="clients/active" element={<Clients />} />
-              <Route path="clients/new" element={<Clients />} />
               <Route path="services" element={<Services />} />
               <Route path="finances" element={<Finances />} />
               <Route path="finances/payments" element={<Finances />} />

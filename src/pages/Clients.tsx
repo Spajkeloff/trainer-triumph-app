@@ -297,7 +297,12 @@ const Clients = () => {
 
                 {/* Actions */}
                 <div className="flex gap-2 mt-4 pt-4 border-t border-border">
-                  <Button variant="outline" size="sm" className="flex-1">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={() => navigate(`/admin/calendar?book=${client.id}`)}
+                  >
                     <Calendar className="h-4 w-4 mr-2" />
                     Book Session
                   </Button>
