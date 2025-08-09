@@ -27,6 +27,7 @@ const PackageExpiryNotifications = () => {
   const [expiringPackages, setExpiringPackages] = useState<ExpiringPackage[]>([]);
   const [lowSessionPackages, setLowSessionPackages] = useState<ExpiringPackage[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sendingEmails, setSendingEmails] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -107,6 +108,8 @@ const PackageExpiryNotifications = () => {
 
   const sendNotifications = async () => {
     try {
+      setSendingEmails(true);
+      
       const { data: session } = await supabase.auth.getSession();
       if (!session?.session?.access_token) {
         throw new Error('No authentication token available');
@@ -134,6 +137,8 @@ const PackageExpiryNotifications = () => {
         description: "Failed to send notifications",
         variant: "destructive",
       });
+    } finally {
+      setSendingEmails(false);
     }
   };
 
@@ -170,9 +175,10 @@ const PackageExpiryNotifications = () => {
           variant="outline" 
           size="sm" 
           onClick={sendNotifications}
+          disabled={sendingEmails}
           className="text-xs"
         >
-          Send Email Alerts
+          {sendingEmails ? "Sending..." : "Send Email Alerts"}
         </Button>
       </div>
 
