@@ -63,7 +63,8 @@ const PackageExpiryNotifications = () => {
         `)
         .eq("status", "active")
         .lte("expiry_date", twoWeeksFromNow.toISOString().split('T')[0])
-        .gt("expiry_date", new Date().toISOString().split('T')[0]);
+        .gt("expiry_date", new Date().toISOString().split('T')[0])
+        .is("expiry_alert_sent_at", null); // Only show packages that haven't been alerted for expiry
 
       if (expiringError) throw expiringError;
 
@@ -88,7 +89,8 @@ const PackageExpiryNotifications = () => {
         `)
         .eq("status", "active")
         .lte("sessions_remaining", 3)
-        .gt("sessions_remaining", 0);
+        .gt("sessions_remaining", 0)
+        .is("alert_sent_at", null); // Only show packages that haven't been alerted for low sessions
 
       if (lowSessionError) throw lowSessionError;
 

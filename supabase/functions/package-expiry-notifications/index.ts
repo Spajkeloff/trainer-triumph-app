@@ -74,7 +74,8 @@ const handler = async (req: Request): Promise<Response> => {
       `)
       .eq("status", "active")
       .lte("expiry_date", twoWeeksFromNow.toISOString().split('T')[0])
-      .gt("expiry_date", new Date().toISOString().split('T')[0]); // Not expired yet
+      .gt("expiry_date", new Date().toISOString().split('T')[0])
+      .is("expiry_alert_sent_at", null); // Only get packages that haven't been alerted for expiry
 
     if (expiringError) throw expiringError;
 
@@ -99,7 +100,8 @@ const handler = async (req: Request): Promise<Response> => {
       `)
       .eq("status", "active")
       .lte("sessions_remaining", 3)
-      .gt("sessions_remaining", 0);
+      .gt("sessions_remaining", 0)
+      .is("alert_sent_at", null); // Only get packages that haven't been alerted for low sessions
 
     if (lowSessionError) throw lowSessionError;
 
@@ -126,6 +128,12 @@ const handler = async (req: Request): Promise<Response> => {
             <p>Best regards,<br>TrainWithUs Team</p>
           `,
         });
+
+        // Mark package as alerted for expiry
+        await supabase
+          .from("client_packages")
+          .update({ expiry_alert_sent_at: new Date().toISOString() })
+          .eq("id", pkg.id);
 
         notifications.push({
           type: "expiry_reminder",
@@ -156,6 +164,12 @@ const handler = async (req: Request): Promise<Response> => {
             <p>Best regards,<br>TrainWithUs Team</p>
           `,
         });
+
+        // Mark package as alerted for low sessions
+        await supabase
+          .from("client_packages")
+          .update({ alert_sent_at: new Date().toISOString() })
+          .eq("id", pkg.id);
 
         notifications.push({
           type: "low_sessions",
