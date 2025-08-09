@@ -1,73 +1,182 @@
-# Welcome to your Lovable project
+# 💪 Trainer Triumph - Personal Trainer Business Management Platform
 
-## Project info
+> *A comprehensive CRM and business management solution for personal trainers and fitness professionals to manage clients, sessions, bookings, and packages - similar to MindBody but simplified for individual trainers.*
 
-**URL**: https://lovable.dev/projects/868db4d1-8e9f-49bb-bcad-edb1bf4fdcd6
+## 🎯 Overview
 
-## How can I edit this code?
+Trainer Triumph is a streamlined business management platform designed specifically for personal trainers, fitness coaches, and small studios. Unlike complex enterprise solutions, our platform focuses on what individual trainers need most: simple client management, efficient scheduling, and automated business operations.
 
-There are several ways of editing your application.
+## 🌟 Key Features
 
-**Use Lovable**
+### 👥 Client Management
+- **Contact Information**: Store complete client profiles with contact details, preferences, and notes
+- **Progress Tracking**: Record measurements, fitness assessments, and progress photos
+- **Client Notes**: Maintain detailed session notes and training observations
+- **Medical Information**: Safely store medical conditions, injuries, and limitations
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/868db4d1-8e9f-49bb-bcad-edb1bf4fdcd6) and start prompting.
+### 📅 Session Scheduling & Calendar Management
+- **Interactive Calendar**: Visual scheduling with drag-and-drop functionality
+- **Time Slot Management**: Customizable session durations and availability
+- **Recurring Sessions**: Set up weekly or monthly recurring appointments
+- **Conflict Prevention**: Automatic detection of scheduling conflicts
 
-Changes made via Lovable will be committed automatically to this repo.
+### 📦 Package Creation & Sales
+- **Flexible Packages**: Create 5-pack, 10-pack, or custom session bundles
+- **Monthly Subscriptions**: Set up recurring membership plans
+- **Package Tracking**: Monitor remaining sessions and expiration dates
+- **Pricing Management**: Flexible pricing for different package types
 
-**Use your preferred IDE**
+### 📊 Session Tracking & Attendance
+- **Attendance Logging**: Quick check-in/check-out for sessions
+- **Session Status**: Track scheduled, completed, cancelled, and no-show sessions
+- **Workout Notes**: Record exercises, weights, and performance metrics
+- **Progress Documentation**: Maintain detailed training history
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### 💰 Payment Processing & Invoice Management
+- **Invoice Creation**: Professional invoices with customizable templates
+- **Payment Tracking**: Monitor paid, pending, and overdue payments
+- **Expense Management**: Track business expenses and calculate profitability
+- **Financial Reports**: Comprehensive revenue and expense analytics
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### 📱 Client Booking System
+- **Self-Service Booking**: Clients can book available time slots independently
+- **Booking Restrictions**: Set advance booking limits and cancellation policies
+- **Waitlist Management**: Automatic notifications when slots become available
+- **Package Integration**: Clients can book using their purchased packages
 
-Follow these steps:
+### 📈 Revenue Analytics & Reports
+- **Revenue Tracking**: Monitor income trends and growth patterns
+- **Client Analytics**: Identify your most valuable clients and packages
+- **Session Statistics**: Track completion rates and popular time slots
+- **Financial Insights**: Understand profit margins and business performance
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
+### 🔔 Automated Reminders & Notifications
+- **Session Reminders**: Automatic email notifications before appointments
+- **Package Expiration Alerts**: Notify clients when packages are about to expire
+- **Low Session Warnings**: Alert clients when they have few sessions remaining
+- **Payment Reminders**: Automated overdue payment notifications
+
+## 👨‍💼 Target Users
+
+- **Personal Trainers**: Independent fitness professionals managing 1-50 clients
+- **Fitness Coaches**: Specialized coaches (strength, nutrition, wellness)
+- **Yoga Instructors**: Individual instructors offering private and small group sessions
+- **Small Fitness Studios**: Boutique gyms and training facilities with multiple trainers
+
+## 🛠️ Tech Stack
+
+- **Frontend**: React 18 with TypeScript for type-safe development
+- **Build Tool**: Vite for fast development and optimized builds
+- **Styling**: Tailwind CSS for responsive, utility-first styling
+- **UI Components**: shadcn-ui for beautiful, accessible components
+- **Backend**: Supabase for authentication, database, and real-time features
+- **Database**: PostgreSQL with Row Level Security (RLS)
+- **Email**: Resend for transactional emails and notifications
+
+## 🚀 Installation & Setup
+
+### Prerequisites
+- Node.js 18+ and npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+- Git for version control
+
+### Local Development Setup
+
+```bash
+# Clone the repository
 git clone <YOUR_GIT_URL>
+cd trainer-triumph
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# Install dependencies
+npm install
 
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Start development server
 npm run dev
+
+# Open your browser to http://localhost:5173
 ```
 
-**Edit a file directly in GitHub**
+### Environment Setup
+1. Create a Supabase account and project
+2. Set up your environment variables
+3. Run database migrations
+4. Configure email service (Resend)
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## 📖 Usage Guide
 
-**Use GitHub Codespaces**
+### 🆕 Adding New Clients
+1. Navigate to **Clients** from the main dashboard
+2. Click **Add Client** button
+3. Fill in contact information, emergency contacts, and medical notes
+4. Set goals and preferences
+5. Save to create the client profile
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+### 📦 Creating and Selling Packages
+1. Go to **Package Management**
+2. Click **Create Package**
+3. Define package details (name, sessions included, duration, price)
+4. Assign packages to clients from their profile
+5. Track package usage and expiration dates
 
-## What technologies are used for this project?
+### 📅 Scheduling Sessions
+1. Open the **Calendar** view
+2. Click on desired time slot
+3. Select client and package (if applicable)
+4. Set session duration and add notes
+5. Save to confirm booking
 
-This project is built with:
+### ✅ Tracking Attendance
+1. View today's sessions on the dashboard
+2. Mark sessions as completed, cancelled, or no-show
+3. Add session notes and workout details
+4. Update client progress measurements
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+### 💳 Managing Payments
+1. Access **Finances** section
+2. Create invoices for services rendered
+3. Record payments and track outstanding balances
+4. Generate financial reports for business insights
 
-## How can I deploy this project?
+## 🔮 Upcoming Features
 
-Simply open [Lovable](https://lovable.dev/projects/868db4d1-8e9f-49bb-bcad-edb1bf4fdcd6) and click on Share -> Publish.
+- 📱 **Mobile App for Trainers**: iOS/Android app for on-the-go management
+- 👤 **Client Mobile App**: Allow clients to book, cancel, and manage their sessions
+- 💳 **Payment Processor Integration**: Stripe/Square integration for seamless payments
+- 📧 **Email/SMS Automation**: Advanced notification workflows
+- 🏋️ **Workout Builder**: Create and assign custom workout plans
+- 📊 **Advanced Analytics**: Deeper insights into business performance
+- 🔄 **API Access**: Integrate with other fitness apps and wearables
+- 👥 **Team Management**: Multi-trainer support for growing businesses
 
-## Can I connect a custom domain to my Lovable project?
+## 🆚 Why Choose Trainer Triumph Over MindBody?
 
-Yes, you can!
+| Feature | Trainer Triumph | MindBody |
+|---------|----------------|----------|
+| **Target Audience** | Individual trainers & small studios | Large gyms & enterprises |
+| **Setup Complexity** | ⭐⭐ Simple | ⭐⭐⭐⭐⭐ Complex |
+| **Monthly Cost** | 💰 Affordable | 💰💰💰💰 Expensive |
+| **Learning Curve** | 📈 Quick to master | 📈📈📈 Steep learning curve |
+| **Customization** | 🎯 Trainer-focused features | 🏢 Enterprise-focused |
+| **Support** | 👤 Personal support | 🏢 Corporate support |
+| **Mobile Experience** | 📱 Optimized for trainers | 📱 Complex interface |
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+### 🎯 Our Advantages
+- **Simplified Interface**: Focus on what trainers actually need
+- **Affordable Pricing**: No hidden fees or per-client charges
+- **Quick Setup**: Start managing clients in minutes, not days
+- **Trainer-Centric**: Built by trainers, for trainers
+- **No Overkill**: Essential features without enterprise bloat
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+## 📞 Support & Community
+
+- 📧 **Email Support**: support@trainertriumph.com
+- 📚 **Documentation**: [docs.trainertriumph.com](https://docs.trainertriumph.com)
+- 💬 **Community Forum**: [community.trainertriumph.com](https://community.trainertriumph.com)
+- 🐛 **Bug Reports**: [GitHub Issues](https://github.com/trainertriumph/issues)
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+*Built with ❤️ for the fitness community. Empowering trainers to focus on what they do best - transforming lives through fitness.*
