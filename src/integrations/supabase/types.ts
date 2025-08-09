@@ -372,8 +372,10 @@ export type Database = {
       }
       client_packages: {
         Row: {
+          alert_sent_at: string | null
           client_id: string
           created_at: string
+          expiry_alert_sent_at: string | null
           expiry_date: string
           id: string
           package_id: string
@@ -383,8 +385,10 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          alert_sent_at?: string | null
           client_id: string
           created_at?: string
+          expiry_alert_sent_at?: string | null
           expiry_date: string
           id?: string
           package_id: string
@@ -394,8 +398,10 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          alert_sent_at?: string | null
           client_id?: string
           created_at?: string
+          expiry_alert_sent_at?: string | null
           expiry_date?: string
           id?: string
           package_id?: string
