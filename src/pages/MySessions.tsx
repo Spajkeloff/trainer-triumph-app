@@ -30,6 +30,7 @@ interface Session {
 const MySessions = () => {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
+  const [clientPermissions, setClientPermissions] = useState({ can_book_sessions: false, can_cancel_sessions: false });
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -50,9 +51,14 @@ const MySessions = () => {
         return;
       }
 
-      // Fetch real client sessions
-      const clientSessions = await clientAreaService.getClientSessions(clientId);
+      // Fetch both sessions and permissions
+      const [clientSessions, permissions] = await Promise.all([
+        clientAreaService.getClientSessions(clientId),
+        clientAreaService.getClientPermissions(clientId)
+      ]);
+      
       setSessions(clientSessions as Session[]);
+      setClientPermissions(permissions);
     } catch (error) {
       console.error('Error fetching sessions:', error);
       toast({
@@ -184,7 +190,7 @@ const MySessions = () => {
                       <Button variant="outline" size="sm">
                         View Details
                       </Button>
-                      {canCancelSession(session) && (
+                      {canCancelSession(session) && clientPermissions.can_cancel_sessions && (
                         <Button variant="outline" size="sm" className="text-destructive">
                           Cancel Session
                         </Button>

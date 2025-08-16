@@ -6,6 +6,7 @@ import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { clientAreaService } from '@/services/clientAreaService';
 import { 
   Package, 
   Clock, 
@@ -32,6 +33,7 @@ interface ClientPackage {
 const MyPackages = () => {
   const [packages, setPackages] = useState<ClientPackage[]>([]);
   const [loading, setLoading] = useState(true);
+  const [clientPermissions, setClientPermissions] = useState({ can_book_sessions: false, can_cancel_sessions: false });
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -45,34 +47,34 @@ const MyPackages = () => {
     try {
       setLoading(true);
       
-      // Get current user's profile to get client_id
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('user_id', user.id)
-        .single();
-
-      if (!profile) {
-        throw new Error('Profile not found');
+      // Get client ID
+      const clientId = await clientAreaService.getClientIdFromUserId(user.id);
+      if (!clientId) {
+        setLoading(false);
+        return;
       }
 
-      // Fetch client packages with package details
-      const { data, error } = await supabase
-        .from('client_packages')
-        .select(`
-          *,
-          packages (
-            name,
-            description,
-            sessions_included,
-            price
-          )
-        `)
-        .eq('client_id', profile.id)
-        .order('purchase_date', { ascending: false });
+      // Fetch both packages and permissions
+      const [packagesData, permissions] = await Promise.all([
+        supabase
+          .from('client_packages')
+          .select(`
+            *,
+            packages (
+              name,
+              description,
+              sessions_included,
+              price
+            )
+          `)
+          .eq('client_id', clientId)
+          .order('purchase_date', { ascending: false }),
+        clientAreaService.getClientPermissions(clientId)
+      ]);
 
-      if (error) throw error;
-      setPackages(data as ClientPackage[] || []);
+      if (packagesData.error) throw packagesData.error;
+      setPackages(packagesData.data as ClientPackage[] || []);
+      setClientPermissions(permissions);
     } catch (error) {
       console.error('Error fetching packages:', error);
       toast({
@@ -231,11 +233,19 @@ const MyPackages = () => {
 
                     {/* Action Buttons - CLIENT ONLY actions */}
                     {pkg.status === 'active' && pkg.sessions_remaining > 0 && (
-                      <div className="flex space-x-2">
-                        <Button className="flex-1">
-                          <Calendar className="h-4 w-4 mr-2" />
-                          Book Session
-                        </Button>
+                      <div className="space-y-2">
+                        {clientPermissions.can_book_sessions ? (
+                          <Button className="w-full">
+                            <Calendar className="h-4 w-4 mr-2" />
+                            Book Session
+                          </Button>
+                        ) : (
+                          <div className="p-3 bg-muted rounded-lg text-center">
+                            <p className="text-sm text-muted-foreground">
+                              Please contact your trainer to schedule sessions
+                            </p>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>

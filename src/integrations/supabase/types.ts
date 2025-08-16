@@ -432,6 +432,8 @@ export type Database = {
           address: string | null
           assigned_trainer_id: string | null
           avatar_url: string | null
+          can_book_sessions: boolean | null
+          can_cancel_sessions: boolean | null
           created_at: string
           date_of_birth: string | null
           email: string
@@ -460,6 +462,8 @@ export type Database = {
           address?: string | null
           assigned_trainer_id?: string | null
           avatar_url?: string | null
+          can_book_sessions?: boolean | null
+          can_cancel_sessions?: boolean | null
           created_at?: string
           date_of_birth?: string | null
           email: string
@@ -488,6 +492,8 @@ export type Database = {
           address?: string | null
           assigned_trainer_id?: string | null
           avatar_url?: string | null
+          can_book_sessions?: boolean | null
+          can_cancel_sessions?: boolean | null
           created_at?: string
           date_of_birth?: string | null
           email?: string

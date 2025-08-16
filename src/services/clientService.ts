@@ -24,6 +24,8 @@ export interface Client {
   lead_source?: string;
   tags?: string[];
   avatar_url?: string;
+  can_book_sessions?: boolean;
+  can_cancel_sessions?: boolean;
   created_at: string;
   updated_at: string;
   user_id: string;

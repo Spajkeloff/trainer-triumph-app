@@ -161,6 +161,21 @@ export const clientAreaService = {
     return data;
   },
 
+  // Get client permissions
+  async getClientPermissions(clientId: string): Promise<{ can_book_sessions: boolean; can_cancel_sessions: boolean }> {
+    const { data, error } = await supabase
+      .from('clients')
+      .select('can_book_sessions, can_cancel_sessions')
+      .eq('id', clientId)
+      .single();
+
+    if (error) throw error;
+    return {
+      can_book_sessions: data?.can_book_sessions || false,
+      can_cancel_sessions: data?.can_cancel_sessions || false
+    };
+  },
+
   // Get account balance for client
   async getClientBalance(clientId: string): Promise<number> {
     const { data, error } = await supabase

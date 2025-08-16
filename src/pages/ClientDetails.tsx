@@ -7,6 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { clientService, ClientWithDetails } from '@/services/clientService';
 import { sessionService } from '@/services/sessionService';
@@ -339,8 +341,9 @@ const ClientDetails = () => {
         {/* Main Content */}
         <div className="col-span-9">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-            <TabsList className="grid w-full grid-cols-10">
+            <TabsList className="grid w-full grid-cols-11">
               <TabsTrigger value="summary">Summary</TabsTrigger>
+              <TabsTrigger value="profile">Profile</TabsTrigger>
               <TabsTrigger value="services">Services</TabsTrigger>
               <TabsTrigger value="bookings">Bookings</TabsTrigger>
               <TabsTrigger value="training">Training</TabsTrigger>
@@ -485,6 +488,129 @@ const ClientDetails = () => {
                         {client.assessments?.[0]?.assessment_date ? new Date(client.assessments[0].assessment_date).toLocaleDateString() : '-'}
                       </p>
                     </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="profile" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <User className="h-5 w-5 mr-2" />
+                    Client Profile & Settings
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Basic Information */}
+                  <div>
+                    <h4 className="text-lg font-semibold mb-4">Basic Information</h4>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="first_name">First Name</Label>
+                        <Input
+                          id="first_name"
+                          value={client.first_name}
+                          onChange={(e) => {
+                            setClient(prev => prev ? { ...prev, first_name: e.target.value } : null);
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="last_name">Last Name</Label>
+                        <Input
+                          id="last_name"
+                          value={client.last_name}
+                          onChange={(e) => {
+                            setClient(prev => prev ? { ...prev, last_name: e.target.value } : null);
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="email">Email</Label>
+                        <Input
+                          id="email"
+                          value={client.email}
+                          onChange={(e) => {
+                            setClient(prev => prev ? { ...prev, email: e.target.value } : null);
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="phone">Phone</Label>
+                        <Input
+                          id="phone"
+                          value={client.phone || ''}
+                          onChange={(e) => {
+                            setClient(prev => prev ? { ...prev, phone: e.target.value } : null);
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Client Permissions */}
+                  <div className="border-t pt-6">
+                    <h4 className="text-lg font-semibold mb-4">Client Permissions</h4>
+                    <div className="space-y-4">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="can_book_sessions"
+                          checked={client.can_book_sessions || false}
+                          onCheckedChange={(checked) => {
+                            setClient(prev => prev ? { ...prev, can_book_sessions: !!checked } : null);
+                          }}
+                        />
+                        <Label htmlFor="can_book_sessions" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                          Allow client to book their own sessions
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="can_cancel_sessions"
+                          checked={client.can_cancel_sessions || false}
+                          onCheckedChange={(checked) => {
+                            setClient(prev => prev ? { ...prev, can_cancel_sessions: !!checked } : null);
+                          }}
+                        />
+                        <Label htmlFor="can_cancel_sessions" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                          Allow client to cancel sessions
+                        </Label>
+                      </div>
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      These permissions control what actions clients can perform in their portal.
+                    </p>
+                  </div>
+
+                  {/* Save Button */}
+                  <div className="flex justify-end">
+                    <Button
+                      onClick={async () => {
+                        try {
+                          await clientService.update(client.id, {
+                            first_name: client.first_name,
+                            last_name: client.last_name,
+                            email: client.email,
+                            phone: client.phone,
+                            can_book_sessions: client.can_book_sessions,
+                            can_cancel_sessions: client.can_cancel_sessions
+                          });
+                          toast({
+                            title: "Success",
+                            description: "Client profile updated successfully",
+                          });
+                        } catch (error) {
+                          toast({
+                            title: "Error",
+                            description: "Failed to update client profile",
+                            variant: "destructive",
+                          });
+                        }
+                      }}
+                    >
+                      Save Changes
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
