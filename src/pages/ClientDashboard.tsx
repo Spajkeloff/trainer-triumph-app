@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar, Package, CreditCard, User } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { clientAreaService, ClientPackageInfo, ClientSession } from '@/services/clientAreaService';
 import { useToast } from '@/hooks/use-toast';
@@ -14,6 +15,7 @@ const ClientDashboard = () => {
   const [nextSession, setNextSession] = useState<ClientSession | null>(null);
   const [accountBalance, setAccountBalance] = useState(0);
   const [profileCompletion, setProfileCompletion] = useState(0);
+  const [clientPermissions, setClientPermissions] = useState({ can_book_sessions: false, can_cancel_sessions: false });
 
   useEffect(() => {
     if (user) {
@@ -34,10 +36,11 @@ const ClientDashboard = () => {
       }
 
       // Fetch all data in parallel
-      const [packages, nextSessionData, balance] = await Promise.all([
+      const [packages, nextSessionData, balance, permissions] = await Promise.all([
         clientAreaService.getClientPackages(clientId),
         clientAreaService.getNextSession(clientId),
-        clientAreaService.getClientBalance(clientId)
+        clientAreaService.getClientBalance(clientId),
+        clientAreaService.getClientPermissions(clientId)
       ]);
 
       // Calculate total sessions remaining
@@ -46,6 +49,7 @@ const ClientDashboard = () => {
       
       setNextSession(nextSessionData);
       setAccountBalance(balance);
+      setClientPermissions(permissions);
 
       // Calculate profile completion
       const profileFields = [
@@ -169,7 +173,27 @@ const ClientDashboard = () => {
         </Card>
       </div>
 
-      {/* Quick Actions - REMOVED per user request */}
+      {/* Quick Actions */}
+      {clientPermissions.can_book_sessions && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Quick Actions</CardTitle>
+            <CardDescription>
+              Manage your training sessions
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex space-x-4">
+              <Link to="/client/book-session">
+                <Button className="flex-1">
+                  <Calendar className="h-4 w-4 mr-2" />
+                  Book New Session
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Upcoming Sessions */}
       <Card>

@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { clientAreaService } from '@/services/clientAreaService';
+import { Link } from 'react-router-dom';
 import { 
   Package, 
   Clock, 
@@ -235,10 +236,12 @@ const MyPackages = () => {
                     {pkg.status === 'active' && pkg.sessions_remaining > 0 && (
                       <div className="space-y-2">
                         {clientPermissions.can_book_sessions ? (
-                          <Button className="w-full">
-                            <Calendar className="h-4 w-4 mr-2" />
-                            Book Session
-                          </Button>
+                          <Link to="/client/book-session" className="block">
+                            <Button className="w-full">
+                              <Calendar className="h-4 w-4 mr-2" />
+                              Book Session
+                            </Button>
+                          </Link>
                         ) : (
                           <div className="p-3 bg-muted rounded-lg text-center">
                             <p className="text-sm text-muted-foreground">

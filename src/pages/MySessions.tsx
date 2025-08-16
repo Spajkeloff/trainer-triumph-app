@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { clientAreaService } from '@/services/clientAreaService';
+import { Link } from 'react-router-dom';
 import { 
   Calendar as CalendarIcon, 
   Clock, 
@@ -128,11 +129,21 @@ const MySessions = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">My Sessions</h1>
-        <p className="text-muted-foreground">
-          View and manage your training sessions.
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">My Sessions</h1>
+          <p className="text-muted-foreground">
+            View and manage your training sessions
+          </p>
+        </div>
+        {clientPermissions.can_book_sessions && (
+          <Link to="/client/book-session">
+            <Button>
+              <CalendarIcon className="h-4 w-4 mr-2" />
+              Book Another Session
+            </Button>
+          </Link>
+        )}
       </div>
 
       {/* Upcoming Sessions */}

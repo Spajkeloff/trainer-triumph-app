@@ -189,5 +189,74 @@ export const clientAreaService = {
     }
 
     return data?.balance || 0;
+  },
+
+  // Book a new session
+  async bookSession(bookingData: {
+    clientId: string;
+    packageId: string;
+    date: string;
+    time: string;
+    duration: number;
+  }): Promise<void> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+
+    // Get a default trainer ID - in a real app, this would be based on availability
+    const { data: trainers } = await supabase
+      .from('trainers')
+      .select('id')
+      .limit(1);
+
+    if (!trainers || trainers.length === 0) {
+      throw new Error('No trainers available');
+    }
+
+    // Parse time to create start and end times
+    const [hours, minutes] = bookingData.time.replace(/[ap]m/i, '').trim().split(':').map(Number);
+    const isPM = bookingData.time.toLowerCase().includes('pm');
+    const hour24 = isPM && hours !== 12 ? hours + 12 : (!isPM && hours === 12 ? 0 : hours);
+    
+    const startTime = `${hour24.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+    const endHour = hour24 + Math.floor(bookingData.duration / 60);
+    const endMinutes = minutes + (bookingData.duration % 60);
+    const endTime = `${endHour.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
+
+    // Create the session
+    const { error: sessionError } = await supabase
+      .from('sessions')
+      .insert({
+        client_id: bookingData.clientId,
+        trainer_id: trainers[0].id,
+        client_package_id: bookingData.packageId,
+        date: bookingData.date,
+        start_time: startTime,
+        end_time: endTime,
+        duration: bookingData.duration,
+        type: 'personal',
+        status: 'scheduled',
+        notes: 'Self-booked session'
+      });
+
+    if (sessionError) throw sessionError;
+
+    // Update package sessions remaining - get current count first
+    const { data: currentPackage } = await supabase
+      .from('client_packages')
+      .select('sessions_remaining')
+      .eq('id', bookingData.packageId)
+      .single();
+
+    if (!currentPackage) throw new Error('Package not found');
+
+    const { error: updateError } = await supabase
+      .from('client_packages')
+      .update({ 
+        sessions_remaining: currentPackage.sessions_remaining - 1,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', bookingData.packageId);
+
+    if (updateError) throw updateError;
   }
 };

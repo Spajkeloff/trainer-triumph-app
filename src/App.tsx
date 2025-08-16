@@ -15,6 +15,7 @@ import ClientProfile from "./pages/ClientProfile";
 import ClientDetails from "./pages/ClientDetails";
 import MySessions from "./pages/MySessions";
 import MyPackages from "./pages/MyPackages";
+import BookSession from "./pages/BookSession";
 import Services from "./pages/Services";
 
 import Finances from "./pages/Finances";
@@ -118,6 +119,7 @@ const App = () => {
               <Route path="profile" element={<ClientProfile />} />
               <Route path="sessions" element={<MySessions />} />
               <Route path="packages" element={<MyPackages />} />
+              <Route path="book-session" element={<BookSession />} />
               <Route path="settings" element={<Settings />} />
             </Route>
             
