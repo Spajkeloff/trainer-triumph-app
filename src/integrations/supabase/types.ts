@@ -804,6 +804,9 @@ export type Database = {
       }
       sessions: {
         Row: {
+          cancellation_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
           client_id: string
           client_package_id: string | null
           created_at: string
@@ -821,6 +824,9 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
           client_id: string
           client_package_id?: string | null
           created_at?: string
@@ -838,6 +844,9 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
           client_id?: string
           client_package_id?: string | null
           created_at?: string

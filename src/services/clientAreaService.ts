@@ -258,5 +258,57 @@ export const clientAreaService = {
       .eq('id', bookingData.packageId);
 
     if (updateError) throw updateError;
+  },
+
+  // Cancel a session
+  async cancelSession(sessionId: string, reason?: string): Promise<{ creditRefunded: boolean }> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+
+    // Get session details to check timing and package info
+    const { data: session, error: sessionError } = await supabase
+      .from('sessions')
+      .select('*, client_packages(id, sessions_remaining)')
+      .eq('id', sessionId)
+      .single();
+
+    if (sessionError || !session) {
+      throw new Error('Session not found');
+    }
+
+    // Check if session is more than 24 hours away
+    const sessionDateTime = new Date(`${session.date}T${session.start_time}`);
+    const now = new Date();
+    const hoursUntilSession = (sessionDateTime.getTime() - now.getTime()) / (1000 * 60 * 60);
+    const creditRefunded = hoursUntilSession >= 24;
+
+    // Update session to cancelled
+    const { error: updateSessionError } = await supabase
+      .from('sessions')
+      .update({
+        status: 'cancelled',
+        cancelled_at: new Date().toISOString(),
+        cancelled_by: 'client',
+        cancellation_reason: reason || null,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', sessionId);
+
+    if (updateSessionError) throw updateSessionError;
+
+    // If cancelled with enough notice, refund the session credit
+    if (creditRefunded && session.client_package_id && session.client_packages) {
+      const { error: refundError } = await supabase
+        .from('client_packages')
+        .update({
+          sessions_remaining: (session.client_packages as any).sessions_remaining + 1,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', session.client_package_id);
+
+      if (refundError) throw refundError;
+    }
+
+    return { creditRefunded };
   }
 };

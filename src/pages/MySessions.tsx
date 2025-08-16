@@ -6,6 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { clientAreaService } from '@/services/clientAreaService';
 import { Link } from 'react-router-dom';
+import CancelSessionModal from '@/components/CancelSessionModal';
 import { 
   Calendar as CalendarIcon, 
   Clock, 
@@ -31,7 +32,10 @@ interface Session {
 const MySessions = () => {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
+  const [cancelLoading, setCancelLoading] = useState(false);
   const [clientPermissions, setClientPermissions] = useState({ can_book_sessions: false, can_cancel_sessions: false });
+  const [cancelModalOpen, setCancelModalOpen] = useState(false);
+  const [sessionToCancel, setSessionToCancel] = useState<Session | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -107,6 +111,64 @@ const MySessions = () => {
     const now = new Date();
     const hoursUntilSession = (sessionDateTime.getTime() - now.getTime()) / (1000 * 60 * 60);
     return session.status === 'scheduled' && hoursUntilSession > 24;
+  };
+
+  const handleCancelClick = (session: Session) => {
+    setSessionToCancel(session);
+    setCancelModalOpen(true);
+  };
+
+  const handleCancelConfirm = async (reason?: string) => {
+    if (!sessionToCancel) return;
+
+    try {
+      setCancelLoading(true);
+      const result = await clientAreaService.cancelSession(sessionToCancel.id, reason);
+      
+      toast({
+        title: "Session cancelled",
+        description: result.creditRefunded 
+          ? "Your session credit has been refunded." 
+          : "Late cancellation. No credit refunded.",
+        variant: result.creditRefunded ? "default" : "destructive",
+      });
+
+      // Refresh sessions data
+      fetchMySessions();
+      setCancelModalOpen(false);
+      setSessionToCancel(null);
+    } catch (error) {
+      console.error('Error cancelling session:', error);
+      toast({
+        title: "Error",
+        description: "Failed to cancel session. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setCancelLoading(false);
+    }
+  };
+
+  const shouldShowCancelButton = (session: Session) => {
+    if (!clientPermissions.can_cancel_sessions) return false;
+    if (session.status !== 'scheduled') return false;
+    
+    const sessionDateTime = new Date(`${session.date}T${session.start_time}`);
+    const now = new Date();
+    const hoursUntilSession = (sessionDateTime.getTime() - now.getTime()) / (1000 * 60 * 60);
+    
+    return hoursUntilSession > 0; // Show if in future, but disable if less than 24 hours
+  };
+
+  const getCancelButtonText = (session: Session) => {
+    const sessionDateTime = new Date(`${session.date}T${session.start_time}`);
+    const now = new Date();
+    const hoursUntilSession = (sessionDateTime.getTime() - now.getTime()) / (1000 * 60 * 60);
+    
+    if (hoursUntilSession < 24) {
+      return "Too late to cancel online. Please contact your trainer.";
+    }
+    return null;
   };
 
   if (loading) {
@@ -201,10 +263,24 @@ const MySessions = () => {
                       <Button variant="outline" size="sm">
                         View Details
                       </Button>
-                      {canCancelSession(session) && clientPermissions.can_cancel_sessions && (
-                        <Button variant="outline" size="sm" className="text-destructive">
-                          Cancel Session
-                        </Button>
+                      {shouldShowCancelButton(session) && (
+                        <>
+                          {canCancelSession(session) ? (
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="text-destructive"
+                              onClick={() => handleCancelClick(session)}
+                              disabled={cancelLoading}
+                            >
+                              Cancel Session
+                            </Button>
+                          ) : (
+                            <div className="text-xs text-muted-foreground max-w-32 text-center">
+                              {getCancelButtonText(session)}
+                            </div>
+                          )}
+                        </>
                       )}
                     </div>
                   </div>
@@ -271,6 +347,15 @@ const MySessions = () => {
           </div>
         </div>
       )}
+
+      {/* Cancel Session Modal */}
+      <CancelSessionModal
+        open={cancelModalOpen}
+        onOpenChange={setCancelModalOpen}
+        session={sessionToCancel}
+        onConfirm={handleCancelConfirm}
+        loading={cancelLoading}
+      />
     </div>
   );
 };
